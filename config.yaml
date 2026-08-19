@@ -1,0 +1,302 @@
+# Cross-Asset Macro Regime Engine - configuration
+#
+# Pipeline:  instruments -> derived series -> signal scores -> factor scores -> regime
+#
+# Every scored series lives in `instruments` (raw, downloaded) or `derived` (computed).
+# `mode` controls how a change is measured:
+#   price -> log change  (strictly positive series: prices, ratios)
+#   level -> absolute difference (yields, spreads, percentages that can cross zero)
+
+data:
+  history_years: 12
+  cache_hours: 6
+  fill_limit_days: 5
+
+instruments:
+  # --- Equities -------------------------------------------------------------
+  spx:    {source: yahoo, ticker: "^GSPC",     name: "S&P 500",             category: equity,    mode: price}
+  ndx:    {source: yahoo, ticker: "^NDX",      name: "Nasdaq 100",          category: equity,    mode: price}
+  rut:    {source: yahoo, ticker: "^RUT",      name: "Russell 2000",        category: equity,    mode: price}
+  sx5e:   {source: yahoo, ticker: "^STOXX50E", name: "Euro Stoxx 50",       category: equity,    mode: price}
+  nikkei: {source: yahoo, ticker: "^N225",     name: "Nikkei 225",          category: equity,    mode: price}
+  hsi:    {source: yahoo, ticker: "^HSI",      name: "Hang Seng",           category: equity,    mode: price}
+  eem:    {source: yahoo, ticker: "EEM",       name: "EM Equities",         category: equity,    mode: price}
+  spy:    {source: yahoo, ticker: "SPY",       name: "SPY",                 category: equity,    mode: price}
+  qqq:    {source: yahoo, ticker: "QQQ",       name: "QQQ",                 category: equity,    mode: price}
+  iwm:    {source: yahoo, ticker: "IWM",       name: "IWM",                 category: equity,    mode: price}
+  xli:    {source: yahoo, ticker: "XLI",       name: "Industrials",         category: equity,    mode: price}
+  xlp:    {source: yahoo, ticker: "XLP",       name: "Staples",             category: equity,    mode: price}
+  xly:    {source: yahoo, ticker: "XLY",       name: "Consumer Discret.",   category: equity,    mode: price}
+
+  # --- Credit / bonds -------------------------------------------------------
+  hyg:    {source: yahoo, ticker: "HYG",       name: "US High Yield",       category: credit,    mode: price}
+  lqd:    {source: yahoo, ticker: "LQD",       name: "US Investment Grade", category: credit,    mode: price}
+  jnk:    {source: yahoo, ticker: "JNK",       name: "HY (JNK)",            category: credit,    mode: price}
+  emb:    {source: yahoo, ticker: "EMB",       name: "EM USD Sovereign",    category: credit,    mode: price}
+  vwob:   {source: yahoo, ticker: "VWOB",      name: "EM Govt Bond",        category: credit,    mode: price}
+  tlt:    {source: yahoo, ticker: "TLT",       name: "20Y+ Treasury",       category: rates,     mode: price}
+  ief:    {source: yahoo, ticker: "IEF",       name: "7-10Y Treasury",      category: rates,     mode: price}
+  tip:    {source: yahoo, ticker: "TIP",       name: "TIPS",                category: rates,     mode: price}
+  shy:    {source: yahoo, ticker: "SHY",       name: "1-3Y Treasury",       category: rates,     mode: price}
+
+  # --- FX / commodities / crypto -------------------------------------------
+  dxy:    {source: yahoo, ticker: "DX-Y.NYB",  name: "US Dollar Index",     category: fx,        mode: price}
+  wti:    {source: yahoo, ticker: "CL=F",      name: "WTI Crude",           category: commodity, mode: price}
+  brent:  {source: yahoo, ticker: "BZ=F",      name: "Brent Crude",         category: commodity, mode: price}
+  gold:   {source: yahoo, ticker: "GC=F",      name: "Gold",                category: commodity, mode: price}
+  copper: {source: yahoo, ticker: "HG=F",      name: "Copper",              category: commodity, mode: price}
+  silver: {source: yahoo, ticker: "SI=F",      name: "Silver",              category: commodity, mode: price}
+  btc:    {source: yahoo, ticker: "BTC-USD",   name: "Bitcoin",             category: crypto,    mode: price}
+
+  # --- Volatility -----------------------------------------------------------
+  vix:    {source: yahoo, ticker: "^VIX",      name: "VIX",                 category: vol,       mode: level}
+  vxn:    {source: yahoo, ticker: "^VXN",      name: "VXN",                 category: vol,       mode: level}
+  # ^VIX3M returns a single stale print on Yahoo; FRED VXVCLS is the same index.
+  vix3m:  {source: fred,  ticker: "VXVCLS",    name: "VIX 3M",              category: vol,       mode: level}
+
+  # --- Rates (FRED: Yahoo has no usable 2Y/5Y, real yields or breakevens) ---
+  ust2:   {source: fred,  ticker: "DGS2",      name: "US 2Y",               category: rates,     mode: level}
+  ust5:   {source: fred,  ticker: "DGS5",      name: "US 5Y",               category: rates,     mode: level}
+  ust10:  {source: fred,  ticker: "DGS10",     name: "US 10Y",              category: rates,     mode: level}
+  ust30:  {source: fred,  ticker: "DGS30",     name: "US 30Y",              category: rates,     mode: level}
+  bei10:  {source: fred,  ticker: "T10YIE",    name: "10Y Breakeven",       category: rates,     mode: level}
+  bei5:   {source: fred,  ticker: "T5YIE",     name: "5Y Breakeven",        category: rates,     mode: level}
+  real10: {source: fred,  ticker: "DFII10",    name: "10Y Real Yield",      category: rates,     mode: level}
+  real5:  {source: fred,  ticker: "DFII5",     name: "5Y Real Yield",       category: rates,     mode: level}
+  effr:   {source: fred,  ticker: "EFFR",      name: "Effective Fed Funds", category: rates,     mode: level}
+
+  # --- Credit spreads (ICE BofA OAS via FRED, ~3y of daily history) ---------
+  hy_oas: {source: fred,  ticker: "BAMLH0A0HYM2", name: "US HY OAS",        category: credit,    mode: level}
+  ig_oas: {source: fred,  ticker: "BAMLC0A0CM",   name: "US IG OAS",        category: credit,    mode: level}
+
+  # --- Displayed only, not scored (only the front contract lives on Yahoo) --
+  ff_front: {source: yahoo, ticker: "ZQ=F", name: "Fed Funds Fut (front)", category: rates, mode: price, scored: false}
+
+derived:
+  # --- Growth / risk ratios -------------------------------------------------
+  iwm_spy:     {kind: ratio,  numerator: iwm,    denominator: spy,  name: "Small vs Large (IWM/SPY)",   category: growth,    mode: price}
+  copper_gold: {kind: ratio,  numerator: copper, denominator: gold, name: "Copper / Gold",              category: growth,    mode: price}
+  xli_xlp:     {kind: ratio,  numerator: xli,    denominator: xlp,  name: "Cyclicals vs Defensives",    category: growth,    mode: price}
+  xly_xlp:     {kind: ratio,  numerator: xly,    denominator: xlp,  name: "Cons. Cyclicals vs Staples", category: growth,    mode: price}
+  eem_spy:     {kind: ratio,  numerator: eem,    denominator: spy,  name: "EM vs SPX",                  category: growth,    mode: price}
+  qqq_spy:     {kind: ratio,  numerator: qqq,    denominator: spy,  name: "Long Duration Equity",       category: liquidity, mode: price}
+
+  # --- Credit ratios --------------------------------------------------------
+  hyg_lqd:     {kind: ratio,  numerator: hyg, denominator: lqd, name: "HY vs IG (HYG/LQD)",         category: credit, mode: price}
+  hyg_spy:     {kind: ratio,  numerator: hyg, denominator: spy, name: "Credit vs Equity (HYG/SPY)", category: credit, mode: price}
+  jnk_lqd:     {kind: ratio,  numerator: jnk, denominator: lqd, name: "JNK / LQD",                  category: credit, mode: price}
+  emb_ief:     {kind: ratio,  numerator: emb, denominator: ief, name: "EM Credit vs Treasuries",    category: credit, mode: price}
+
+  # --- Rates curve ----------------------------------------------------------
+  s2s10:    {kind: spread, long: ust10, short: ust2, scale: 100, name: "2s10s", category: rates, mode: level}
+  s5s10:    {kind: spread, long: ust10, short: ust5, scale: 100, name: "5s10s", category: rates, mode: level}
+  s5s30:    {kind: spread, long: ust30, short: ust5, scale: 100, name: "5s30s", category: rates, mode: level}
+  s2s30:    {kind: spread, long: ust30, short: ust2, scale: 100, name: "2s30s", category: rates, mode: level}
+  fed_path: {kind: spread, long: ust2,  short: effr, scale: 100, name: "2Y less EFFR (policy path)", category: rates, mode: level}
+
+  # --- Volatility term structure -------------------------------------------
+  vix_vix3m: {kind: ratio, numerator: vix, denominator: vix3m, name: "VIX / VIX3M", category: vol, mode: price}
+
+# Signals that get scored. `confirmers` supply the 20% cross-asset confirmation
+# component: peers whose own 20d move should agree (sign 1) or disagree (sign -1).
+signals:
+  spx:         {confirmers: [{signal: hyg_lqd, sign: 1},  {signal: vix, sign: -1}, {signal: iwm_spy, sign: 1}]}
+  ndx:         {confirmers: [{signal: spx, sign: 1},      {signal: vxn, sign: -1}]}
+  rut:         {confirmers: [{signal: spx, sign: 1},      {signal: hyg_lqd, sign: 1}]}
+  sx5e:        {confirmers: [{signal: spx, sign: 1},      {signal: copper_gold, sign: 1}]}
+  nikkei:      {confirmers: [{signal: spx, sign: 1},      {signal: dxy, sign: 1}]}
+  hsi:         {confirmers: [{signal: eem, sign: 1},      {signal: copper, sign: 1}]}
+  eem:         {confirmers: [{signal: dxy, sign: -1},     {signal: copper, sign: 1}]}
+  iwm_spy:     {confirmers: [{signal: hyg_lqd, sign: 1},  {signal: copper_gold, sign: 1}]}
+  copper_gold: {confirmers: [{signal: iwm_spy, sign: 1},  {signal: real10, sign: 1}]}
+  xli_xlp:     {confirmers: [{signal: copper, sign: 1},   {signal: iwm_spy, sign: 1}]}
+  xly_xlp:     {confirmers: [{signal: spx, sign: 1},      {signal: hyg_lqd, sign: 1}]}
+  eem_spy:     {confirmers: [{signal: dxy, sign: -1},     {signal: copper, sign: 1}]}
+  qqq_spy:     {confirmers: [{signal: real10, sign: -1},  {signal: btc, sign: 1}]}
+  hyg_lqd:     {confirmers: [{signal: spx, sign: 1},      {signal: vix, sign: -1}, {signal: hy_oas, sign: -1}]}
+  hyg_spy:     {confirmers: [{signal: hy_oas, sign: -1}]}
+  jnk_lqd:     {confirmers: [{signal: hyg_lqd, sign: 1}]}
+  emb_ief:     {confirmers: [{signal: dxy, sign: -1},     {signal: hyg_lqd, sign: 1}]}
+  hy_oas:      {confirmers: [{signal: vix, sign: 1},      {signal: spx, sign: -1}]}
+  ig_oas:      {confirmers: [{signal: hy_oas, sign: 1}]}
+  ust2:        {confirmers: [{signal: dxy, sign: 1},      {signal: fed_path, sign: 1}]}
+  ust5:        {confirmers: [{signal: ust2, sign: 1}]}
+  ust10:       {confirmers: [{signal: bei10, sign: 1},    {signal: real10, sign: 1}]}
+  ust30:       {confirmers: [{signal: ust10, sign: 1}]}
+  bei10:       {confirmers: [{signal: wti, sign: 1},      {signal: copper, sign: 1}]}
+  bei5:        {confirmers: [{signal: bei10, sign: 1}]}
+  real10:      {confirmers: [{signal: dxy, sign: 1},      {signal: gold, sign: -1}]}
+  real5:       {confirmers: [{signal: real10, sign: 1}]}
+  fed_path:    {confirmers: [{signal: ust2, sign: 1},     {signal: dxy, sign: 1}]}
+  s2s10:       {confirmers: [{signal: bei10, sign: 1}]}
+  s5s10:       {confirmers: [{signal: s2s10, sign: 1}]}
+  s5s30:       {confirmers: [{signal: s2s10, sign: 1}]}
+  s2s30:       {confirmers: [{signal: s2s10, sign: 1}]}
+  dxy:         {confirmers: [{signal: eem, sign: -1},     {signal: ust2, sign: 1}]}
+  wti:         {confirmers: [{signal: brent, sign: 1},    {signal: bei10, sign: 1}]}
+  brent:       {confirmers: [{signal: wti, sign: 1}]}
+  copper:      {confirmers: [{signal: iwm_spy, sign: 1},  {signal: eem, sign: 1}]}
+  gold:        {confirmers: [{signal: real10, sign: -1},  {signal: dxy, sign: -1}]}
+  silver:      {confirmers: [{signal: gold, sign: 1},     {signal: copper, sign: 1}]}
+  btc:         {confirmers: [{signal: qqq_spy, sign: 1},  {signal: dxy, sign: -1}]}
+  vix:         {confirmers: [{signal: spx, sign: -1},     {signal: hy_oas, sign: 1}]}
+  vxn:         {confirmers: [{signal: vix, sign: 1}]}
+  vix_vix3m:   {confirmers: [{signal: vix, sign: 1}]}
+  tlt:         {confirmers: [{signal: ust10, sign: -1}]}
+  ief:         {confirmers: [{signal: ust10, sign: -1}]}
+  tip:         {confirmers: [{signal: ief, sign: 1},      {signal: bei10, sign: 1}]}
+
+scoring:
+  components:
+    trend: 30
+    momentum: 30
+    zscore: 20
+    confirmation: 20
+  momentum_horizons: {5: 0.40, 20: 0.30, 60: 0.20, 120: 0.10}
+  momentum_squash: 1.5
+  zscore_window: 252
+  zscore_squash: 2.0
+  confirmation_horizon: 20
+  moving_averages: [20, 50, 200]
+  state_threshold: 25
+  percentile_windows: {"1y": 252, "5y": 1260}
+  return_horizons: [1, 5, 20, 60, 120]
+
+factors:
+  growth:
+    label: Growth
+    low: "Growth deterioration"
+    high: "Growth acceleration"
+    bands:
+      - [-101, -60, "Recessionary / stress"]
+      - [-60, -30, "Deceleration"]
+      - [-30, 30, "Neutral"]
+      - [30, 60, "Expansion"]
+      - [60, 101, "Strong acceleration"]
+    weights:
+      copper_gold: {weight: 20, sign: 1}
+      hyg_lqd:     {weight: 20, sign: 1}
+      iwm_spy:     {weight: 15, sign: 1}
+      xli_xlp:     {weight: 15, sign: 1}
+      xly_xlp:     {weight: 10, sign: 1}
+      eem_spy:     {weight: 10, sign: 1}
+      wti:         {weight: 10, sign: 1}
+
+  inflation:
+    label: Inflation
+    low: "Deflationary"
+    high: "Inflationary"
+    bands:
+      - [-101, -60, "Deflationary"]
+      - [-60, -30, "Disinflation"]
+      - [-30, 30, "Stable"]
+      - [30, 60, "Reflation"]
+      - [60, 101, "Inflation shock"]
+    weights:
+      bei10:  {weight: 30, sign: 1}
+      wti:    {weight: 25, sign: 1}
+      copper: {weight: 15, sign: 1}
+      ust10:  {weight: 10, sign: 1}
+      gold:   {weight: 10, sign: 1}
+      real10: {weight: 10, sign: -1}
+
+  liquidity:
+    label: Liquidity
+    low: "Tightening"
+    high: "Easing"
+    bands:
+      - [-101, -60, "Severe tightening"]
+      - [-60, -30, "Tightening"]
+      - [-30, 30, "Neutral"]
+      - [30, 60, "Easing"]
+      - [60, 101, "Easing strongly"]
+    weights:
+      dxy:     {weight: 25, sign: -1}
+      ust2:    {weight: 20, sign: -1}
+      hyg_lqd: {weight: 20, sign: 1}
+      qqq_spy: {weight: 10, sign: 1}
+      iwm_spy: {weight: 10, sign: 1}
+      btc:     {weight: 10, sign: 1}
+      vix:     {weight: 5, sign: -1}
+
+  risk:
+    label: Risk Appetite
+    low: "Risk-off"
+    high: "Risk-on"
+    bands:
+      - [-101, -60, "Strong risk-off"]
+      - [-60, -30, "Risk-off"]
+      - [-30, 30, "Neutral"]
+      - [30, 60, "Risk-on"]
+      - [60, 101, "Strong risk-on"]
+    weights:
+      spx:         {weight: 15, sign: 1}
+      hyg_lqd:     {weight: 15, sign: 1}
+      vix:         {weight: 15, sign: -1}
+      ndx:         {weight: 10, sign: 1}
+      rut:         {weight: 10, sign: 1}
+      eem_spy:     {weight: 10, sign: 1}
+      copper_gold: {weight: 10, sign: 1}
+      btc:         {weight: 5, sign: 1}
+      dxy:         {weight: 5, sign: -1}
+      gold:        {weight: 5, sign: -1}
+
+  credit:
+    label: Credit
+    low: "Stress / widening"
+    high: "Tight / healthy"
+    bands:
+      - [-101, -60, "Credit stress"]
+      - [-60, -30, "Tightening"]
+      - [-30, 30, "Neutral"]
+      - [30, 60, "Healthy"]
+      - [60, 101, "Very loose"]
+    weights:
+      hyg_lqd: {weight: 25, sign: 1}
+      hy_oas:  {weight: 25, sign: -1}
+      hyg_spy: {weight: 15, sign: 1}
+      ig_oas:  {weight: 15, sign: -1}
+      jnk_lqd: {weight: 10, sign: 1}
+      emb_ief: {weight: 10, sign: 1}
+
+  fed:
+    label: Fed
+    low: "Dovish"
+    high: "Hawkish"
+    bands:
+      - [-101, -60, "Strongly dovish"]
+      - [-60, -30, "Dovish"]
+      - [-30, 30, "Neutral"]
+      - [30, 60, "Hawkish"]
+      - [60, 101, "Strongly hawkish"]
+    weights:
+      ust2:     {weight: 30, sign: 1}
+      fed_path: {weight: 20, sign: 1}
+      s2s10:    {weight: 15, sign: -1}
+      dxy:      {weight: 15, sign: 1}
+      real10:   {weight: 10, sign: 1}
+      bei10:    {weight: 10, sign: -1}
+
+regime:
+  neutral_band: 20
+  cells:
+    "up|down":   {name: "Goldilocks", icon: "G"}
+    "up|flat":   {name: "Expansion", icon: "E"}
+    "up|up":     {name: "Reflation", icon: "R"}
+    "flat|down": {name: "Disinflation", icon: "D"}
+    "flat|flat": {name: "Neutral", icon: "N"}
+    "flat|up":   {name: "Late-cycle inflation", icon: "L"}
+    "down|down": {name: "Deflation", icon: "F"}
+    "down|flat": {name: "Slowdown", icon: "S"}
+    "down|up":   {name: "Stagflation", icon: "X"}
+  hysteresis_days: 3
+  recovery_change_threshold: 15
+  recovery_lookback: 20
+
+panels:
+  rates: [ust2, ust10, s2s10, s5s30, real10, bei10]
+  risk: [spx, ndx, rut, vix, hyg_lqd, btc]
+  liquidity_arrows: [dxy, ust2, hyg_lqd, btc, qqq_spy]
+  growth_arrows: [copper_gold, iwm_spy, xli_xlp, eem_spy, xly_xlp]
+  inflation_arrows: [bei10, real10, tip, gold]
+  commodity_arrows: [wti, brent, copper, gold, silver]
