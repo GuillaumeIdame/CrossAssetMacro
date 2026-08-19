@@ -66,8 +66,10 @@ class EngineCli:
         rates = result.snapshot.config.panel("rates")
         risk = result.snapshot.config.panel("risk")
         self._two_columns("RATES", "RISK")
-        for left, right in zip(rates, risk):
-            self._two_columns(self._panel_line(snapshot, left), self._panel_line(snapshot, right))
+        for index in range(max(len(rates), len(risk))):
+            left = self._panel_line(snapshot, rates[index]) if index < len(rates) else ""
+            right = self._panel_line(snapshot, risk[index]) if index < len(risk) else ""
+            self._two_columns(left, right)
         self._row()
 
         self._two_columns("LIQUIDITY", "GROWTH")

@@ -172,6 +172,36 @@ class ChartBuilder:
 
     # --- series views --------------------------------------------------------
 
+    def panel_history(self, zscores: pd.DataFrame, keys: List[str], labels: Dict[str, str],
+                      months: int = 24) -> go.Figure:
+        """Time series for one market panel, plotted as z-scores.
+
+        Panel series live on different units (a yield in percent, a spread in
+        basis points, a ratio) so a shared z-score axis is what makes them
+        comparable on one chart, rather than raw levels that would swamp each
+        other's scale.
+        """
+        available = [k for k in keys if k in zscores.columns]
+        if not available:
+            return go.Figure()
+        window = zscores.loc[
+            zscores.index >= zscores.index[-1] - pd.DateOffset(months=months), available
+        ]
+        figure = go.Figure()
+        for key in available:
+            figure.add_trace(go.Scatter(
+                x=window.index, y=window[key], name=labels.get(key, key), mode="lines",
+                hovertemplate="%{fullData.name}: %{y:+.2f}<extra></extra>",
+            ))
+        figure.add_hline(y=0, line_width=1, line_color="#b0b0b0")
+        figure.update_layout(
+            yaxis=dict(title="z-score"),
+            margin=dict(l=10, r=10, t=10, b=30),
+            height=300,
+            legend=dict(orientation="h", y=-0.25),
+        )
+        return figure
+
     def signal_heatmap(self, signal_scores: pd.DataFrame, keys: List[str],
                        labels: Dict[str, str], months: int = 12) -> go.Figure:
         window = signal_scores.loc[

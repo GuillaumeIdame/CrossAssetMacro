@@ -294,7 +294,7 @@ regime:
   recovery_lookback: 20
 
 panels:
-  rates: [ust2, ust10, s2s10, s5s30, real10, bei10]
+  rates: [ust2, ust5, ust10, ust30, s2s10, s5s10, s5s30, s2s30, real10, real5, bei10, bei5, fed_path, effr]
   risk: [spx, ndx, rut, vix, hyg_lqd, btc]
   liquidity_arrows: [dxy, ust2, hyg_lqd, btc, qqq_spy]
   growth_arrows: [copper_gold, iwm_spy, xli_xlp, eem_spy, xly_xlp]

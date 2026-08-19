@@ -15,7 +15,7 @@ from score_formatter import ScoreFormatter
 
 
 class MacroRegimeApp:
-    """Renders one EngineResult across six tabs.
+    """Renders one EngineResult across six sections, navigated from the left sidebar.
 
     The app does no analysis of its own: everything shown here comes off the
     result object, so the console view, the charts and the tables can never
@@ -29,24 +29,25 @@ class MacroRegimeApp:
 
     # --- entry point ---------------------------------------------------------
 
+    SECTIONS = ["Regime", "Factors", "Signals", "Sub-regimes", "History", "Data"]
+
     def run(self) -> None:
         st.set_page_config(page_title="Cross-Asset Macro Regime Engine",
                            page_icon="=", layout="wide")
         result = self._result()
-        self._sidebar(result)
+        section = self._sidebar(result)
         self._header(result)
-        tabs = st.tabs(["Regime", "Factors", "Signals", "Sub-regimes", "History", "Data"])
-        with tabs[0]:
+        if section == "Regime":
             self._regime_tab(result)
-        with tabs[1]:
+        elif section == "Factors":
             self._factors_tab(result)
-        with tabs[2]:
+        elif section == "Signals":
             self._signals_tab(result)
-        with tabs[3]:
+        elif section == "Sub-regimes":
             self._sub_regime_tab(result)
-        with tabs[4]:
+        elif section == "History":
             self._history_tab(result)
-        with tabs[5]:
+        elif section == "Data":
             self._data_tab(result)
 
     def _result(self) -> EngineResult:
@@ -57,11 +58,15 @@ class MacroRegimeApp:
 
     # --- chrome --------------------------------------------------------------
 
-    def _sidebar(self, result: EngineResult) -> None:
+    def _sidebar(self, result: EngineResult) -> str:
         with st.sidebar:
             st.markdown("### Cross-Asset Macro Regime Engine")
             st.caption(f"As of {result.as_of.date()} - "
                        f"{len(result.factor_history):,} sessions of history rebuilt from prices.")
+
+            section = st.radio("Navigate", self.SECTIONS, label_visibility="collapsed")
+
+            st.markdown("---")
             if st.button("Refresh market data", width="stretch"):
                 RegimeEngine().repository.cache.clear()
                 st.session_state.pop("result", None)
@@ -82,6 +87,8 @@ class MacroRegimeApp:
                 st.markdown("**Data notes**")
                 for note in result.notes:
                     st.caption(note)
+
+        return section
 
     def _header(self, result: EngineResult) -> None:
         regime = result.regime
@@ -151,12 +158,23 @@ class MacroRegimeApp:
             ("Liquidity", "liquidity_arrows", 20), ("Growth", "growth_arrows", 20),
             ("Inflation", "inflation_arrows", 20), ("Commodities", "commodity_arrows", 20),
         ]
+        months = st.slider("Panel history window (months)", 6, 60, 24, step=6,
+                           key="panel_months")
+        st.caption("Each panel chart plots its series as z-scores, so yields, spreads and "
+                   "ratios sit on one comparable scale - click a name in the legend to "
+                   "isolate it.")
         columns = st.columns(2)
         for index, (title, panel, horizon) in enumerate(pairs):
             with columns[index % 2]:
                 st.markdown(f"**{title}**")
                 st.dataframe(self._panel_frame(result, panel, horizon),
                              hide_index=True, width="stretch")
+                keys = self.config.panel(panel)
+                labels = {key: self.config.series_name(key) for key in keys}
+                st.plotly_chart(
+                    self.charts.panel_history(result.snapshot.zscores, keys, labels, months),
+                    width="stretch",
+                )
 
     def _panel_frame(self, result: EngineResult, panel: str, horizon: int) -> pd.DataFrame:
         snapshot = result.snapshot
