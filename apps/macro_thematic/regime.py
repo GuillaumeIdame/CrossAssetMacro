@@ -38,14 +38,15 @@ def state_variables(frame: pd.DataFrame):
     rows, hist = [], {}
 
     # Growth — ISM not on FRED: INDPRO 3m momentum + GDPNow + UMich, labelled proxy
-    ip = D.series(frame, "indpro"); gd = D.series(frame, "gdpnow"); um = D.series(frame, "umcsent")
+    ip = D.prints("indpro"); gd = D.prints("gdpnow"); um = D.prints("umcsent")
+    idx = frame.index
     g_parts = []
-    if len(ip) > 300:
-        g_parts.append(D.z3y(((ip / ip.shift(63)) ** 4 - 1) * 100))
-    if len(gd) > 300:
-        g_parts.append(D.z3y(gd))
-    if len(um) > 300:
-        g_parts.append(D.z3y(um))
+    if len(ip) > 36:
+        g_parts.append(D.z3y((((ip / ip.shift(3)) ** 4 - 1) * 100).reindex(idx, method="ffill")))
+    if len(gd) > 36:
+        g_parts.append(D.z3y(gd.reindex(idx, method="ffill")))
+    if len(um) > 36:
+        g_parts.append(D.z3y(um.reindex(idx, method="ffill")))
     g = pd.concat(g_parts, axis=1).mean(axis=1) if g_parts else pd.Series(dtype=float)
     conf_g = D.ratio(frame, "xli", "xlp")
     rows.append(_row("Growth", g, "INDPRO 3m ann. + GDPNow + UMich (ISM proxy)", "proxy",
@@ -53,8 +54,8 @@ def state_variables(frame: pd.DataFrame):
     hist["Growth"] = g
 
     # Inflation — core CPI 3m annualised vs 12m
-    cc = D.series(frame, "core_cpi")
-    infl = D.z3y(_annualised_3m(cc.resample("MS").last().dropna()).reindex(frame.index, method="ffill")) if len(cc) > 300 else pd.Series(dtype=float)
+    cc = D.prints("core_cpi")
+    infl = D.z3y(_annualised_3m(cc).reindex(frame.index, method="ffill")) if len(cc) > 36 else pd.Series(dtype=float)
     rows.append(_row("Inflation", infl, "Core CPI 3m ann. − 12m (pp)", "live", D.diff(D.series(frame, "fwd5y5y"), 20) * 100, "5y5y fwd BE 20D Δ bp", +1))
     hist["Inflation"] = infl
 
@@ -86,7 +87,7 @@ def state_variables(frame: pd.DataFrame):
     # Credit & risk — HY OAS percentile + 20D Δ (z sign flipped: tight spreads = healthy = +)
     hy = D.series(frame, "hy_oas")
     cred = -D.z3y(hy) if len(hy) > 300 else pd.Series(dtype=float)
-    rows.append(_row("Credit & Risk", cred, f"HY OAS {D.last(frame,'hy_oas'):.0f} bp, pct {D.pct_rank(hy):.0f}, 20D Δ {D.diff(hy,20):+.0f} bp" if len(hy) else "HY OAS n/a",
+    rows.append(_row("Credit & Risk", cred, f"HY OAS {D.last(frame,'hy_oas')*100:.0f} bp, pct {D.pct_rank(hy):.0f}, 20D Δ {D.diff(hy,20)*100:+.0f} bp" if len(hy) else "HY OAS n/a",
                      "live", D.pct_change(D.ratio(frame, "hyg", "lqd"), 20) * 100, "HYG/LQD 20D %", +1))
     hist["Credit"] = cred
 
@@ -160,14 +161,15 @@ def classify(table: pd.DataFrame, history: pd.DataFrame):
     elif days_in >= 20:
         state = "Stable (low RC)"; behaviour = "Quadrant held but confirmation weak: cap thematic gross at 60%, marginal expression in options"
     else:
-        state = "New regime (unconfirmed)"; behaviour = "Held < 20d; back to Stable rules once RC ≥ 0.6 for 20d"
+        state = "New regime (RC < 0.5)"; behaviour = "Held < 20d; back to Stable rules once RC ≥ 0.6 for 20d"
     return dict(quadrant=quad, playbook=playbook, rc=rc, days_in=days_in, against=against, state=state, behaviour=behaviour, labels=lab)
 
 
 def credibility(frame: pd.DataFrame) -> dict:
     """Rolling 2y beta of 5y5y breakevens to CPI surprises proxy (monthly CPI change vs its 12m mean),
     plus the ACM term-premium trend. Positive, rising beta + rising TP + long yields up = fiscal-dominance tell."""
-    cpi = D.series(frame, "cpi").resample("MS").last().pct_change() * 100
+    cpi = D.prints("cpi").pct_change() * 100
+    cpi.index = cpi.index.to_period("M").to_timestamp()
     surprise = (cpi - cpi.rolling(12).mean()).dropna()
     be = D.series(frame, "fwd5y5y").resample("MS").last().diff()
     df = pd.concat([be, surprise], axis=1, keys=["dbe", "surp"]).dropna()

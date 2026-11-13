@@ -107,7 +107,7 @@ def main():
             st.cache_data.clear()
             st.session_state.pop("result", None)
             st.rerun()
-    page = st.navigation(nav, position="sidebar")
+    page = st.navigation(nav, position="sidebar", expanded=True)
     page.run()
 
 

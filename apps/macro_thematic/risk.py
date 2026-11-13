@@ -188,7 +188,7 @@ def render():
                     pnl += g.loc[f, "beta"] * mv; n += 1
             srows.append(dict(scenario=name, kind="parametric", pnl=pnl / max(n, 1), note=str(sh)))
         stt = pd.DataFrame(srows)
-        st.dataframe(stt.style.format({"pnl": "{:,.0f}"}).background_gradient(subset=["pnl"], cmap="RdYlGn"), use_container_width=True, hide_index=True, height=440)
+        st.dataframe(stt.style.format({"pnl": "{:,.0f}"}).map(D.shade(-1e6, 1e6), subset=["pnl"]), use_container_width=True, hide_index=True, height=440)
         worst = stt.dropna(subset=["pnl"]).sort_values("pnl").head(3)
         st.markdown("**Top-3 fragilities:** " + "; ".join(f"{r['scenario']} ({r['pnl']:,.0f})" for _, r in worst.iterrows()))
         # reverse stress: Mahalanobis-nearest factor vector to the loss limit

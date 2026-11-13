@@ -39,7 +39,7 @@ def moves(frame: pd.DataFrame, horizon: int) -> dict:
     m["gold"] = D.pct_change(D.series(frame, "gold"), h) * 100
     m["cyc_def"] = D.pct_change(D.ratio(frame, "xli", "xlp"), h) * 100
     m["high_beta"] = D.pct_change(D.ratio(frame, "iwm", "spy"), h) * 100
-    hy = D.series(frame, "hy_oas")
+    hy = D.series(frame, "hy_oas") * 100  # % -> bp
     m["hy_tight"] = -D.diff(hy, h) if len(hy) else D.pct_change(D.ratio(frame, "hyg", "lqd"), h) * 100
     m["bei10"] = D.diff(D.series(frame, "bei10"), h) * 100
     s2s10 = (D.series(frame, "ust10") - D.series(frame, "ust2")).dropna()

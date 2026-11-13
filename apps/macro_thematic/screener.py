@@ -128,8 +128,6 @@ def carry(ins: U.Instrument, frame: pd.DataFrame, gating: float) -> dict:
         out.update(detail="equity carry (dividend − funding) not scored")
     elif ins.asset_class == "xmkt":
         out.update(detail="cross-market carry needs foreign repo/funding → n/a")
-    if np.isfinite(out["S_C_raw"]):
-        out["S_C_raw"] = out["S_C_raw"] * gating
     return out
 
 
@@ -226,7 +224,10 @@ def run_screener(weights: dict, gating: float, month: int):
         else:
             z = ir
         pen = 0.5 * (g["pca_z"].abs() > 2).astype(float) + 0.5 * ((g["carry_ir"] < 1.5) & g["carry_ir"].notna()).astype(float)
-        df.loc[g.index, "S_C"] = (z.clip(-3, 3) - pen).where(ir.notna())
+        sc = (z.clip(-3, 3) - pen).where(ir.notna())
+        # regime gating: full / halved / carry-longs <= 0 (only negative carry still counts against a long)
+        sc = sc * gating if gating > 0 else sc.clip(upper=0)
+        df.loc[g.index, "S_C"] = sc
     pil = ["S_V", "S_C", "S_S", "S_P"]
     W = np.array([weights["valuation"], weights["carry"], weights["seasonality"], weights["positioning"]])
     def comp(r):
@@ -270,7 +271,7 @@ def render():
     gate = {"Stable": 1.0, "Stable (low RC)": 1.0, "Early transition": 0.5}.get(cls["state"], 0.0)
     month = st.selectbox("Seasonality window (calendar month about to open)", list(range(1, 13)), index=(pd.Timestamp.today().month % 12),
                          format_func=lambda m: pd.Timestamp(2000, m, 1).strftime("%B"))
-    st.caption(f"Carry gating from the regime engine: state **{cls['state']}** → carry score × {gate:.1f} (full in Stable, halved in Early transition, carry-longs ≤ 0 in Confirmed transition). Quadrant {cls['quadrant']}, RC {cls['rc']:.2f}.")
+    st.caption(f"Carry gating from the regime engine: state **{cls['state']}** → {'carry score × %.1f' % gate if gate > 0 else 'carry-longs ≤ 0 (only negative carry counts)'} (full in Stable, halved in Early transition, carry-longs ≤ 0 in Confirmed transition / unconfirmed new regime). Quadrant {cls['quadrant']}, RC {cls['rc']:.2f}.")
     df, curve_pca = run_screener(weights, gate, month)
     if df.empty:
         st.warning("Screener universe empty — data unavailable."); return
@@ -283,7 +284,7 @@ def render():
 
     st.markdown("#### Read 1 — high composite, high conviction")
     top = view[(view["conviction"] >= 0.5)].sort_values("composite", key=abs, ascending=False).head(12)
-    st.dataframe(top[cols].style.format(fmtd).background_gradient(subset=["composite"], cmap="RdYlGn", vmin=-2, vmax=2), use_container_width=True, hide_index=True)
+    st.dataframe(top[cols].style.format(fmtd).map(D.shade(-2, 2), subset=["composite"]), use_container_width=True, hide_index=True)
     st.markdown("#### Read 2 — conflict rows (cheap but crowded-short = squeeze; rich but strong and uncrowded = don't fight it yet)")
     conf = view[view["flags"].str.contains("CONFLICT|CROWDED")]
     st.dataframe(conf[cols].style.format(fmtd), use_container_width=True, hide_index=True)

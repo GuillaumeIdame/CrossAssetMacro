@@ -95,6 +95,14 @@ def series(frame: pd.DataFrame, key: str) -> pd.Series:
     return pd.Series(dtype=float, name=key)
 
 
+def prints(key: str) -> pd.Series:
+    """Genuine prints only (no forward-fill) — use for monthly/weekly macro series before resampling."""
+    frame, observed, _ = load_universe()
+    if key not in frame.columns or key not in observed.columns:
+        return pd.Series(dtype=float, name=key)
+    return frame[key].where(observed[key]).dropna()
+
+
 def last(frame, key, default=np.nan):
     s = series(frame, key)
     return float(s.iloc[-1]) if len(s) else default
@@ -147,3 +155,26 @@ def sign_fmt(x, nd=1, suffix=""):
     if x is None or (isinstance(x, float) and not np.isfinite(x)):
         return "n/a"
     return f"{x:+.{nd}f}{suffix}"
+
+
+def shade(lo: float, hi: float, neg="#B71C1C", pos="#2E7D32", mid="#FFFFFF"):
+    """matplotlib-free cell shading for Styler.map: linear blend from neg (lo) through mid to pos (hi)."""
+    def _hex(c):
+        return tuple(int(c[i:i + 2], 16) for i in (1, 3, 5))
+    def _blend(a, b, t):
+        return "#%02x%02x%02x" % tuple(int(x + (y - x) * t) for x, y in zip(_hex(a), _hex(b)))
+    def f(v):
+        try:
+            if v is None or not np.isfinite(float(v)):
+                return ""
+            v = float(v)
+            if hi == lo:
+                return ""
+            if v >= (lo + hi) / 2:
+                t = min(1.0, (v - (lo + hi) / 2) / ((hi - lo) / 2))
+                return f"background-color: {_blend(mid, pos, t * 0.55)}"
+            t = min(1.0, ((lo + hi) / 2 - v) / ((hi - lo) / 2))
+            return f"background-color: {_blend(mid, neg, t * 0.55)}"
+        except Exception:
+            return ""
+    return f

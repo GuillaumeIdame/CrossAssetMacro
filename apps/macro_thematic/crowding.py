@@ -87,7 +87,7 @@ def render():
                 + ui.badge("proxy") + " ETF volume z stands in for flow and liquidity · " + ui.badge("unavailable") + " top-4/top-8 concentration without CFTC", unsafe_allow_html=True)
     show = df[["label", "asset_class", "C", "band", "crowd_direction", "positioning", "flow", "volskew", "concentration", "liquidity", "mature", "split"]]
     st.dataframe(show.style.format({"C": "{:.0f}", "positioning": "{:.0f}", "flow": "{:.0f}", "volskew": "{:.0f}", "concentration": "{:.0f}", "liquidity": "{:.0f}"})
-                 .background_gradient(subset=["C"], cmap="YlOrRd", vmin=20, vmax=90), use_container_width=True, hide_index=True, height=480)
+                 .map(D.shade(20, 90, neg="#FFFFFF", pos="#B71C1C"), subset=["C"]), use_container_width=True, hide_index=True, height=480)
     fragile = df[df["C"] >= 65]
     if len(fragile):
         st.error("Fragile / crowded list: " + ", ".join(f"{r['label']} ({r['C']:.0f}, {r['crowd_direction']})" for _, r in fragile.iterrows()))
@@ -119,7 +119,7 @@ def render():
     # propagate shock to each instrument through 60D betas to the shocked factors
     univ = U.build(frame)
     fac = {"ust10": D.series(frame, "ust10").diff() * 100, "spx": np.log(D.series(frame, "spx")).diff() * 100, "dxy": np.log(D.series(frame, "dxy")).diff() * 100,
-           "brent": np.log(D.series(frame, "brent")).diff() * 100, "vix": D.series(frame, "vix").diff(), "hy_oas": D.series(frame, "hy_oas").diff()}
+           "brent": np.log(D.series(frame, "brent")).diff() * 100, "vix": D.series(frame, "vix").diff(), "hy_oas": D.series(frame, "hy_oas").diff() * 100}
     rows = []
     for k, ins in univ.items():
         s = ins.series.dropna()

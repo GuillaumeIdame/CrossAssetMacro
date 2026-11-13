@@ -1,3 +1,58 @@
+# CrossAssetMacro — Investment Process one-stop shop
+
+Three Streamlit apps, one for each book of the written investment process, plus the original
+Cross-Asset Macro Regime Engine, mounted together behind a single navigation. Every page is one step
+of the process (the step number and the question it answers are printed at the top), and every
+number carries a provenance badge: **live** (observed market / official print), **proxy** (public
+data with a documented approximation), **estimated** (calendar date by rule), **manual** (typed by
+the desk), **synthetic** (never traded on), or **unavailable** (no public source — shown, not faked).
+
+```bash
+pip install -r requirements.txt
+streamlit run hub.py                            # one-stop shop: all three apps + regime engine
+streamlit run apps/g3_central_bank/app.py       # or each app on its own
+streamlit run apps/macro_fx/app.py
+streamlit run apps/macro_thematic/app.py
+streamlit run streamlit_app.py                  # regime engine only (legacy entry point)
+```
+
+First load pulls ~12 years of Yahoo and FRED history (30–60 s), cached 6 h in `.cache/`; the
+sidebar button clears the cache.
+
+## The three apps
+
+| App | Process chain | Pages |
+|---|---|---|
+| **G3 Central Bank** (`apps/g3_central_bank`) | Fundamental → expected distribution → market distribution → pricing → trade → Kelly | Countdown & process · Macro read (3×2 gauges, regime cell, curve segment, credibility switch) · Market-implied state (ZQ / SOFR / Euribor / SONIA strips, meeting-by-meeting bootstrap) · Three distributions per print · Distribution tree & valuation (EV, Kelly, leg choice) · Risk (shocks, strike & expiry maps, ladder) · Data & provenance |
+| **Macro FX** (`apps/macro_fx`) | Price → driver → regime → confirmation → relative value → expression | Factor decomposition (Dollar / Carry / Momentum, ε) · Macro differentials · Valuation & REER · Flows & positioning · Seasonality (two gates) · Regime & quadrant (five axes) · Sub-strategies & trade card · Risk · Data & provenance |
+| **Macro Thematic** (`apps/macro_thematic`) | Regime → theme & scenarios → confirmation → four pillars → crowding → leg choice → size → stress | Regime engine & transition (T1/T2) · Theme tracker & scenarios (T13) · Confirmation & divergence (T3) · Four pillars & screener (T4–T8) · Crowding, quality, unwind tree (T9/T10) · Leg choice & vol alphas · Sizing, exposure, stress, theta · Daily one-pager (T14) · Data & provenance |
+
+Each app module exposes `PAGES` (title, render function) and `main()`; `hub.py` mounts them with
+`st.navigation`. Manual inputs (scenario trees, trade cards, themes, books, option inputs) live in
+session state and can be downloaded / uploaded as JSON.
+
+## Data spine (`datahub/`)
+
+| Module | Role |
+|---|---|
+| `catalogue.py` | every series by key: source, ticker, name, frequency, quality, which apps use it |
+| `loader.py` | one call → aligned business-day frame + observed mask + provenance table |
+| `yahoo.py`, `fred.py` | cached loaders (Yahoo bulk download; FRED public CSV, `FRED_API_KEY` optional) |
+| `stir.py` | STIR strips (Yahoo individual fed funds contracts, IBKR snapshot CSV) and the meeting-dated bootstrap |
+| `calendar.py` + `data/g3_calendar.csv` | Fed / ECB / BoE / BoJ / SNB meetings and tier-1 releases with a confidence status |
+| `kelly.py` | scenario trees, EV, Kelly, payoff structures in rate space, implied event move |
+| `stats.py` | z-scores, percentiles, EWMA and Yang-Zhang vol, univariate rolling OLS, PCA residuals, CTA ensemble |
+| `cftc.py` | COT positioning (API when reachable, else files dropped in `data/cftc/`) |
+| `ibkr_refresh.py` | optional strip refresh from a local TWS / IB Gateway (`ib_insync`) |
+| `ui.py` | process-step headers, provenance badges, data-health tables |
+
+Sources: **Yahoo Finance** and **FRED** (no key), **IBKR** through the Claude connector (strips
+captured into `data/ibkr_snapshots/`), **CFTC** when reachable. The full availability matrix,
+including what is blocked from the build environment and what has no public source (OTC option
+surfaces, consensus surveys, institutional flow), is in [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
+
+---
+
 # Cross-Asset Macro Regime Engine
 
 Observe prices → transform them into signals → combine signals into macro factors →
