@@ -221,8 +221,8 @@ def chain_surface(calls: pd.DataFrame, puts: pd.DataFrame, spot, t_years):
     pp = sorted([p for p in pts if not p["call"]], key=lambda p: p["k"])
 
     def interp(points, target_delta):
-        cand = sorted(points, key=lambda p: abs(abs(p["delta"]) - target_delta))
-        return cand[0] if cand and abs(abs(cand[0]["delta"]) - target_delta) < 0.12 else None
+        cand = sorted([p for p in points if 0.6 * atm_iv <= p["iv"] <= 1.6 * atm_iv], key=lambda p: abs(abs(p["delta"]) - target_delta))
+        return cand[0] if cand and abs(abs(cand[0]["delta"]) - target_delta) < 0.08 else None
     p25 = interp(pp, 0.25)
     c25 = interp(pc, 0.25)
     out = {"atm_strike": atm["k"], "atm_iv": f(atm_iv), "n_strikes": n_filtered, "basis": "mid" if pts and all(p["basis"] == "mid" for p in pts) else "last",
