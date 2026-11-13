@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .cache/
 .venv/
+
+equity_monitor/logs/
+equity_monitor/.yf_cache/
+equity_monitor/LAST_ERROR.txt

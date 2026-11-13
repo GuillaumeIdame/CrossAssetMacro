@@ -1,0 +1,708 @@
+<title>Equity Monitor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky header + tab bar, one max-width column, dense data tables in scroll containers, charts in cards. Dark-first. */
+:root {
+  --bg: #0e1116; --surface: #151a21; --surface-2: #1b212b; --border: #28303c; --fg: #e4e7ec; --muted: #8e97a6; --faint: #5c6675;
+  --accent: #4f9cf5; --accent-soft: rgba(79,156,245,.14);
+  --up: #34c27a; --down: #ef5f5f; --warn: #f0a63a; --mid: #3a4352;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #4caf50; --s7: #9085e9; --s8: #e66767;
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f6f9; --surface: #ffffff; --surface-2: #eef1f5; --border: #d7dde6; --fg: #161a21; --muted: #5c6574; --faint: #8c95a3;
+    --accent: #2a78d6; --accent-soft: rgba(42,120,214,.12); --up: #1a8f55; --down: #d13b3b; --warn: #b86e00; --mid: #c9d0da;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f4f6f9; --surface: #ffffff; --surface-2: #eef1f5; --border: #d7dde6; --fg: #161a21; --muted: #5c6574; --faint: #8c95a3;
+  --accent: #2a78d6; --accent-soft: rgba(42,120,214,.12); --up: #1a8f55; --down: #d13b3b; --warn: #b86e00; --mid: #c9d0da;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--font-sans); font-variant-numeric: tabular-nums; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h2 { font-size: 15px; font-weight: 600; letter-spacing: .01em; }
+h3 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9; background: var(--surface); border-bottom: 1px solid var(--border); }
+.top-inner { max-width: 1480px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-block: 10px; }
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 { font-size: 17px; font-weight: 600; letter-spacing: .01em; }
+.brand .sub { color: var(--muted); font-size: 12px; }
+.status { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-left: auto; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); font-size: 12px; color: var(--fg); white-space: nowrap; }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--up); }
+.pill.partial .dot { background: var(--warn); } .pill.error .dot { background: var(--down); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+button, select, input[type=number], input[type=text] { font: inherit; color: var(--fg); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 9px; }
+button { cursor: pointer; } button:hover { border-color: var(--accent); }
+button:focus-visible, select:focus-visible, input:focus-visible, .tab:focus-visible, th:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+nav.tabs { max-width: 1480px; margin: 0 auto; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.tab { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 12px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+main { max-width: 1480px; margin: 0 auto; padding-block: 18px 32px; display: grid; gap: 18px; }
+section.panel { display: grid; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; min-width: 0; }
+.card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 10px; }
+.card-head .hint { color: var(--muted); font-size: 12px; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-size: 12px; }
+.chip[aria-pressed="true"] { color: var(--fg); border-color: var(--accent); background: var(--accent-soft); }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); align-items: start; }
+.grid > .card { min-width: 0; }
+.tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.tile { background: var(--surface-2); border-radius: 8px; padding: 10px 12px; }
+.tile .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.tile .v { font: 500 20px/1.2 var(--font-mono); margin-top: 4px; }
+.tile .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.tscroll { overflow-x: auto; max-width: 100%; }
+table.data { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+table.data th, table.data td { padding: 5px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; text-align: right; }
+table.data th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font-weight: 500; cursor: pointer; user-select: none; font-size: 11.5px; letter-spacing: .02em; }
+table.data th.sorted { color: var(--fg); } table.data th .arrow { font-size: 9px; margin-left: 2px; }
+table.data th:first-child, table.data td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 1; }
+table.data td.l, table.data th.l { text-align: left; }
+table.data td.num { font-family: var(--font-mono); }
+table.data tr:hover td { background: var(--surface-2); }
+table.data td[title], table.data th[title] { cursor: help; text-decoration: underline dotted var(--faint); text-underline-offset: 3px; }
+table.data td.wrap { white-space: normal; min-width: 220px; max-width: 360px; }
+td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { color: var(--warn); } .muted { color: var(--muted); } .mono { font-family: var(--font-mono); }
+.stale { color: var(--warn); font-weight: 600; }
+.tag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+.tag.sig { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.tag.cher { color: var(--down); border-color: var(--down); } .tag.bon { color: var(--up); border-color: var(--up); }
+.heat { display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
+.heat .cell { border-radius: 6px; padding: 8px 6px; text-align: center; min-height: 54px; display: flex; flex-direction: column; justify-content: center; }
+.heat .cell b { font-size: 12px; font-weight: 600; } .heat .cell span { font: 12px var(--font-mono); }
+.heat .group-label { grid-column: 1 / -1; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+.chart { width: 100%; height: 320px; }
+.chart.tall { height: 440px; }
+.chart .note { padding: 12px 0; }
+.reading { display: grid; gap: 10px; }
+.reading li { line-height: 1.5; }
+.reading ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.note { font-size: 12px; color: var(--muted); }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 12.5px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; }
+.slider { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; font-size: 12.5px; }
+.slider input[type=range] { width: 100%; }
+.cond { font-size: 11.5px; color: var(--muted); }
+.cond .ok { color: var(--up); } .cond .ko { color: var(--down); }
+.loading { padding: 40px; text-align: center; color: var(--muted); }
+.sr { position: absolute; left: -9999px; }
+@media (max-width: 640px) { .tile .v { font-size: 17px; } table.data { font-size: 12px; } .brand .sub { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="top wrap">
+  <div class="top-inner">
+    <div class="brand"><h1>Equity Monitor</h1><span class="sub">buy-side · long only · semaines–mois</span></div>
+    <div class="status" id="status-bar"><span class="pill"><span class="dot"></span>chargement…</span></div>
+    <button id="theme-toggle" type="button" title="Basculer clair / sombre">◐</button>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-tab="monitor" aria-selected="true">Monitor</button>
+    <button class="tab" role="tab" data-tab="fonda">Fondamentaux</button>
+    <button class="tab" role="tab" data-tab="events">Events</button>
+    <button class="tab" role="tab" data-tab="risk">Beta &amp; risque</button>
+    <button class="tab" role="tab" data-tab="sources">Sources &amp; run</button>
+  </nav>
+</header>
+
+<main class="wrap" id="main">
+  <div class="loading" id="loading">Chargement des fichiers « Sources du dashboard »…</div>
+
+  <section class="panel" id="tab-monitor" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Actions — marché, fondamental, événement</h2>
+        <div class="controls"><span class="hint">Groupe :</span><div class="chips" id="grp-chips"></div><span class="hint">Trier : cliquer un en-tête. Survoler un chiffre : source et horodatage. Date orange = clôture absente.</span></div>
+      </div>
+      <div class="tscroll" id="tbl-stocks"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Indices, volatilités implicites, FX et ETFs — marché</h2><span class="hint">ETFs : les deux lignes détenues (LSE en GBp/GBP, Xetra en EUR). Perf locale ; écart vs indice en USD.</span></div>
+      <div class="tscroll" id="tbl-indices"></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Heatmap</h2><div class="controls"><button type="button" class="chip" data-heat="r_1d" aria-pressed="true">1D</button><button type="button" class="chip" data-heat="r_5d">5D</button><button type="button" class="chip" data-heat="idio_1m">Idio 1M</button></div></div><div class="heat" id="heat"></div></div>
+      <div class="card"><div class="card-head"><h2>Momentum 3M vs vol 3M</h2><span class="hint">Perf locale, vol réalisée annualisée</span></div><div class="chart" id="ch-scatter"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Indices et ETFs, base 100</h2><div class="controls" id="base-ctl"><select id="base-period"><option value="21">1M</option><option value="63" selected>3M</option><option value="ytd">YTD</option><option value="252">1A</option></select><select id="base-ccy"><option value="local">devise locale</option><option value="usd">en USD</option></select></div></div><div class="chart tall" id="ch-base100"></div></div>
+      <div class="card"><div class="card-head"><h2>Vol réalisée 1M glissante</h2><select id="vol-pick" multiple size="1" class="sr"></select><div class="chips" id="vol-chips"></div></div><div class="chart tall" id="ch-rollvol"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Relatifs : SX5E / SPX (EUR et USD), NDX / SPX</h2><span class="hint">base 100, 1 an</span></div><div class="chart" id="ch-rel"></div></div>
+      <div class="card"><div class="card-head"><h2>ETF vs indice sous-jacent et FX</h2><select id="etf-pick"></select></div><div class="chart" id="ch-etf"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-fonda" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Valorisation, croissance, qualité, sentiment, 13F</h2><div class="controls"><div class="chips" id="grp-chips-f"></div><span class="hint">Source : yfinance (info, earnings_estimate, eps_trend, eps_revisions), poids = sa_13f.json</span></div></div>
+      <div class="tscroll" id="tbl-fonda"></div>
+    </div>
+    <div class="card"><div class="card-head"><h2>Panier 13F Situational Awareness</h2><span class="hint" id="f13-hint"></span></div><div class="tscroll" id="tbl-13f"></div></div>
+  </section>
+
+  <section class="panel" id="tab-events" hidden>
+    <div class="card"><div class="card-head"><h2>Calendrier 30 jours</h2><span class="hint">Move implicite = straddle ATM / spot sur la 1re échéance après publication ; historique = |réaction| moyenne 12 trimestres ; ratio &gt; 1 = l'option paie cher l'événement.</span></div><div class="tscroll" id="tbl-cal"></div></div>
+    <div class="card"><div class="card-head"><h2>Réaction aux earnings — synthèse 12 trimestres</h2><span class="hint">Réaction = clôture avant → clôture après (AMC : J→J+1, BMO : J−1→J). Anormale = réaction − β(1 an avant) × SPX.</span></div><div class="tscroll" id="tbl-react"></div></div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Surprise EPS vs réaction anormale</h2><select id="react-pick"></select></div><div class="chart tall" id="ch-react"></div></div>
+      <div class="card"><div class="card-head"><h2>Détail par titre</h2><span class="hint" id="react-detail-hint"></span></div><div class="tscroll" id="tbl-react-detail"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-risk" hidden>
+    <div class="card"><div class="card-head"><h2>Betas en USD</h2><div class="controls"><span class="hint">Benchmark :</span><div class="chips" id="bench-chips"></div><span class="hint">Quotidien 1 an / 3 mois, hebdo 1 an (corrige Londres/New York), downside = jours SPX &lt; 0.</span></div></div><div class="tscroll" id="tbl-beta"></div></div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Contribution beta vs idio</h2><select id="contrib-h"><option value="1m">1M</option><option value="3m">3M</option></select></div><div class="chart tall" id="ch-contrib"></div></div>
+      <div class="card"><div class="card-head"><h2>Vol implicite vs réalisée</h2><span class="hint" id="vol-hint"></span></div><div class="tscroll" id="tbl-vol"></div><div class="chart" id="ch-vix"></div></div>
+    </div>
+    <div class="card"><div class="card-head"><h2>Breadth locale</h2><span class="hint" id="breadth-note"></span></div><div class="tiles" id="breadth-tiles"></div><div class="grid" style="margin-top:12px"><div><div class="chart" id="ch-breadth"></div></div><div><div class="chart" id="ch-ad"></div></div></div></div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Concentration semis — SMGB (USD) vs univers, 60 j</h2><span class="hint" id="corr-note"></span></div><div class="chart tall" id="ch-smgb"></div></div>
+      <div class="card"><div class="card-head"><h2>Matrice du panier 13F (+ NVDA, AMD)</h2><span class="hint" id="pairs-hint"></span></div><div class="chart tall" id="ch-corr"></div><div id="pairs-list" class="note"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Signaux</h2><span class="hint">Seuils modifiables (recalcul immédiat). * = résultats ≤ 5 j.</span></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))"><div id="sig-ctl-mom"></div><div id="sig-ctl-mr"></div></div><div class="tscroll" id="tbl-signals" style="margin-top:10px"></div></div>
+      <div class="card"><div class="card-head"><h2>Backtest des signaux</h2><span class="hint" id="bt-hint"></span></div><div class="tscroll" id="tbl-bt"></div><div class="chart" id="ch-bt"></div><div id="bt-caveats" class="note"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-sources" hidden>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Dernier run</h2></div><dl class="kv" id="run-kv"></dl></div>
+      <div class="card"><div class="card-head"><h2>Fichiers</h2></div><dl class="kv" id="files-kv"></dl></div>
+    </div>
+    <div class="card"><div class="card-head"><h2>Étapes</h2></div><div class="tscroll" id="tbl-steps"></div></div>
+    <div class="card"><div class="card-head"><h2>Journal par symbole</h2><div class="controls"><input type="text" id="log-filter" placeholder="filtrer (symbole, source, statut)"></div></div><div class="tscroll" id="tbl-log"></div></div>
+    <div class="card"><div class="card-head"><h2>Compositions d'indices (Wikipédia, API MediaWiki)</h2></div><div class="tscroll" id="tbl-cons"></div></div>
+  </section>
+
+  <section class="card reading" id="reading" hidden>
+    <div class="card-head"><h2>Lecture du marché</h2><span class="hint" id="reading-stamp"></span></div>
+    <ol id="reading-list"></ol>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script src="Sources%20du%20dashboard/data.js"></script>
+<script>
+(function () {
+  'use strict';
+  const FILES = ['universe', 'prices', 'quotes', 'events', 'breadth', 'constituents', 'sa_13f', 'risk', 'run_status', 'backtest'];
+  const D = {};
+  const $ = (id) => document.getElementById(id);
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const SERIES = () => ['--s1', '--s2', '--s3', '--s4', '--s5', '--s6', '--s7', '--s8'].map(css);
+
+  // ---------------------------------------------------------------- theme
+  const root = document.documentElement;
+  try { const t = localStorage.getItem('em-theme'); if (t) root.setAttribute('data-theme', t); } catch (e) {}
+  $('theme-toggle').addEventListener('click', () => {
+    const dark = root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && !matchMedia('(prefers-color-scheme: light)').matches);
+    const next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('em-theme', next); } catch (e) {}
+    renderAllCharts();
+  });
+
+  // ---------------------------------------------------------------- formatting
+  const isNum = (x) => typeof x === 'number' && isFinite(x);
+  const NA = '—';
+  const pct = (x, d = 1, sign = true) => isNum(x) ? ((sign && x > 0 ? '+' : '') + (x * 100).toFixed(d) + '%') : NA;
+  const pctAbs = (x, d = 1) => isNum(x) ? (x * 100).toFixed(d) + '%' : NA;
+  const num = (x, d = 2) => isNum(x) ? x.toFixed(d) : NA;
+  const int = (x) => isNum(x) ? Math.round(x).toString() : NA;
+  const big = (x) => { if (!isNum(x)) return NA; const a = Math.abs(x); if (a >= 1e12) return (x / 1e12).toFixed(2) + ' T'; if (a >= 1e9) return (x / 1e9).toFixed(1) + ' Md'; if (a >= 1e6) return (x / 1e6).toFixed(0) + ' M'; return x.toFixed(0); };
+  const px = (x, cur) => { if (!isNum(x)) return NA; const d = x >= 1000 ? 0 : (x >= 100 ? 1 : 2); return x.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }) + (cur ? ' ' + cur : ''); };
+  const dstr = (s) => s ? s.slice(0, 10) : NA;
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const sgnClass = (x) => isNum(x) ? (x > 0 ? 'up' : (x < 0 ? 'down' : '')) : '';
+  const src = (label, at) => `${label}${at ? ' · ' + at.replace('T', ' ').replace('Z', ' UTC') : ''}`;
+
+  // ---------------------------------------------------------------- generic table
+  const sortState = {};
+  function table(container, columns, rows, opts = {}) {
+    const el = typeof container === 'string' ? $(container) : container;
+    const key = el.id || 'tbl';
+    const st = sortState[key] || (opts.defaultSort ? { col: opts.defaultSort, dir: opts.defaultDir || -1 } : null);
+    let data = rows.slice();
+    if (st) {
+      const c = columns.find((c) => c.key === st.col);
+      if (c) data.sort((a, b) => { const va = c.sortVal ? c.sortVal(a) : a[c.key], vb = c.sortVal ? c.sortVal(b) : b[c.key]; const na = va == null || va !== va, nb = vb == null || vb !== vb; if (na && nb) return 0; if (na) return 1; if (nb) return -1; return (va < vb ? -1 : va > vb ? 1 : 0) * st.dir; });
+    }
+    const th = columns.map((c) => `<th class="${c.left ? 'l' : ''} ${st && st.col === c.key ? 'sorted' : ''}" data-col="${c.key}" ${c.title ? `title="${esc(c.title)}"` : ''} tabindex="0">${esc(c.label)}${st && st.col === c.key ? `<span class="arrow">${st.dir > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('');
+    const body = data.map((r) => '<tr>' + columns.map((c) => {
+      const v = c.render ? c.render(r) : r[c.key];
+      const cls = [c.left ? 'l' : 'num', c.cls ? c.cls(r) : ''].join(' ');
+      const t = c.src ? c.src(r) : null;
+      return `<td class="${cls}" ${t ? `title="${esc(t)}"` : ''}>${v == null ? NA : v}</td>`;
+    }).join('') + '</tr>').join('');
+    el.innerHTML = `<table class="data"><thead><tr>${th}</tr></thead><tbody>${body || `<tr><td colspan="${columns.length}" class="l muted">aucune ligne</td></tr>`}</tbody></table>`;
+    el.querySelectorAll('th').forEach((h) => {
+      const go = () => { const col = h.dataset.col; const cur = sortState[key]; sortState[key] = { col, dir: cur && cur.col === col ? -cur.dir : -1 }; table(container, columns, rows, opts); };
+      h.addEventListener('click', go); h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    });
+  }
+  function chips(container, items, state, onChange, multi = false) {
+    const el = $(container);
+    el.innerHTML = items.map((it) => `<button type="button" class="chip" data-v="${esc(it.value)}" aria-pressed="${state.has(it.value)}">${esc(it.label)}</button>`).join('');
+    el.querySelectorAll('.chip').forEach((b) => b.addEventListener('click', () => {
+      const v = b.dataset.v;
+      if (multi) { if (state.has(v)) state.delete(v); else state.add(v); } else { state.clear(); state.add(v); }
+      chips(container, items, state, onChange, multi); onChange();
+    }));
+  }
+
+  // ---------------------------------------------------------------- data access
+  const U = () => D.universe, Q = () => D.quotes, E = () => D.events, R = () => D.risk, P = () => D.prices;
+  const sym = (t) => (U().symbols[t] || {});
+  const series = (t) => { const s = P().symbols[t]; return s && s.dates.length ? s : null; };
+  const fxSeries = () => ({ EURUSD: series(U().fx_keys.EURUSD), GBPUSD: series(U().fx_keys.GBPUSD) });
+  function toMap(s) { const m = new Map(); for (let i = 0; i < s.dates.length; i++) m.set(s.dates[i], s.close[i]); return m; }
+  function alignOn(masterDates, s) { const m = toMap(s); let last = null; const out = []; let j = 0; const sd = s.dates; for (const d of masterDates) { while (j < sd.length && sd[j] <= d) { last = s.close[j]; j++; } out.push(last); } return out; }
+  function usdSeries(t) {
+    const s = series(t); if (!s) return null;
+    const cur = (s.currency || sym(t).currency || 'USD');
+    if (cur === 'USD' || cur === 'pts') return s;
+    const fx = fxSeries(); const key = cur === 'EUR' ? 'EURUSD' : 'GBPUSD'; const f = fx[key]; if (!f) return s;
+    const rate = alignOn(s.dates, f); const div = cur === 'GBp' ? 100 : 1;
+    return { dates: s.dates, close: s.close.map((v, i) => rate[i] ? v * rate[i] / div : null), currency: 'USD' };
+  }
+  function base100(s, fromIdx) { const b = s.close[fromIdx]; return s.close.slice(fromIdx).map((v) => (v != null && b) ? v / b * 100 : null); }
+  function startIndex(s, period) { const n = s.dates.length; if (period === 'ytd') { const y = s.dates[n - 1].slice(0, 4); let i = s.dates.findIndex((d) => d.slice(0, 4) === y); i = Math.max(0, i - 1); return i; } return Math.max(0, n - 1 - Number(period)); }
+  function rollVol(s, n = 21) { const out = []; const lr = []; for (let i = 1; i < s.close.length; i++) lr.push(Math.log(s.close[i] / s.close[i - 1])); for (let i = 0; i < s.close.length; i++) { if (i < n) { out.push(null); continue; } const w = lr.slice(i - n, i); const m = w.reduce((a, b) => a + b, 0) / n; const v = Math.sqrt(w.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1)) * Math.sqrt(252) * 100; out.push(v); } return out; }
+
+  // ---------------------------------------------------------------- plotly helpers
+  function layout(extra = {}) {
+    const fg = css('--fg'), muted = css('--muted'), grid = css('--border');
+    return Object.assign({ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { family: css('--font-sans'), color: fg, size: 12 },
+      margin: { l: 48, r: 16, t: 10, b: 40 }, xaxis: { gridcolor: grid, zerolinecolor: grid, tickfont: { color: muted } }, yaxis: { gridcolor: grid, zerolinecolor: grid, tickfont: { color: muted } },
+      legend: { orientation: 'h', y: -0.18, font: { color: muted } }, hoverlabel: { bgcolor: css('--surface-2'), bordercolor: css('--border'), font: { color: fg } }, autosize: true }, extra);
+  }
+  const PCFG = { displayModeBar: false, responsive: true };
+  const charts = [];
+  function plot(id, traces, lay) { const el = $(id); if (!el) return; if (typeof Plotly === 'undefined') { el.innerHTML = '<div class="note">graphique indisponible : la librairie Plotly (cdnjs) n\'a pas pu être chargée.</div>'; return; } Plotly.react(el, traces, Object.assign(layout(lay), { height: el.clientHeight || 320 }), PCFG); }
+  function renderAllCharts() { charts.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } }); }
+
+  // ---------------------------------------------------------------- state
+  const state = { group: new Set(['all']), groupF: new Set(['all']), heat: 'r_1d', volPick: new Set(), bench: new Set(['SPX']), thresholds: null };
+
+  // ---------------------------------------------------------------- header
+  function renderStatus() {
+    const rs = D.run_status || {}; const stale = (rs.stale_symbols || []).length;
+    const cls = rs.status === 'ok' ? '' : (rs.status === 'partial' ? 'partial' : 'error');
+    $('status-bar').innerHTML = `<span class="pill ${cls}" title="run_status.json"><span class="dot"></span>run ${esc(rs.status || 'n/a')} · ${esc((rs.finished_at || '').replace('T', ' ').replace('Z', ' UTC'))}</span>` +
+      `<span class="pill" title="Dernière clôture attendue (veille ouvrée)">clôture attendue ${esc(rs.expected_last_close || NA)}</span>` +
+      (stale ? `<span class="pill warn" title="${esc((rs.stale_symbols || []).join(', '))}">${stale} série${stale > 1 ? 's' : ''} sans clôture</span>` : '') +
+      ((rs.errors || []).length ? `<span class="pill error" title="${esc(rs.errors.map((e) => e.step + ': ' + e.error).join('\n'))}"><span class="dot"></span>${rs.errors.length} erreur(s)</span>` : '');
+  }
+
+  // ---------------------------------------------------------------- MONITOR
+  function stockRows(filterSet) {
+    const out = [];
+    for (const [t, r] of Object.entries(Q().stocks)) {
+      if (!filterSet.has('all') && !filterSet.has(r.group)) continue;
+      const m = r.market || {}; const up = (E().upcoming || {})[t] || {}; const v = (R().vol.stocks || {})[t] || {};
+      out.push({ t, r, m, up, v, name: r.name, group: r.group, last: m.last, r_1d: m.r_1d, r_5d: m.r_5d, r_1m: m.r_1m, r_3m: m.r_3m, r_ytd: m.r_ytd, vol_3m: m.vol_3m, beta: r.beta_spx_1y,
+        idio_1m: m.idio_1m, pe: (r.valuation || {}).pe_fwd, rev30: (r.sentiment || {}).rev_fy_30d, upside: (r.sentiment || {}).upside, d2e: up.days_to, im: up.implied_move, hist: up.hist_avg_abs_move, ratio: up.ratio_implied_hist, signal: r.signal });
+    }
+    return out;
+  }
+  const retCol = (key, label, n = 1) => ({ key, label, render: (r) => pct(r[key], n), cls: (r) => sgnClass(r[key]), src: (r) => src('yfinance.download (clôtures ajustées)', (P().symbols[r.t] || {}).fetched_at) });
+  function renderStocks() {
+    const rows = stockRows(state.group);
+    const cols = [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.group)}</span>`, src: (r) => r.name },
+      { key: 'last', label: 'Prix', render: (r) => `${px(r.last)} <span class="${r.m.stale ? 'stale' : 'muted'}" title="${r.m.stale ? 'clôture absente pour la date attendue' : ''}">${esc((r.m.last_date || '').slice(5))}</span>`, src: (r) => src('yfinance.download · dernière clôture ' + (r.m.last_date || NA), (P().symbols[r.t] || {}).fetched_at) },
+      retCol('r_1d', '1D'), retCol('r_5d', '5D'), retCol('r_1m', '1M'), retCol('r_3m', '3M'), retCol('r_ytd', 'YTD'),
+      { key: 'vol_3m', label: 'Vol 3M', render: (r) => pctAbs(r.vol_3m, 0), src: (r) => 'écart-type des rendements log 63 j × √252' },
+      { key: 'beta', label: 'β SPX 1a', render: (r) => num(r.beta), src: (r) => `OLS rendements quotidiens USD 1 an vs ^GSPC · R² ${num(((R().betas[r.t] || {}).SPX || {}).r2_1y)}` },
+      { key: 'idio_1m', label: 'Idio 1M', title: 'perf 1M − β × SPX 1M', render: (r) => pct(r.idio_1m), cls: (r) => sgnClass(r.idio_1m), src: (r) => `perf 1M ${pct(r.r_1m)} − β ${num(r.beta)} × SPX 1M ${pct(((r.r || {}).idio || {})['1m'] ? (r.r.idio['1m'].beta_part / (r.beta || 1)) : null)}` },
+      { key: 'pe', label: 'P/E fwd', render: (r) => num(r.pe, 1), src: (r) => src('yfinance.info.forwardPE', r.r.fetched_at) },
+      { key: 'rev30', label: 'Rév EPS FY 30j', render: (r) => pct(r.rev30), cls: (r) => sgnClass(r.rev30), src: (r) => src('yfinance.eps_trend (0y current / 30daysAgo − 1)', r.r.fetched_at) },
+      { key: 'upside', label: 'Upside', render: (r) => pct(r.upside, 0), cls: (r) => sgnClass(r.upside), src: (r) => src(`yfinance.info.targetMeanPrice ${num((r.r.sentiment || {}).target_mean)} / prix − 1`, r.r.fetched_at) },
+      { key: 'd2e', label: 'J → résultats', render: (r) => r.d2e == null ? (r.up.note ? `<span class="muted">n/a</span>` : NA) : `${r.d2e} <span class="muted">${esc(dstr(r.up.date).slice(5))}${r.up.timing ? ' ' + r.up.timing : ''}${r.up.confirmed === false ? ' ?' : ''}</span>`, src: (r) => src((r.up.note || r.up.source || 'yfinance') + (r.up.confirmed === false ? ' · date estimée (fourchette)' : ''), r.r.fetched_at) },
+      { key: 'ratio', label: 'Move impl. / hist.', render: (r) => (r.im == null && r.hist == null) ? NA : `${pctAbs(r.im)} / ${pctAbs(r.hist)}${isNum(r.ratio) ? ` <b>×${r.ratio.toFixed(2)}</b>` : ''}`, cls: (r) => isNum(r.ratio) ? (r.ratio > 1.2 ? 'down' : (r.ratio < 0.8 ? 'up' : '')) : '', src: (r) => src(`straddle ATM (${r.up.implied_move_basis || 'n/a'}) éch. ${r.up.implied_move_expiry || NA}; hist = |réaction| moy. ${((E().reactions[r.t] || {}).summary || {}).n || 0} trimestres` + (r.up.options_note ? ' · ' + r.up.options_note : ''), r.up.options_fetched_at) },
+      { key: 'signal', label: 'Signal', render: (r) => r.signal ? `<span class="tag sig">${esc(r.signal)}</span>` : '', sortVal: (r) => r.signal ? 1 : 0, src: () => 'risk.json signals (seuils dans Beta & risque)' },
+    ];
+    table('tbl-stocks', cols, rows, { defaultSort: 'r_1d' });
+  }
+  function renderIndices() {
+    const rows = [];
+    for (const [t, q] of Object.entries(Q().indices)) rows.push({ t, q, kind: q.currency === 'pts' ? 'Vol' : 'Indice', name: q.name, cur: q.currency, m: q.market || {}, beta: q.beta_spx_1y, signal: q.signal, gap: null });
+    for (const [t, q] of Object.entries(Q().fx)) rows.push({ t, q, kind: 'FX', name: sym(t).name, cur: '', m: q.market || {}, beta: null });
+    for (const [t, q] of Object.entries(Q().etfs)) rows.push({ t, q, kind: 'ETF', name: q.name, cur: q.currency, m: q.market || {}, beta: q.beta_spx_1y, gap: ((q.tracking_usd || {})['1M'] || {}).gap, gap3: ((q.tracking_usd || {})['3M'] || {}).gap, und: q.underlying });
+    const cols = [
+      { key: 't', label: 'Instrument', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.name || '')}</span>`, sortVal: (r) => r.kind + r.t },
+      { key: 'kind', label: 'Type', left: true },
+      { key: 'last', label: 'Dernier', render: (r) => `${px(r.m.last, r.cur)} <span class="${r.m.stale ? 'stale' : 'muted'}">${esc((r.m.last_date || '').slice(5))}</span>`, sortVal: (r) => r.m.last, src: (r) => src('yfinance.download', r.q.fetched_at) },
+      { key: 'r_1d', label: '1D', render: (r) => pct(r.m.r_1d), cls: (r) => sgnClass(r.m.r_1d), sortVal: (r) => r.m.r_1d }, { key: 'r_5d', label: '5D', render: (r) => pct(r.m.r_5d), cls: (r) => sgnClass(r.m.r_5d), sortVal: (r) => r.m.r_5d },
+      { key: 'r_1m', label: '1M', render: (r) => pct(r.m.r_1m), cls: (r) => sgnClass(r.m.r_1m), sortVal: (r) => r.m.r_1m }, { key: 'r_3m', label: '3M', render: (r) => pct(r.m.r_3m), cls: (r) => sgnClass(r.m.r_3m), sortVal: (r) => r.m.r_3m },
+      { key: 'r_ytd', label: 'YTD', render: (r) => pct(r.m.r_ytd), cls: (r) => sgnClass(r.m.r_ytd), sortVal: (r) => r.m.r_ytd },
+      { key: 'vol', label: 'Vol 3M', render: (r) => r.kind === 'Vol' ? NA : pctAbs(r.m.vol_3m, 0), sortVal: (r) => r.m.vol_3m },
+      { key: 'beta', label: 'β SPX 1a (USD)', render: (r) => num(r.beta), src: (r) => 'OLS quotidien 1 an en USD' },
+      { key: 'gap', label: 'ETF − indice 1M (USD)', title: 'perf ETF en USD − perf indice sous-jacent', render: (r) => r.kind === 'ETF' ? `${pct(r.gap)} <span class="muted">3M ${pct(r.gap3)}</span>` : '', cls: (r) => sgnClass(r.gap), src: (r) => r.kind === 'ETF' ? `ETF ${r.t} converti en USD vs ${r.und}` : null },
+      { key: 'signal', label: 'Signal', render: (r) => r.signal ? `<span class="tag sig">${esc(r.signal)}</span>` : '', sortVal: (r) => r.signal ? 1 : 0 },
+    ];
+    table('tbl-indices', cols, rows);
+  }
+  function heatColor(v, scale) {
+    if (!isNum(v)) return { bg: css('--surface-2'), fg: css('--muted') };
+    const a = Math.min(1, Math.abs(v) / scale);
+    const col = v >= 0 ? css('--up') : css('--down');
+    return { bg: `color-mix(in oklab, ${col} ${Math.round(12 + a * 70)}%, ${css('--surface-2')})`, fg: a > 0.5 ? '#ffffff' : css('--fg') };
+  }
+  function renderHeat() {
+    const key = state.heat; const scale = key === 'r_1d' ? 0.05 : 0.12;
+    const groups = U().groups; let html = '';
+    const cellFor = (t, m, label) => { const v = m[key]; const c = heatColor(v, scale); return `<div class="cell" style="background:${c.bg};color:${c.fg}" title="${esc(src(label + ' · ' + (m.last_date || ''), (P().symbols[t] || {}).fetched_at))}"><b>${esc(t.replace(/^\^/, ''))}</b><span>${pct(v)}</span></div>`; };
+    for (const g of Object.keys(groups)) {
+      const list = groups[g].filter((t) => Q().stocks[t] || Q().indices[t] || Q().etfs[t] || Q().fx[t]);
+      if (!list.length || (key === 'idio_1m' && !Q().stocks[list[0]])) continue;
+      html += `<div class="group-label">${esc(g)}</div>`;
+      for (const t of list) { const q = Q().stocks[t] || Q().indices[t] || Q().etfs[t] || Q().fx[t]; html += cellFor(t, q.market || {}, key); }
+    }
+    $('heat').innerHTML = html;
+    document.querySelectorAll('[data-heat]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.heat === key));
+  }
+  document.querySelectorAll('[data-heat]').forEach((b) => b.addEventListener('click', () => { state.heat = b.dataset.heat; renderHeat(); }));
+
+  function chartScatter() {
+    const rows = stockRows(new Set(['all']));
+    const groups = [...new Set(rows.map((r) => r.group))]; const cols = SERIES();
+    const traces = groups.map((g, i) => { const rs = rows.filter((r) => r.group === g && isNum(r.r_3m) && isNum(r.vol_3m)); return { type: 'scatter', mode: 'markers+text', name: g, text: rs.map((r) => r.t), textposition: 'top center', textfont: { size: 10, color: css('--muted') }, x: rs.map((r) => r.vol_3m * 100), y: rs.map((r) => r.r_3m * 100), marker: { size: 9, color: cols[i % 8], line: { width: 1, color: css('--surface') } }, hovertemplate: '%{text}<br>vol 3M %{x:.0f}%<br>perf 3M %{y:+.1f}%<extra></extra>' }; });
+    for (const [t, q] of Object.entries(Q().indices)) { if (q.currency === 'pts' || !isNum((q.market || {}).r_3m)) continue; }
+    const ix = Object.values(Q().indices).filter((q) => q.currency !== 'pts' && isNum((q.market || {}).r_3m));
+    traces.push({ type: 'scatter', mode: 'markers+text', name: 'Indices', text: ix.map((q) => q.key), textposition: 'bottom center', textfont: { size: 10, color: css('--muted') }, x: ix.map((q) => q.market.vol_3m * 100), y: ix.map((q) => q.market.r_3m * 100), marker: { size: 10, symbol: 'diamond', color: css('--muted') }, hovertemplate: '%{text}<br>vol 3M %{x:.0f}%<br>perf 3M %{y:+.1f}%<extra></extra>' });
+    plot('ch-scatter', traces, { xaxis: { title: { text: 'vol réalisée 3M (%)' }, gridcolor: css('--border') }, yaxis: { title: { text: 'perf 3M (%)' }, gridcolor: css('--border'), zerolinecolor: css('--muted') } });
+  }
+  function chartBase100() {
+    const period = $('base-period').value, ccy = $('base-ccy').value; const cols = SERIES();
+    const list = [...U().groups.Indices, ...U().groups.ETFs].filter(series);
+    const traces = list.map((t, i) => { const s = ccy === 'usd' ? usdSeries(t) : series(t); const i0 = startIndex(s, period); return { type: 'scatter', mode: 'lines', name: t.replace(/^\^/, ''), x: s.dates.slice(i0), y: base100(s, i0), line: { width: U().groups.ETFs.includes(t) ? 1.2 : 2, dash: U().groups.ETFs.includes(t) ? 'dot' : 'solid', color: cols[i % 8] }, hovertemplate: '%{x}<br>' + t + ' %{y:.1f}<extra></extra>' }; });
+    plot('ch-base100', traces, { hovermode: 'x unified', legend: { orientation: 'h', y: -0.15 } });
+  }
+  function volChipsInit() {
+    const cands = [...U().groups['Mag7+AMD'], ...U().groups.Indices.slice(0, 2), 'SMGB.L', ...(U().groups['13F Situational Awareness'] || []).slice(0, 4)].filter(series);
+    if (!state.volPick.size) ['NVDA', 'AAPL', '^GSPC', 'SMGB.L', 'MU'].forEach((t) => { if (series(t)) state.volPick.add(t); });
+    chips('vol-chips', cands.map((t) => ({ value: t, label: t.replace(/^\^/, '') })), state.volPick, chartRollVol, true);
+  }
+  function chartRollVol() {
+    const cols = SERIES();
+    const traces = [...state.volPick].map((t, i) => { const s = series(t); const v = rollVol(s); const n = Math.min(s.dates.length, 252); return { type: 'scatter', mode: 'lines', name: t.replace(/^\^/, ''), x: s.dates.slice(-n), y: v.slice(-n), line: { width: 1.6, color: cols[i % 8] }, hovertemplate: '%{x}<br>' + t + ' %{y:.0f}%<extra></extra>' }; });
+    plot('ch-rollvol', traces, { hovermode: 'x unified', yaxis: { title: { text: 'vol 21 j annualisée (%)' }, gridcolor: css('--border') } });
+  }
+  function chartRel() {
+    const spx = series(U().index_keys.SPX), ndx = series(U().index_keys.NDX), sx = series(U().index_keys.SX5E), sxu = usdSeries(U().index_keys.SX5E);
+    if (!spx || !ndx || !sx) return;
+    const n = 252; const dates = spx.dates.slice(-n); const cols = SERIES();
+    const rel = (a, b) => { const A = alignOn(dates, a), B = alignOn(dates, b); const r = A.map((v, i) => v && B[i] ? v / B[i] : null); const b0 = r.find((x) => x); return r.map((x) => x ? x / b0 * 100 : null); };
+    const eurspx = { dates: spx.dates, close: alignOn(spx.dates, fxSeries().EURUSD).map((f, i) => f ? spx.close[i] / f : null) };
+    plot('ch-rel', [
+      { type: 'scatter', mode: 'lines', name: 'SX5E / SPX (USD)', x: dates, y: rel(sxu, spx), line: { color: cols[0], width: 2 } },
+      { type: 'scatter', mode: 'lines', name: 'SX5E / SPX (EUR)', x: dates, y: rel(sx, eurspx), line: { color: cols[2], width: 2 } },
+      { type: 'scatter', mode: 'lines', name: 'NDX / SPX', x: dates, y: rel(ndx, spx), line: { color: cols[1], width: 2 } },
+    ], { hovermode: 'x unified' });
+  }
+  function etfPickInit() { $('etf-pick').innerHTML = U().groups.ETFs.filter(series).map((t) => `<option value="${t}">${t} vs ${esc(sym(t).underlying)}</option>`).join(''); $('etf-pick').addEventListener('change', chartEtf); }
+  function chartEtf() {
+    const t = $('etf-pick').value; if (!t) return; const s = series(t), su = usdSeries(t); const und = series(U().index_keys[sym(t).underlying]); if (!s || !und) return;
+    const cur = s.currency; const fxk = cur === 'EUR' ? 'EURUSD' : 'GBPUSD'; const fx = fxSeries()[fxk];
+    const n = 252; const dates = und.dates.slice(-n); const cols = SERIES();
+    const b100 = (arr) => { const b0 = arr.find((x) => x); return arr.map((x) => x ? x / b0 * 100 : null); };
+    plot('ch-etf', [
+      { type: 'scatter', mode: 'lines', name: `${t} (USD)`, x: dates, y: b100(alignOn(dates, su)), line: { color: cols[0], width: 2 } },
+      { type: 'scatter', mode: 'lines', name: `${t} (${cur})`, x: dates, y: b100(alignOn(dates, s)), line: { color: cols[0], width: 1.2, dash: 'dot' } },
+      { type: 'scatter', mode: 'lines', name: sym(t).underlying + ' (USD)', x: dates, y: b100(alignOn(dates, und)), line: { color: cols[1], width: 2 } },
+      { type: 'scatter', mode: 'lines', name: fxk, x: dates, y: b100(alignOn(dates, fx)), line: { color: cols[3], width: 1.4 } },
+    ], { hovermode: 'x unified' });
+  }
+
+  // ---------------------------------------------------------------- FONDAMENTAUX
+  function renderFonda() {
+    const rows = stockRows(state.groupF).map((r) => ({ ...r, va: r.r.valuation || {}, gr: r.r.growth || {}, qu: r.r.quality || {}, se: r.r.sentiment || {}, w13: r.r.weight_13f, c13: r.r.change_13f }));
+    const S = (label) => (r) => src(label, r.r.fetched_at);
+    const cols = [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.r.sector || '')}</span>` },
+      { key: 'mcap', label: 'Cap. ($)', render: (r) => big(r.va.market_cap), sortVal: (r) => r.va.market_cap, src: S('info.marketCap') },
+      { key: 'pe', label: 'P/E fwd', render: (r) => num(r.va.pe_fwd, 1), sortVal: (r) => r.va.pe_fwd, src: S('info.forwardPE') },
+      { key: 'eveb', label: 'EV/EBITDA', render: (r) => num(r.va.ev_ebitda, 1), sortVal: (r) => r.va.ev_ebitda, src: (r) => src('info.enterpriseToEbitda' + (r.va.currency_note ? ' · ' + r.va.currency_note : ''), r.r.fetched_at) },
+      { key: 'evs', label: 'EV/Sales', render: (r) => num(r.va.ev_sales, 1), sortVal: (r) => r.va.ev_sales, src: (r) => src('info.enterpriseToRevenue' + (r.va.currency_note ? ' · ' + r.va.currency_note : ''), r.r.fetched_at) },
+      { key: 'fcfy', label: 'FCF yield', render: (r) => pct(r.va.fcf_yield, 1, false), sortVal: (r) => r.va.fcf_yield, src: (r) => src('info.freeCashflow / marketCap' + (r.va.currency_note ? ' · ' + r.va.currency_note : ''), r.r.fetched_at) },
+      { key: 'nde', label: 'Dette nette / EBITDA', render: (r) => num(r.va.net_debt_ebitda, 1), sortVal: (r) => r.va.net_debt_ebitda, cls: (r) => isNum(r.va.net_debt_ebitda) && r.va.net_debt_ebitda < 0 ? 'up' : '', src: S('(totalDebt − totalCash) / ebitda ; négatif = cash net') },
+      { key: 'rg', label: 'CA yoy', render: (r) => pct(r.gr.revenue_growth_yoy, 0), cls: (r) => sgnClass(r.gr.revenue_growth_yoy), sortVal: (r) => r.gr.revenue_growth_yoy, src: S('info.revenueGrowth (dernier trimestre yoy)') },
+      { key: 'eg', label: 'EPS yoy', render: (r) => pct(r.gr.eps_growth_yoy, 0), cls: (r) => sgnClass(r.gr.eps_growth_yoy), sortVal: (r) => r.gr.eps_growth_yoy, src: S('info.earningsGrowth') },
+      { key: 'efy', label: 'EPS FY+1 vs FY', render: (r) => `${pct(r.gr.eps_fy1_vs_fy, 0)} <span class="muted">${num(r.gr.eps_fy)}→${num(r.gr.eps_fy1)}</span>`, cls: (r) => sgnClass(r.gr.eps_fy1_vs_fy), sortVal: (r) => r.gr.eps_fy1_vs_fy, src: S('earnings_estimate avg +1y / 0y − 1') },
+      { key: 'gm', label: 'Marge brute', render: (r) => pct(r.qu.gross_margin, 0, false), sortVal: (r) => r.qu.gross_margin, src: S('info.grossMargins') },
+      { key: 'om', label: 'Marge op.', render: (r) => pct(r.qu.operating_margin, 0, false), sortVal: (r) => r.qu.operating_margin, src: S('info.operatingMargins') },
+      { key: 'roe', label: 'ROE', render: (r) => pct(r.qu.roe, 0, false), sortVal: (r) => r.qu.roe, src: S('info.returnOnEquity') },
+      { key: 'rq', label: 'Rév. EPS Q 7/30/90j', render: (r) => `${pct(r.se.rev_q_7d)} / ${pct(r.se.rev_q_30d)} / ${pct(r.se.rev_q_90d)}`, sortVal: (r) => r.se.rev_q_30d, cls: (r) => sgnClass(r.se.rev_q_30d), src: S('eps_trend 0q current vs 7/30/90daysAgo') },
+      { key: 'ry', label: 'Rév. EPS FY 7/30/90j', render: (r) => `${pct(r.se.rev_fy_7d)} / ${pct(r.se.rev_fy_30d)} / ${pct(r.se.rev_fy_90d)}`, sortVal: (r) => r.se.rev_fy_30d, cls: (r) => sgnClass(r.se.rev_fy_30d), src: S('eps_trend 0y current vs 7/30/90daysAgo') },
+      { key: 'ud', label: '↑/↓ 30j (FY)', render: (r) => `<span class="up">${int(r.se.up_30d_fy)}</span> / <span class="down">${int(r.se.down_30d_fy)}</span>`, sortVal: (r) => (r.se.up_30d_fy || 0) - (r.se.down_30d_fy || 0), src: S('eps_revisions 0y upLast30days / downLast30days') },
+      { key: 'reco', label: 'Reco (1=achat)', render: (r) => `${num(r.se.recommendation_mean, 2)} <span class="muted">${int(r.se.n_analysts)}</span>`, sortVal: (r) => r.se.recommendation_mean, src: S('info.recommendationMean · numberOfAnalystOpinions') },
+      { key: 'upside', label: 'Upside', render: (r) => pct(r.se.upside, 0), cls: (r) => sgnClass(r.se.upside), sortVal: (r) => r.se.upside, src: S('info.targetMeanPrice / prix') },
+      { key: 'si', label: 'Short % flottant', render: (r) => pct(r.se.short_pct_float, 1, false), sortVal: (r) => r.se.short_pct_float, src: S('info.shortPercentOfFloat') },
+      { key: 'w13', label: 'Poids 13F', render: (r) => isNum(r.w13) ? `${pct(r.w13, 1, false)} <span class="muted">${esc(r.c13 || '')}</span>` : '', sortVal: (r) => r.w13, src: () => `sa_13f.json · ${(D.sa_13f || {}).filer || ''} période ${((D.sa_13f || {}).filing || {}).period || ''}` },
+    ];
+    table('tbl-fonda', cols, rows, { defaultSort: 'mcap' });
+  }
+  function render13f() {
+    const f = D.sa_13f || {}; const fil = f.filing || {};
+    $('f13-hint').textContent = `${f.filer || ''} · CIK ${f.cik || ''} · ${fil.form || ''} période ${fil.period || ''} déposé le ${fil.filing_date || ''} · ${f.n_positions || 0} lignes longues, ${big(f.total_long_equity_usd)} $ · info table lue le ${(fil.fetched_at || '').replace('T', ' ')}`;
+    const rows = (f.positions || []).map((p) => ({ ...p, q: Q().stocks[p.yahoo] || {} }));
+    table('tbl-13f', [
+      { key: 'issuer', label: 'Émetteur (13F)', left: true, render: (p) => `${esc(p.issuer)} <span class="muted">${esc(p.class)}</span>` },
+      { key: 'yahoo', label: 'Ticker', left: true, render: (p) => p.yahoo ? `<b>${esc(p.yahoo)}</b>` : `<span class="warn">non résolu</span>`, src: (p) => src(`OpenFIGI ${p.figi_idtype || ''} ${p.cusip} → ${p.figi_ticker || 'n/a'} (${p.figi_exch || ''}, ${p.figi_type || ''})${p.figi_error ? ' · ' + p.figi_error : ''}`, p.figi_fetched_at) },
+      { key: 'weight', label: 'Poids', render: (p) => pct(p.weight, 1, false), src: () => 'valeur / total actions longues' },
+      { key: 'value_usd', label: 'Valeur ($)', render: (p) => big(p.value_usd), src: () => src('13F infoTable value', fil.fetched_at) },
+      { key: 'shares', label: 'Titres', render: (p) => big(p.shares) },
+      { key: 'change_vs_prior', label: 'vs trimestre préc.', left: true, render: (p) => `${esc(p.change_vs_prior)} ${isNum(p.shares_change_pct) ? `<span class="muted">${pct(p.shares_change_pct, 0)}</span>` : ''}`, src: () => `vs 13F période ${(f.prior_filing || {}).period || 'n/a'}` },
+      { key: 'r_1m', label: '1M', render: (p) => pct((p.q.market || {}).r_1m), cls: (p) => sgnClass((p.q.market || {}).r_1m), sortVal: (p) => (p.q.market || {}).r_1m },
+      { key: 'r_3m', label: '3M', render: (p) => pct((p.q.market || {}).r_3m), cls: (p) => sgnClass((p.q.market || {}).r_3m), sortVal: (p) => (p.q.market || {}).r_3m },
+      { key: 'idio', label: 'Idio 1M', render: (p) => pct((p.q.market || {}).idio_1m), cls: (p) => sgnClass((p.q.market || {}).idio_1m), sortVal: (p) => (p.q.market || {}).idio_1m },
+    ], rows, { defaultSort: 'weight' });
+  }
+
+  // ---------------------------------------------------------------- EVENTS
+  function renderCalendar() {
+    const rows = (E().calendar || []).map((c) => ({ ...c, days: Math.round((new Date(c.date) - new Date(E().today)) / 864e5) }));
+    table('tbl-cal', [
+      { key: 'date', label: 'Date', left: true, render: (c) => `<b>${esc(c.date)}</b> <span class="muted">J+${c.days}</span>` },
+      { key: 'type', label: 'Type', left: true, render: (c) => `<span class="tag">${esc(c.type)}</span>` },
+      { key: 'label', label: 'Événement', left: true, render: (c) => esc(c.label) + (c.confirmed === false ? ' <span class="warn" title="date estimée par Yahoo (fourchette)">?</span>' : ''), src: (c) => src(c.source || '', c.fetched_at) },
+      { key: 'eps_consensus', label: 'EPS consensus', render: (c) => isNum(c.eps_consensus) ? c.eps_consensus.toFixed(2) : '', src: (c) => c.source },
+      { key: 'implied_move', label: 'Move implicite', render: (c) => pctAbs(c.implied_move), src: (c) => c.symbol in (E().upcoming || {}) ? src(`straddle ATM ${E().upcoming[c.symbol].implied_move_basis || ''} éch. ${E().upcoming[c.symbol].implied_move_expiry || ''}`, E().upcoming[c.symbol].options_fetched_at) : null },
+      { key: 'hist_avg_abs_move', label: 'Move hist. moyen', render: (c) => pctAbs(c.hist_avg_abs_move) },
+      { key: 'ratio', label: 'Impl. / hist.', render: (c) => isNum(c.ratio) ? `×${c.ratio.toFixed(2)}` : '', cls: (c) => isNum(c.ratio) ? (c.ratio > 1 ? 'down' : 'up') : '' },
+    ], rows, { defaultSort: 'date', defaultDir: 1 });
+  }
+  function renderReact() {
+    const rows = Object.entries(E().reactions || {}).map(([t, r]) => ({ t, s: r.summary || {}, fa: r.fetched_at })).filter((r) => r.s.n);
+    table('tbl-react', [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b>` },
+      { key: 'n', label: 'N', render: (r) => r.s.n, sortVal: (r) => r.s.n },
+      { key: 'avg_abs_move', label: '|Move| moyen', render: (r) => pctAbs(r.s.avg_abs_move), sortVal: (r) => r.s.avg_abs_move, src: (r) => src('moyenne des |réactions| close→close', r.fa) },
+      { key: 'avg_abs_abnormal', label: '|Anormale| moyenne', render: (r) => pctAbs(r.s.avg_abs_abnormal), sortVal: (r) => r.s.avg_abs_abnormal },
+      { key: 'avg_abnormal', label: 'Anormale moyenne', render: (r) => pct(r.s.avg_abnormal), cls: (r) => sgnClass(r.s.avg_abnormal), sortVal: (r) => r.s.avg_abnormal },
+      { key: 'beat_rate', label: 'Part de beats', render: (r) => pctAbs(r.s.beat_rate, 0), sortVal: (r) => r.s.beat_rate, src: () => 'surprise EPS > 0 (yfinance Surprise(%))' },
+      { key: 'positive_rate', label: 'Réactions positives', render: (r) => pctAbs(r.s.positive_rate, 0), sortVal: (r) => r.s.positive_rate },
+      { key: 'avg_pead_20d', label: 'PEAD 20 j moyen', render: (r) => pct(r.s.avg_pead_20d), cls: (r) => sgnClass(r.s.avg_pead_20d), sortVal: (r) => r.s.avg_pead_20d },
+      { key: 'corr', label: 'Corr. surprise / anormale', render: (r) => num(r.s.corr_surprise_abnormal), sortVal: (r) => r.s.corr_surprise_abnormal },
+    ], rows, { defaultSort: 'avg_abs_move' });
+    const sel = $('react-pick'); sel.innerHTML = '<option value="all">tous les titres</option>' + rows.map((r) => `<option value="${r.t}">${r.t}</option>`).join('');
+    sel.onchange = () => { chartReact(); renderReactDetail(); };
+  }
+  function chartReact() {
+    const pick = $('react-pick').value; const cols = SERIES(); const traces = [];
+    const ent = Object.entries(E().reactions || {}).filter(([t]) => pick === 'all' || t === pick);
+    ent.forEach(([t, r], i) => { const rs = (r.rows || []).filter((x) => isNum(x.surprise_pct) && isNum(x.abnormal)); if (!rs.length) return; traces.push({ type: 'scatter', mode: 'markers', name: t, x: rs.map((x) => x.surprise_pct), y: rs.map((x) => x.abnormal * 100), text: rs.map((x) => `${t} ${x.date}`), marker: { size: 8, color: pick === 'all' ? css('--accent') : cols[0], opacity: .8, line: { width: 1, color: css('--surface') } }, hovertemplate: '%{text}<br>surprise %{x:.1f}%<br>anormale %{y:+.1f}%<extra></extra>', showlegend: false }); });
+    plot('ch-react', traces, { xaxis: { title: { text: 'surprise EPS (%)' }, gridcolor: css('--border'), zerolinecolor: css('--muted') }, yaxis: { title: { text: 'réaction anormale (%)' }, gridcolor: css('--border'), zerolinecolor: css('--muted') } });
+  }
+  function renderReactDetail() {
+    const pick = $('react-pick').value; const rows = [];
+    for (const [t, r] of Object.entries(E().reactions || {})) { if (pick !== 'all' && t !== pick) continue; (r.rows || []).forEach((x) => rows.push({ t, ...x })); }
+    $('react-detail-hint').textContent = pick === 'all' ? `${rows.length} publications` : `${pick} · ${rows.length} publications`;
+    const pc = (k) => ({ key: k, render: (x) => pct(x[k]), cls: (x) => sgnClass(x[k]) });
+    table('tbl-react-detail', [
+      { key: 't', label: 'Titre', left: true }, { key: 'date', label: 'Date', left: true, render: (x) => `${x.date} <span class="muted">${x.timing}</span>`, src: (x) => 'fenêtre ' + x.window },
+      { key: 'surprise_pct', label: 'Surprise', render: (x) => isNum(x.surprise_pct) ? x.surprise_pct.toFixed(1) + '%' : NA, cls: (x) => sgnClass(x.surprise_pct), src: (x) => `EPS ${num(x.eps_reported)} vs ${num(x.eps_estimate)}` },
+      { ...pc('pre_drift_5d'), label: 'Dérive 5 j avant' }, { ...pc('reaction'), label: 'Réaction' }, { ...pc('market_move'), label: 'SPX' },
+      { key: 'beta_prior_1y', label: 'β avant', render: (x) => num(x.beta_prior_1y) }, { ...pc('abnormal'), label: 'Anormale' }, { ...pc('pead_5d'), label: 'PEAD 5 j' }, { ...pc('pead_20d'), label: 'PEAD 20 j' },
+    ], rows, { defaultSort: 'date' });
+  }
+
+  // ---------------------------------------------------------------- RISK
+  function renderBeta() {
+    const bench = [...state.bench][0];
+    const rows = Object.entries(R().betas || {}).filter(([t, b]) => b[bench]).map(([t, b]) => ({ t, b: b[bench], q: Q().stocks[t] || Q().etfs[t] || Q().indices[t] || {}, grp: sym(t).group }));
+    const S = (r) => `OLS log-rendements USD vs ${bench === 'SOX' ? R().sox_benchmark : bench} · n=${r.b.n_1y}`;
+    table('tbl-beta', [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.grp || '')}</span>` },
+      { key: 'beta_1y', label: 'β 1a quot.', render: (r) => num(r.b.beta_1y), sortVal: (r) => r.b.beta_1y, src: S },
+      { key: 'beta_3m', label: 'β 3M quot.', render: (r) => num(r.b.beta_3m), sortVal: (r) => r.b.beta_3m, src: S },
+      { key: 'beta_1y_weekly', label: 'β 1a hebdo', render: (r) => num(r.b.beta_1y_weekly), sortVal: (r) => r.b.beta_1y_weekly, src: () => 'rendements W-FRI, 52 semaines (clôtures non synchrones corrigées)' },
+      { key: 'beta_downside_1y', label: 'β downside', render: (r) => num(r.b.beta_downside_1y), sortVal: (r) => r.b.beta_downside_1y, cls: (r) => isNum(r.b.beta_downside_1y) && isNum(r.b.beta_1y) && r.b.beta_downside_1y > r.b.beta_1y + 0.2 ? 'down' : '', src: () => 'jours où le benchmark baisse, 1 an' },
+      { key: 'r2_1y', label: 'R² 1a', render: (r) => num(r.b.r2_1y), sortVal: (r) => r.b.r2_1y },
+      { key: 'idio_vol_1y', label: 'Vol idio 1a', render: (r) => pctAbs(r.b.idio_vol_1y, 0), sortVal: (r) => r.b.idio_vol_1y, src: () => 'écart-type des résidus × √252' },
+      { key: 'i1', label: 'Idio 1M (vs SPX)', render: (r) => pct(((r.q.idio || {})['1m'] || {}).idio_part), cls: (r) => sgnClass(((r.q.idio || {})['1m'] || {}).idio_part), sortVal: (r) => ((r.q.idio || {})['1m'] || {}).idio_part },
+      { key: 'i3', label: 'Idio 3M (vs SPX)', render: (r) => pct(((r.q.idio || {})['3m'] || {}).idio_part), cls: (r) => sgnClass(((r.q.idio || {})['3m'] || {}).idio_part), sortVal: (r) => ((r.q.idio || {})['3m'] || {}).idio_part },
+    ], rows, { defaultSort: 'beta_1y' });
+  }
+  function chartContrib() {
+    const h = $('contrib-h').value; const rows = Object.entries(Q().stocks).map(([t, q]) => ({ t, c: (q.idio || {})[h] || {} })).filter((r) => isNum(r.c.total)).sort((a, b) => b.c.total - a.c.total);
+    plot('ch-contrib', [
+      { type: 'bar', name: 'β × SPX', x: rows.map((r) => r.t), y: rows.map((r) => r.c.beta_part * 100), marker: { color: css('--s1') }, hovertemplate: '%{x} beta %{y:+.1f}%<extra></extra>' },
+      { type: 'bar', name: 'idiosyncratique', x: rows.map((r) => r.t), y: rows.map((r) => r.c.idio_part * 100), marker: { color: css('--s2') }, hovertemplate: '%{x} idio %{y:+.1f}%<extra></extra>' },
+    ], { barmode: 'relative', bargap: .3, yaxis: { title: { text: `perf ${h.toUpperCase()} (%)` }, gridcolor: css('--border'), zerolinecolor: css('--muted') }, xaxis: { tickangle: -45, gridcolor: 'rgba(0,0,0,0)' } });
+  }
+  function renderVol() {
+    const vt = R().vol_thresholds || {}; $('vol-hint').textContent = `Indices : IV = VIX/VXN ; percentile 1 an réel. Actions : IV ATM ~30 j dérivée du straddle (Black-Scholes, r=0) sur la chaîne yfinance — avant l'ouverture US les bid/ask sont vides, le prix utilisé est le dernier traité ; percentile vs distribution 1 an de la vol réalisée 21 j. Chère ≥ ${vt.expensive_pct}e, bon marché ≤ ${vt.cheap_pct}e.`;
+    const rows = [];
+    for (const [k, v] of Object.entries(R().vol.indices || {})) rows.push({ t: k, kind: 'indice', v, iv: v.available ? v.iv / 100 : null, rv: v.rv_1m, spread: v.spread, p: v.iv_pct_1y, flag: v.available ? (isNum(v.iv_pct_1y) ? (v.iv_pct_1y >= vt.expensive_pct ? 'chère' : (v.iv_pct_1y <= vt.cheap_pct ? 'bon marché' : null)) : null) : null, note: v.available ? `${v.ticker} · ${v.iv_date}` : v.reason, fa: v.fetched_at });
+    for (const [t, v] of Object.entries(R().vol.stocks || {})) rows.push({ t, kind: 'action', v, iv: v.iv_30d, rv: v.rv_1m, spread: v.spread, p: v.iv_pct_vs_rv_1y, flag: v.flag, note: v.iv_expiry ? `éch. ${v.iv_expiry} · ${v.iv_source || ''} sur prix ${v.iv_basis || ''}` : 'IV indisponible (pas de prix de straddle)', fa: v.fetched_at });
+    table('tbl-vol', [
+      { key: 't', label: 'Instrument', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.kind)}</span>` },
+      { key: 'iv', label: 'IV', render: (r) => pctAbs(r.iv, 1), sortVal: (r) => r.iv, src: (r) => src(r.note || '', r.fa) },
+      { key: 'rv', label: 'RV 1M', render: (r) => pctAbs(r.rv, 1), sortVal: (r) => r.rv },
+      { key: 'rv3', label: 'RV 3M', render: (r) => pctAbs(r.v.rv_3m, 1), sortVal: (r) => r.v.rv_3m },
+      { key: 'spread', label: 'IV − RV', render: (r) => pct(r.spread, 1), cls: (r) => sgnClass(r.spread), sortVal: (r) => r.spread },
+      { key: 'p', label: 'Percentile 1a', render: (r) => isNum(r.p) ? `${r.p.toFixed(0)}e` : NA, sortVal: (r) => r.p, src: (r) => r.kind === 'indice' ? 'rang du niveau IV dans son historique 1 an' : (r.v.note || '') },
+      { key: 'flag', label: 'Lecture', left: true, cls: (r) => r.v.available === false ? 'wrap' : '', render: (r) => r.flag ? `<span class="tag ${r.flag === 'chère' ? 'cher' : 'bon'}">${r.flag}</span>` : (r.v.available === false ? `<span class="muted">n/a — ${esc(r.v.reason || '')}</span>` : ''), sortVal: (r) => r.flag ? 1 : 0 },
+    ], rows, { defaultSort: 'p' });
+  }
+  function chartVix() {
+    const v = (R().vol.indices || {}).VIX; if (!v || !v.available || !v.history_1y) { $('ch-vix').innerHTML = '<div class="note">VIX indisponible</div>'; return; }
+    plot('ch-vix', [
+      { type: 'scatter', mode: 'lines', name: 'VIX', x: v.history_1y.dates, y: v.history_1y.iv, line: { color: css('--s1'), width: 2 } },
+      { type: 'scatter', mode: 'lines', name: 'SPX vol réalisée 21 j', x: v.history_1y.dates, y: v.history_1y.rv_1m, line: { color: css('--s2'), width: 1.5 } },
+    ], { hovermode: 'x unified', margin: { l: 40, r: 10, t: 6, b: 36 } });
+  }
+  function renderBreadth() {
+    const B = D.breadth || {}; $('breadth-note').textContent = (B.survivorship_note || '') + (B.reused_from_previous_run ? ' (fichier du run précédent)' : '');
+    let html = '';
+    for (const [k, b] of Object.entries(B.indices || {})) {
+      html += `<div class="tile" title="${esc(src(`${b.n}/${b.members_total} constituants avec prix (composition ${b.composition_fetched_at || ''}${b.composition_reused ? ', réutilisée' : ''})`, B.fetched_at))}"><div class="k">${esc(k)} <span class="muted">${b.n}/${b.members_total}</span></div><div class="v">${isNum(b.pct_above_ma50) ? b.pct_above_ma50.toFixed(0) : NA}% <span class="muted" style="font-size:12px">&gt; MM50</span></div><div class="s">${isNum(b.pct_above_ma200) ? b.pct_above_ma200.toFixed(0) : NA}% &gt; MM200 · ${isNum(b.pct_20d_high) ? b.pct_20d_high.toFixed(0) : NA}% plus haut 20 j<br>EW − CW 1M <span class="${sgnClass(b.ew_minus_cw_1m)}">${pct(b.ew_minus_cw_1m)}</span> · 3M <span class="${sgnClass(b.ew_minus_cw_3m)}">${pct(b.ew_minus_cw_3m)}</span>${b.mag7_vs_rest ? `<br>Mag7 EW 1M ${pct(b.mag7_vs_rest.mag7_ew_1m)} vs reste ${pct(b.mag7_vs_rest.rest_ew_1m)}` : ''}</div></div>`;
+    }
+    $('breadth-tiles').innerHTML = html || '<div class="note">breadth non calculée</div>';
+  }
+  function chartBreadth() {
+    const B = D.breadth || {}; const cols = SERIES();
+    const tr = Object.entries(B.indices || {}).filter(([k, b]) => b.pct_above_ma50_3m).map(([k, b], i) => ({ type: 'scatter', mode: 'lines', name: k, x: b.pct_above_ma50_3m.dates, y: b.pct_above_ma50_3m.values, line: { color: cols[i % 8], width: 1.8 } }));
+    plot('ch-breadth', tr, { hovermode: 'x unified', yaxis: { title: { text: '% > MM50, 3 mois' }, range: [0, 100], gridcolor: css('--border') } });
+    const ad = Object.entries(B.indices || {}).filter(([k, b]) => b.ad_line_3m).map(([k, b], i) => ({ type: 'scatter', mode: 'lines', name: k, x: b.ad_line_3m.dates, y: b.ad_line_3m.values.map((v) => v / Math.max(1, b.n) * 100), line: { color: cols[i % 8], width: 1.8 } }));
+    plot('ch-ad', ad, { hovermode: 'x unified', yaxis: { title: { text: 'ligne A/D 3M (cumul, % des titres)' }, gridcolor: css('--border') } });
+  }
+  function chartCorr() {
+    const C = R().correlations || {}; $('corr-note').textContent = C.smgb_note || '';
+    const s = (C.smgb_vs_universe || []).slice().sort((a, b) => a.corr - b.corr);
+    plot('ch-smgb', [{ type: 'bar', orientation: 'h', x: s.map((x) => x.corr), y: s.map((x) => x.symbol.replace(/^\^/, '')), marker: { color: s.map((x) => x.corr > (C.threshold || .8) ? css('--s2') : css('--s1')) }, hovertemplate: '%{y} ρ=%{x:.2f}<extra></extra>' }], { margin: { l: 70, r: 10, t: 6, b: 36 }, xaxis: { range: [-0.2, 1], gridcolor: css('--border') }, yaxis: { tickfont: { size: 10 } } });
+    const m = C.basket_matrix || {};
+    if (m.symbols && m.symbols.length) {
+      plot('ch-corr', [{ type: 'heatmap', z: m.matrix, x: m.symbols, y: m.symbols, zmin: -1, zmax: 1, colorscale: [[0, css('--s8')], [0.5, css('--surface-2')], [1, css('--s1')]], hovertemplate: '%{y} / %{x} ρ=%{z:.2f}<extra></extra>', showscale: false }], { margin: { l: 60, r: 10, t: 6, b: 60 }, xaxis: { tickangle: -45, tickfont: { size: 10 } }, yaxis: { tickfont: { size: 10 }, autorange: 'reversed' } });
+      $('pairs-hint').textContent = `${m.n_days || ''} j · corrélation moyenne de paire ${num(C.basket_avg_pair_corr)}`;
+      const p = C.pairs_above_threshold || [];
+      $('pairs-list').innerHTML = `<b>${p.length} paire${p.length > 1 ? 's' : ''} &gt; ${C.threshold}</b>${p.length ? ' : ' + p.map((x) => `${x.a}/${x.b} ${x.corr.toFixed(2)}`).join(', ') : ''}`;
+    } else { $('ch-corr').innerHTML = '<div class="note">matrice indisponible</div>'; }
+  }
+  // signals with live thresholds
+  function sigDefaults() { const th = R().thresholds || {}; return { mom: { ...th.momentum_us }, mr: { ...th.mean_reversion_eu } }; }
+  function renderSigControls() {
+    if (!state.thresholds) state.thresholds = sigDefaults(); const T = state.thresholds;
+    const sl = (id, label, v, min, max, step) => `<label class="slider" for="${id}"><span>${label}</span><span class="mono" id="${id}-v">${v}</span><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${v}" style="grid-column:1/-1"></label>`;
+    $('sig-ctl-mom').innerHTML = `<h3>Momentum US</h3><div class="note" style="margin:4px 0 8px">${esc((R().thresholds || {}).momentum_us.description || '')}</div>` + sl('th-ex', 'perf 3M − SPX 3M ≥', T.mom.excess_3m_min, -0.1, 0.3, 0.01) + sl('th-idio', 'idio 1M ≥', T.mom.idio_1m_min, -0.1, 0.2, 0.01);
+    $('sig-ctl-mr').innerHTML = `<h3>Mean reversion Europe</h3><div class="note" style="margin:4px 0 8px">${esc((R().thresholds || {}).mean_reversion_eu.description || '')}</div>` + sl('th-z', 'z-score 20 j ≤', T.mr.z_entry, -3, 0, 0.1) + sl('th-rsi', 'RSI 14 ≤', T.mr.rsi_entry, 15, 50, 1);
+    const bind = (id, obj, key) => { const el = $(id); el.addEventListener('input', () => { obj[key] = Number(el.value); $(id + '-v').textContent = el.value; renderSignals(); }); };
+    bind('th-ex', T.mom, 'excess_3m_min'); bind('th-idio', T.mom, 'idio_1m_min'); bind('th-z', T.mr, 'z_entry'); bind('th-rsi', T.mr, 'rsi_entry');
+  }
+  function renderSignals() {
+    const T = state.thresholds; const S = R().signals || {}; const rows = [];
+    for (const [t, s] of Object.entries(S.momentum_us || {})) {
+      const i = s.inputs || {}; const c1 = isNum(i.last) && isNum(i.ma50) && isNum(i.ma200) && i.last > i.ma50 && i.ma50 > i.ma200; const c2 = isNum(i.r_3m) && isNum(s.spx_r_3m) && (i.r_3m - s.spx_r_3m) > T.mom.excess_3m_min; const c3 = isNum(i.idio_1m) && i.idio_1m > T.mom.idio_1m_min;
+      rows.push({ t, kind: 'Momentum US', active: c1 && c2 && c3, flag: s.earnings_soon, d2e: s.days_to_earnings, conds: [['MM50>MM200', c1], [`excès 3M ${pct(isNum(i.r_3m) && isNum(s.spx_r_3m) ? i.r_3m - s.spx_r_3m : null)}`, c2], [`idio 1M ${pct(i.idio_1m)}`, c3]] });
+    }
+    for (const [t, s] of Object.entries(S.mean_reversion_eu || {})) {
+      const i = s.inputs || {}; const buy = isNum(i.z_20d) && isNum(i.rsi_14) && i.z_20d <= T.mr.z_entry && i.rsi_14 <= T.mr.rsi_entry; const st = isNum(i.z_20d) && isNum(i.rsi_14) && i.z_20d >= T.mr.z_stretch && i.rsi_14 >= T.mr.rsi_stretch;
+      rows.push({ t: sym(t).key || t, kind: 'Mean reversion EU', active: buy || st, state: buy ? 'achat (survendu)' : (st ? 'tension' : 'neutre'), conds: [[`z 20 j ${num(i.z_20d)}`, buy], [`RSI14 ${num(i.rsi_14, 0)}`, buy || st]] });
+    }
+    table('tbl-signals', [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b>${r.flag ? '<span class="warn" title="résultats ≤ 5 j">*</span>' : ''}` },
+      { key: 'kind', label: 'Signal', left: true },
+      { key: 'active', label: 'État', left: true, render: (r) => r.active ? `<span class="tag sig">${esc(r.state || 'actif')}</span>` : `<span class="muted">${esc(r.state || 'inactif')}</span>`, sortVal: (r) => r.active ? 1 : 0 },
+      { key: 'conds', label: 'Conditions', left: true, render: (r) => `<span class="cond">${r.conds.map(([l, ok]) => `<span class="${ok ? 'ok' : 'ko'}">${ok ? '✓' : '✗'} ${esc(l)}</span>`).join(' · ')}</span>`, sortVal: () => 0 },
+      { key: 'd2e', label: 'J → résultats', render: (r) => r.d2e == null ? '' : r.d2e },
+    ], rows, { defaultSort: 'active' });
+  }
+  function renderBacktest() {
+    const bt = D.backtest; if (!bt) { $('bt-hint').textContent = 'backtest.json absent : lancer backtest_signals.py'; return; }
+    $('bt-hint').textContent = `Hebdo ${bt.rebalance}, frais ${bt.costs.fee_bps_per_side} bp + slippage ${bt.costs.slippage_bps_per_side} bp par côté, in-sample = ${Math.round(bt.in_sample_share * 100)} % de l'historique · ${(bt.generated_at || '').replace('T', ' ')}`;
+    const rows = Object.entries(bt.strategies || {}).map(([k, s]) => ({ k, s }));
+    const st = (o, f) => (o && isNum(o[f])) ? o[f] : null;
+    table('tbl-bt', [
+      { key: 'k', label: 'Stratégie', left: true, render: (r) => `<b>${esc(r.k)}</b> <span class="muted">${r.s.n_names} titres</span>${r.s.selection_bias ? ' <span class="warn" title="' + esc(r.s.selection_bias) + '">biais</span>' : ''}`, src: (r) => (r.s.universe || []).join(', ') },
+      { key: 'cagr', label: 'CAGR net', render: (r) => pct(st(r.s.net, 'cagr')), cls: (r) => sgnClass(st(r.s.net, 'cagr')), sortVal: (r) => st(r.s.net, 'cagr') },
+      { key: 'cagrg', label: 'CAGR brut', render: (r) => pct(st(r.s.gross, 'cagr')) },
+      { key: 'bench', label: 'Bench CAGR', render: (r) => pct(st(r.s.benchmark_stats, 'cagr')), src: (r) => r.s.benchmark },
+      { key: 'sh', label: 'Sharpe net', render: (r) => num(st(r.s.net, 'sharpe')) }, { key: 'dd', label: 'Max DD', render: (r) => pct(st(r.s.net, 'max_drawdown')), cls: () => 'down' },
+      { key: 'is', label: 'In-sample net / bench', render: (r) => `${pct(st(r.s.in_sample.strategy, 'cagr'))} / ${pct(st(r.s.in_sample.benchmark, 'cagr'))}`, src: (r) => `${r.s.in_sample.strategy.start} → ${r.s.in_sample.strategy.end}` },
+      { key: 'oos', label: 'Out-of-sample net / bench', render: (r) => `${pct(st(r.s.out_of_sample.strategy, 'cagr'))} / ${pct(st(r.s.out_of_sample.benchmark, 'cagr'))}`, cls: (r) => sgnClass(st(r.s.out_of_sample.strategy, 'cagr') - st(r.s.out_of_sample.benchmark, 'cagr')), src: (r) => `${r.s.out_of_sample.strategy.start} → ${r.s.out_of_sample.strategy.end}` },
+      { key: 'to', label: 'Turnover / sem.', render: (r) => pctAbs(r.s.avg_turnover_one_way, 0) }, { key: 'inv', label: 'Temps investi', render: (r) => pctAbs(r.s.time_invested, 0) },
+    ], rows);
+    const cols = SERIES(); const tr = [];
+    rows.forEach((r, i) => { const e = r.s.equity; if (!e) return; tr.push({ type: 'scatter', mode: 'lines', name: r.k + ' (net)', x: e.dates, y: e.strategy, line: { color: cols[i % 8], width: 2 } }); tr.push({ type: 'scatter', mode: 'lines', name: r.k + ' bench', x: e.dates, y: e.benchmark, line: { color: cols[i % 8], width: 1, dash: 'dot' } }); });
+    plot('ch-bt', tr, { hovermode: 'x unified', yaxis: { type: 'log', gridcolor: css('--border') } });
+    $('bt-caveats').innerHTML = (bt.caveats || []).map((c) => '• ' + esc(c)).join('<br>');
+  }
+
+  // ---------------------------------------------------------------- SOURCES
+  function renderSources() {
+    const rs = D.run_status || {};
+    $('run-kv').innerHTML = [['Run', rs.run_id], ['Statut', rs.status], ['Début', rs.started_at], ['Fin', rs.finished_at], ['Clôture attendue', rs.expected_last_close], ['Séries sans clôture', (rs.stale_symbols || []).join(', ') || 'aucune'], ['Erreurs', (rs.errors || []).map((e) => e.step + ' : ' + e.error).join(' | ') || 'aucune'], ['Python', rs.python]].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v || NA)}</dd>`).join('');
+    $('files-kv').innerHTML = FILES.map((f) => `<dt>${f}.json</dt><dd>${esc(((D[f] || {}).generated_at || (D[f] || {}).finished_at || (D[f] ? 'présent' : 'absent')))}</dd>`).join('');
+    table('tbl-steps', [{ key: 'name', label: 'Étape', left: true }, { key: 'status', label: 'Statut', left: true, render: (s) => `<span class="${s.status === 'ok' ? 'up' : 'down'}">${s.status}</span>` }, { key: 'started_at', label: 'Début', left: true }, { key: 'seconds', label: 's', render: (s) => num(s.seconds, 0) }, { key: 'error', label: 'Erreur', left: true, render: (s) => esc(s.error || '') }],
+      Object.entries(rs.steps || {}).map(([name, s]) => ({ name, ...s })));
+    const logRows = rs.symbol_log || [];
+    const draw = () => { const q = ($('log-filter').value || '').toLowerCase(); const rows = logRows.filter((l) => !q || `${l.symbol} ${l.source} ${l.status} ${l.detail}`.toLowerCase().includes(q)); table('tbl-log', [{ key: 'symbol', label: 'Symbole', left: true }, { key: 'source', label: 'Source', left: true }, { key: 'status', label: 'Statut', left: true, render: (l) => `<span class="${l.status === 'ok' ? 'up' : (l.status === 'stale' ? 'warn' : 'down')}">${l.status}</span>` }, { key: 'detail', label: 'Détail', left: true, render: (l) => esc(l.detail) }, { key: 'fetched_at', label: 'Horodatage', left: true }], rows.slice(0, 600)); };
+    $('log-filter').addEventListener('input', draw); draw();
+    const C = D.constituents || {};
+    table('tbl-cons', [{ key: 'k', label: 'Indice', left: true }, { key: 'page', label: 'Page', left: true }, { key: 'count', label: 'Tickers' }, { key: 'fetched_at', label: 'Lu le', left: true }, { key: 'reused', label: 'Note', left: true, render: (r) => r.reused ? `<span class="warn">réutilisé (${esc(r.reason || '')})</span>` : '' }, { key: 'unres', label: 'Non résolus', left: true }],
+      Object.entries(C.indices || {}).map(([k, v]) => ({ k, page: v.page, count: v.count, fetched_at: v.fetched_at, reused: v.reused_from_previous_run, reason: v.reuse_reason, unres: (C.unresolved || []).filter((u) => u.index === k).map((u) => u.raw).join(', ') })));
+  }
+  function renderReading() {
+    const lines = (R().market_reading || (D.run_status || {}).market_reading || []);
+    $('reading-list').innerHTML = lines.map((l) => `<li>${esc(l)}</li>`).join('') || '<li class="muted">lecture indisponible</li>';
+    $('reading-stamp').textContent = 'générée par update_monitor.py · ' + ((R().generated_at || '').replace('T', ' ').replace('Z', ' UTC'));
+    $('reading').hidden = false;
+  }
+
+  // ---------------------------------------------------------------- tabs
+  const TABS = ['monitor', 'fonda', 'events', 'risk', 'sources'];
+  function showTab(name) {
+    if (!TABS.includes(name)) name = 'monitor';
+    TABS.forEach((t) => { $('tab-' + t).hidden = t !== name; });
+    document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === name));
+    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    requestAnimationFrame(() => { renderAllCharts(); });
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+
+  // ---------------------------------------------------------------- boot
+  async function load() {
+    if (window.EQUITY_MONITOR_DATA) { Object.assign(D, window.EQUITY_MONITOR_DATA); return; }
+    await Promise.all(FILES.map(async (f) => { try { const r = await fetch(`Sources du dashboard/${f}.json`, { cache: 'no-store' }); D[f] = r.ok ? await r.json() : null; } catch (e) { D[f] = null; } }));
+  }
+  function init() {
+    if (!D.universe || !D.quotes || !D.risk || !D.events || !D.prices) { $('loading').textContent = 'Fichiers manquants dans « Sources du dashboard » (lancer update_monitor.py).'; return; }
+    $('loading').hidden = true;
+    renderStatus();
+    const groups = Object.keys(U().groups).filter((g) => (U().groups[g] || []).some((t) => Q().stocks[t]));
+    const items = [{ value: 'all', label: 'tous' }, ...groups.map((g) => ({ value: g, label: g }))];
+    chips('grp-chips', items, state.group, () => { renderStocks(); });
+    chips('grp-chips-f', items, state.groupF, () => { renderFonda(); });
+    const safe = (fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } };
+    [renderStocks, renderIndices, renderHeat, volChipsInit, etfPickInit, renderFonda, render13f, renderCalendar, renderReact, renderReactDetail].forEach(safe);
+    chips('bench-chips', ['SPX', 'NDX', 'SOX'].map((b) => ({ value: b, label: b })), state.bench, renderBeta);
+    [renderBeta, renderVol, renderBreadth, renderSigControls, renderSignals, renderBacktest, renderSources, renderReading].forEach(safe);
+    $('base-period').addEventListener('change', chartBase100); $('base-ccy').addEventListener('change', chartBase100); $('contrib-h').addEventListener('change', chartContrib);
+    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat);
+    showTab(location.hash.slice(1) || 'monitor');
+  }
+  load().then(init).catch((e) => { console.error(e); $('loading').textContent = 'Erreur de chargement : ' + e.message; });
+})();
+</script>
