@@ -123,8 +123,8 @@ def main():
               "rebalance": bt["rebalance"], "in_sample_share": bt["in_sample_share"], "thresholds": cfg["signals"], "strategies": {}}
 
     # ---------------- momentum US
-    mag = cfg["stock_groups"]["Mag7+AMD"]
-    sa = universe["groups"].get("13F Situational Awareness", [])
+    mag = cfg["stock_groups"]["Mag7"] + cfg["stock_groups"].get("AMD", [])
+    sa = universe.get("baskets", {}).get("Leopold", [])
     for label, names in (("momentum_us_mag7_amd", mag), ("momentum_us_with_13f_basket", list(dict.fromkeys(mag + sa)))):
         cols = {t: series_from_prices(prices, t) for t in names}
         cols = {t: s for t, s in cols.items() if s is not None and len(s) > 300}
@@ -226,7 +226,7 @@ def main():
         }
 
     universes = {
-        "mag7_amd": ([t for t in cfg["stock_groups"]["Mag7+AMD"]], universe["index_keys"]["SPX"], "SPX", lambda t: series_from_prices(prices, t)),
+        "mag7_amd": (cfg["stock_groups"]["Mag7"] + cfg["stock_groups"].get("AMD", []), universe["index_keys"]["SPX"], "SPX", lambda t: series_from_prices(prices, t)),
         "indices": ([v for v in universe["index_keys"].values()], None, "EW indices (USD, buy & hold)",
                     lambda t: to_usd(series_from_prices(prices, t), next((cfg["indices"][k]["currency"] for k, v in universe["index_keys"].items() if v == t), "USD"), fx) if series_from_prices(prices, t) is not None else None),
     }
@@ -241,7 +241,7 @@ def main():
         if not bench_t:
             bench_w = (px_w / px_w.iloc[0]).mean(axis=1)
         base = {"universe": list(px_d.columns), "n_names": int(px_d.shape[1]), "benchmark": bench_label,
-                "selection_bias": "Mag7 + AMD sont les gagnants connus aujourd'hui : toute regle long only sur cet univers est flattee (biais de selection)." if uname == "mag7_amd" else None}
+                "selection_bias": "Mag7 et AMD sont les gagnants connus aujourd'hui : toute regle long only sur cet univers est flattee (biais de selection)." if uname == "mag7_amd" else None}
         for fast, slow in ((50, 200), (20, 50)):
             above = px_d.rolling(fast).mean() > px_d.rolling(slow).mean()
             sel = above.reindex(px_w.index, method="ffill").fillna(False)
@@ -255,7 +255,7 @@ def main():
             top = mom.rank(axis=1, ascending=False) <= 3
             sel = top.reindex(px_w.index, method="ffill").fillna(False)
             w = sel.astype(float).div(sel.sum(axis=1).replace(0, np.nan), axis=0).fillna(0.0)
-            record(f"momentum_12_1_top3_{uname}", w, px_w, bench_w, {**base, "rule": "top 3 du momentum 12-1 mois parmi Mag7+AMD, équipondéré, hebdo"})
+            record(f"momentum_12_1_top3_{uname}", w, px_w, bench_w, {**base, "rule": "top 3 du momentum 12-1 mois parmi Mag7 et AMD, équipondéré, hebdo"})
         else:
             pos = (px_d / px_d.shift(252) - 1) > 0
             sel = pos.reindex(px_w.index, method="ffill").fillna(False)

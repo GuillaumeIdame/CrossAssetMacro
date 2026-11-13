@@ -37,6 +37,11 @@
       "ticker": "^FTSE",
       "name": "FTSE 100",
       "currency": "GBP"
+    },
+    "RTY": {
+      "ticker": "^RUT",
+      "name": "Russell 2000",
+      "currency": "USD"
     }
   },
   "fx": {
@@ -68,14 +73,16 @@
     }
   },
   "stock_groups": {
-    "Mag7+AMD": [
+    "Mag7": [
       "AAPL",
       "MSFT",
       "NVDA",
       "AMZN",
       "GOOGL",
       "META",
-      "TSLA",
+      "TSLA"
+    ],
+    "AMD": [
       "AMD"
     ]
   },
@@ -416,5 +423,238 @@
         "signal": "Mise en garde : la rotation sectorielle calée sur le cycle économique officiel ne bat pas le marché après coûts ; d'où des règles de prix, pas de macro"
       }
     ]
-  }
+  },
+  "baskets": {
+    "Mag7": {
+      "label": "Mag7",
+      "members": [
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "AMZN",
+        "GOOGL",
+        "META",
+        "TSLA"
+      ],
+      "benchmark": "NDX",
+      "theme": "méga-capitalisations US"
+    },
+    "Hyperscalers": {
+      "label": "Hyperscalers",
+      "members": [
+        "MSFT",
+        "AMZN",
+        "GOOGL",
+        "META",
+        "ORCL"
+      ],
+      "benchmark": "NDX",
+      "theme": "capex IA : cloud et data centers"
+    },
+    "Neo-clouds": {
+      "label": "Neo-clouds",
+      "members": [
+        "CRWV",
+        "NBIS",
+        "IREN",
+        "APLD",
+        "CORZ",
+        "WULF",
+        "CIFR",
+        "HUT",
+        "GLXY"
+      ],
+      "benchmark": "NDX",
+      "theme": "loueurs de GPU et anciens mineurs convertis"
+    },
+    "Mémoire": {
+      "label": "Mémoire",
+      "members": [
+        "MU",
+        "SNDK",
+        "WDC",
+        "STX"
+      ],
+      "benchmark": "SOX",
+      "theme": "DRAM / HBM / NAND / disques"
+    },
+    "Photonique": {
+      "label": "Photonique",
+      "members": [
+        "LITE",
+        "COHR",
+        "CIEN",
+        "AAOI",
+        "FN",
+        "CRDO",
+        "POET",
+        "LWLG"
+      ],
+      "benchmark": "SOX",
+      "theme": "optique et interconnexion data center"
+    },
+    "Leopold": {
+      "label": "Leopold (13F Situational Awareness)",
+      "source": "sa_13f",
+      "benchmark": "SOX",
+      "theme": "panier 13F, jamais code en dur"
+    }
+  },
+  "relative": {
+    "benchmarks": [
+      "SPX",
+      "NDX",
+      "SOX",
+      "RTY",
+      "SX5E"
+    ],
+    "horizons": {
+      "1M": 21,
+      "3M": 63,
+      "6M": 126,
+      "YTD": null
+    },
+    "pairs": [
+      [
+        "NDX",
+        "SPX"
+      ],
+      [
+        "RTY",
+        "SPX"
+      ],
+      [
+        "SOX",
+        "NDX"
+      ],
+      [
+        "SX5E",
+        "SPX"
+      ],
+      [
+        "DAX",
+        "SX5E"
+      ],
+      [
+        "CAC",
+        "SX5E"
+      ],
+      [
+        "FTSE",
+        "SX5E"
+      ],
+      [
+        "basket:Neo-clouds",
+        "NDX"
+      ],
+      [
+        "basket:Mémoire",
+        "SOX"
+      ],
+      [
+        "basket:Photonique",
+        "SOX"
+      ],
+      [
+        "basket:Hyperscalers",
+        "basket:Mag7"
+      ],
+      [
+        "basket:Leopold",
+        "SOX"
+      ],
+      [
+        "basket:Mag7",
+        "SPX"
+      ]
+    ]
+  },
+  "asia": {
+    "indices": {
+      "N225": {
+        "ticker": "^N225",
+        "name": "Nikkei 225"
+      },
+      "KOSPI": {
+        "ticker": "^KS11",
+        "name": "KOSPI"
+      },
+      "TWII": {
+        "ticker": "^TWII",
+        "name": "TAIEX"
+      },
+      "HSI": {
+        "ticker": "^HSI",
+        "name": "Hang Seng"
+      }
+    },
+    "baskets": {
+      "Asie IA": {
+        "members": {
+          "2330.TW": "TSMC",
+          "000660.KS": "SK Hynix",
+          "005930.KS": "Samsung Electronics",
+          "6857.T": "Advantest",
+          "8035.T": "Tokyo Electron",
+          "9984.T": "SoftBank Group",
+          "6146.T": "Disco",
+          "6920.T": "Lasertec"
+        }
+      },
+      "Asie mémoire": {
+        "members": {
+          "000660.KS": "SK Hynix",
+          "005930.KS": "Samsung Electronics",
+          "2408.TW": "Nanya Technology"
+        }
+      },
+      "Asie serveurs IA": {
+        "members": {
+          "6669.TW": "Wiwynn",
+          "2382.TW": "Quanta",
+          "2317.TW": "Hon Hai",
+          "2454.TW": "MediaTek"
+        }
+      },
+      "Asie photonique": {
+        "members": {
+          "5803.T": "Fujikura",
+          "5802.T": "Sumitomo Electric",
+          "5801.T": "Furukawa Electric",
+          "6920.T": "Lasertec"
+        }
+      }
+    },
+    "us_targets": {
+      "SPX": "^GSPC",
+      "NDX": "^NDX",
+      "SOX": "^SOX",
+      "RTY": "^RUT"
+    },
+    "us_basket_targets": [
+      "Mag7",
+      "Hyperscalers",
+      "Neo-clouds",
+      "Mémoire",
+      "Photonique",
+      "Leopold"
+    ],
+    "close_utc": {
+      ".T": "06:00",
+      ".TW": "05:30",
+      ".KS": "06:30",
+      "^N225": "06:00",
+      "^TWII": "05:30",
+      "^KS11": "06:30",
+      "^HSI": "08:10"
+    },
+    "signal_threshold": 0.005,
+    "lookback_days": 250,
+    "cost_bps_per_side": 2
+  },
+  "constituents_stats": {
+    "russell_csv": "inputs/IWM_holdings.csv",
+    "note": "Composition du Russell 2000 : deposer le CSV des positions d'IWM (iShares, bouton Download holdings) dans Sources du dashboard/inputs/. Pas de source API gratuite ; le site iShares impose une page de consentement, donc pas de telechargement automatique."
+  },
+  "earnings_calendar_days": 90
 }

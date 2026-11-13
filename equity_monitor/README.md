@@ -69,6 +69,9 @@ sont souvent encore à J−2, le dashboard le montre tel quel.
 | `sa_13f.json` | positions longues en actions, poids, changements vs trimestre précédent, mapping OpenFIGI, appels SEC |
 | `risk.json` | betas (SPX/NDX/SOX, 1 an, 3 mois, hebdo, downside, R², vol idio), vol implicite vs réalisée, corrélations 60 j, signaux, lecture du marché |
 | `sectors.json` | rotation sectorielle US (11 SPDR vs S&P 500, RSP) et Europe (18 iShares STOXX Europe 600 sectoriels vs ^STOXX) : perf absolue et relative, momentum 12-1 et rang, RRG simplifié avec traces, paires cycliques/défensives, score d'entrée sur 6 conditions avec références |
+| `baskets.json` | paniers thématiques US (Mag7, hyperscalers, neo-clouds, mémoire, photonique, Leopold 13F) : indice équipondéré, perf, relatif au benchmark, z du ratio, betas, largeur, membres ; matrice « qui bat qui » et paires relatives |
+| `asia.json` | séance asiatique → séance US : corrélations et betas sur gap / intraday / close-close, beta partiel, taux de signes, moyennes conditionnelles, règle ouverture→clôture, corrélations glissantes |
+| `constituents_stats.json` | statistiques par titre des constituants SPX / NDX (et RTY si `inputs/IWM_holdings.csv` est présent), agrégats sectoriels |
 | `backtest.json` | momentum US (avec / sans panier 13F), mean reversion Europe, et rotation sectorielle (top 3 momentum 12-1 mensuel, avec / sans filtre Faber, US et Europe), in/out-of-sample, frais et slippage |
 | `run_status.json` | étapes, erreurs, journal par symbole, séries sans clôture, lecture du marché |
 | `data.js` | les dix fichiers ci-dessus dans `window.EQUITY_MONITOR_DATA` |
@@ -96,6 +99,10 @@ sont souvent encore à J−2, le dashboard le montre tel quel.
 - Backtest : hebdomadaire, long only, frais 5 bp + slippage 5 bp par côté sur le turnover,
   in-sample = 60 % de l'historique. Le panier 13F est connu après coup : son résultat est
   présenté séparément et marqué comme biaisé.
+
+## Russell 2000
+
+Déposer l'export iShares des positions d'IWM (`IWM_holdings.csv`) dans `Sources du dashboard/inputs/` ; le run suivant télécharge les prix des 2000 titres (compter 5 minutes de plus) et remplit l'onglet Compositions.
 
 ## Non fait (idées)
 

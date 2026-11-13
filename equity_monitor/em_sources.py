@@ -37,6 +37,65 @@ def _closes_from_download(raw: pd.DataFrame, tickers):
     return closes
 
 
+def download_ohlc(tickers, period, logger, keep_today_for=None, batch_size=50):
+    """Open and Close frames for intraday / gap analysis. `keep_today_for(ticker) -> bool` keeps today's bar
+    (an Asian exchange already closed at run time); everything else drops the partial bar of the day."""
+    tickers = list(dict.fromkeys(t for t in tickers if t))
+    opens, closes = [], []
+    today = pd.Timestamp(date.today())
+    for i in range(0, len(tickers), batch_size):
+        batch = tickers[i:i + batch_size]
+        try:
+            raw = retry(lambda: yf.download(batch, period=period, interval="1d", auto_adjust=True, progress=False, threads=True, group_by="column"),
+                        attempts=3, base_delay=3.0, logger=logger, what=f"ohlc batch {i // batch_size + 1}")
+        except Exception as exc:  # noqa: BLE001
+            logger.error("ohlc batch failed: %s", exc)
+            continue
+        if raw is None or raw.empty:
+            continue
+        for field, store in (("Open", opens), ("Close", closes)):
+            if isinstance(raw.columns, pd.MultiIndex):
+                fr = raw[field] if field in raw.columns.get_level_values(0) else pd.DataFrame()
+            else:
+                fr = raw[[field]].rename(columns={field: batch[0]}) if field in raw.columns else pd.DataFrame()
+            fr = fr.copy()
+            fr.index = pd.DatetimeIndex(fr.index).tz_localize(None).normalize()
+            for t in list(fr.columns):
+                if not (keep_today_for and keep_today_for(t)):
+                    fr.loc[fr.index >= today, t] = np.nan
+            store.append(fr)
+        time.sleep(0.4)
+    o = pd.concat(opens, axis=1).sort_index() if opens else pd.DataFrame()
+    c = pd.concat(closes, axis=1).sort_index() if closes else pd.DataFrame()
+    return o, c
+
+
+def load_iwm_holdings_csv(path):
+    """iShares holdings export: a few header lines, then Ticker,Name,Sector,Asset Class,...,Weight (%). Equities only."""
+    import csv
+    rows, header = [], None
+    with open(path, "r", encoding="utf-8-sig", errors="replace") as fh:
+        for line in csv.reader(fh):
+            if header is None:
+                if line and line[0].strip() == "Ticker":
+                    header = [h.strip() for h in line]
+                continue
+            if not line or len(line) < len(header) - 2:
+                continue
+            rec = dict(zip(header, line))
+            if rec.get("Asset Class", "Equity") != "Equity":
+                continue
+            tk = rec.get("Ticker", "").strip().replace(".", "-").replace("/", "-")
+            if not tk or tk == "-":
+                continue
+            try:
+                w = float(rec.get("Weight (%)", "0").replace(",", ""))
+            except ValueError:
+                w = None
+            rows.append({"raw": rec.get("Ticker"), "yahoo": tk, "name": rec.get("Name"), "sector": rec.get("Sector"), "weight_pct": w})
+    return rows
+
+
 def download_closes(tickers, period, logger, symlog, source_tag="yfinance.download", batch_size=60, interval="1d"):
     """yf.download in batches, retry on error, then a second pass symbol by symbol for the misses.
 

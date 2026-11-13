@@ -86,6 +86,14 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
 .heat { display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
 .heat .cell { border-radius: 6px; padding: 8px 6px; text-align: center; min-height: 54px; display: flex; flex-direction: column; justify-content: center; }
 .heat .cell b { font-size: 12px; font-weight: 600; } .heat .cell span { font: 12px var(--font-mono); }
+.ecal { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 6px; overflow-x: auto; }
+.ecal .day { background: var(--surface-2); border-radius: 8px; padding: 6px 8px; min-height: 64px; font-size: 11.5px; }
+.ecal .day.today { outline: 2px solid var(--accent); }
+.ecal .day.past { opacity: .55; }
+.ecal .d { color: var(--muted); font-size: 11px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.ecal .e { display: flex; gap: 4px; align-items: baseline; flex-wrap: wrap; }
+.ecal .e b { font-size: 12px; } .ecal .e .mono { font-size: 10.5px; }
+@media (max-width: 640px) { .ecal { grid-template-columns: repeat(5, minmax(96px, 1fr)); } }
 .heat .group-label { grid-column: 1 / -1; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
 .chart { width: 100%; height: 320px; }
 .chart.tall { height: 440px; }
@@ -118,6 +126,9 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     <button class="tab" role="tab" data-tab="events">Events</button>
     <button class="tab" role="tab" data-tab="risk">Beta &amp; risque</button>
     <button class="tab" role="tab" data-tab="sectors">Secteurs</button>
+    <button class="tab" role="tab" data-tab="baskets">Paniers &amp; relatif</button>
+    <button class="tab" role="tab" data-tab="asia">Asie → US</button>
+    <button class="tab" role="tab" data-tab="compo">Compositions</button>
     <button class="tab" role="tab" data-tab="sources">Sources &amp; run</button>
   </nav>
 </header>
@@ -160,10 +171,15 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       <div class="card-head"><h2>Valorisation, croissance, qualité, sentiment, 13F</h2><div class="controls"><div class="chips" id="grp-chips-f"></div><span class="hint">Source : yfinance (info, earnings_estimate, eps_trend, eps_revisions), poids = sa_13f.json</span></div></div>
       <div class="tscroll" id="tbl-fonda"></div>
     </div>
-    <div class="card"><div class="card-head"><h2>Panier 13F Situational Awareness</h2><span class="hint" id="f13-hint"></span></div><div class="tscroll" id="tbl-13f"></div></div>
+    <div class="card"><div class="card-head"><h2>Panier Leopold — 13F Situational Awareness LP</h2><span class="hint" id="f13-hint"></span></div><div class="tscroll" id="tbl-13f"></div></div>
   </section>
 
   <section class="panel" id="tab-events" hidden>
+    <div class="card"><div class="card-head"><h2>Calendrier des résultats — 8 semaines</h2><span class="hint" id="ecal-hint">Tous les titres suivis. AMC = après clôture, BMO = avant ouverture, ? = date estimée par Yahoo. Chiffre = move implicite.</span></div><div class="ecal" id="ecal"></div></div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Résultats des 14 derniers jours — réaction</h2></div><div class="tscroll" id="tbl-recent-earn"></div></div>
+      <div class="card"><div class="card-head"><h2>À venir (liste, 90 jours)</h2></div><div class="tscroll" id="tbl-ecal-list"></div></div>
+    </div>
     <div class="card"><div class="card-head"><h2>Calendrier 30 jours</h2><span class="hint">Move implicite = straddle ATM / spot sur la 1re échéance après publication ; historique = |réaction| moyenne 12 trimestres ; ratio &gt; 1 = l'option paie cher l'événement.</span></div><div class="tscroll" id="tbl-cal"></div></div>
     <div class="card"><div class="card-head"><h2>Réaction aux earnings — synthèse 12 trimestres</h2><span class="hint">Réaction = clôture avant → clôture après (AMC : J→J+1, BMO : J−1→J). Anormale = réaction − β(1 an avant) × SPX.</span></div><div class="tscroll" id="tbl-react"></div></div>
     <div class="grid">
@@ -209,6 +225,36 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     </div>
   </section>
 
+  <section class="panel" id="tab-baskets" hidden>
+    <div class="card"><div class="card-head"><h2>Paniers thématiques US</h2><span class="hint" id="bk-hint"></span></div><div class="tiles" id="bk-tiles"></div></div>
+    <div class="card"><div class="card-head"><h2>Paniers — performance, relatif au benchmark, risque</h2><span class="hint">Indice équipondéré rebalancé chaque jour. Rel. = panier − benchmark. z 1a = écart du log-ratio panier/benchmark vs ses 252 dernières séances.</span></div><div class="tscroll" id="tbl-baskets"></div></div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Paniers base 100</h2><select id="bk-period"><option value="63">3M</option><option value="126">6M</option><option value="252" selected>1A</option><option value="756">3A</option></select></div><div class="chart tall" id="ch-baskets"></div></div>
+      <div class="card"><div class="card-head"><h2>Membres du panier</h2><select id="bk-pick"></select></div><div class="tscroll" id="tbl-bk-members"></div></div>
+    </div>
+    <div class="card"><div class="card-head"><h2>Qui bat qui — excès de performance (ligne − colonne), en USD</h2><div class="controls"><div class="chips" id="rel-h"></div><span class="hint" id="rel-note"></span></div></div><div class="tscroll" id="tbl-rel"></div></div>
+    <div class="card"><div class="card-head"><h2>Paires relatives — ratio base 100, 1 an</h2><span class="hint">Trait plein = ratio ; infobulle : perf relative 1M / 3M, ratio vs sa MM50.</span></div><div class="chart tall" id="ch-pairs"></div><div class="tscroll" id="tbl-pairs"></div></div>
+  </section>
+
+  <section class="panel" id="tab-asia" hidden>
+    <div class="card"><div class="card-head"><h2>Séance asiatique du jour</h2><span class="hint" id="asia-hint"></span></div><div class="tiles" id="asia-tiles"></div></div>
+    <div class="card"><div class="card-head"><h2>L'Asie mène-t-elle la séance US ?</h2><div class="controls"><span class="hint">Série asiatique :</span><div class="chips" id="asia-pick"></div></div></div>
+      <div class="note" id="asia-method" style="margin-bottom:10px"></div><div class="tscroll" id="tbl-asia"></div></div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Corrélation glissante 60 j avec la séance US</h2><select id="asia-target"></select></div><div class="chart" id="ch-asia-roll"></div></div>
+      <div class="card"><div class="card-head"><h2>Règle : long ouverture → clôture US quand l'Asie monte</h2><span class="hint" id="asia-rule-hint"></span></div><div class="chart" id="ch-asia-rule"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Paniers asiatiques, base 100, 1 an</h2></div><div class="chart" id="ch-asia-hist"></div></div>
+      <div class="card"><div class="card-head"><h2>Membres asiatiques</h2></div><div class="tscroll" id="tbl-asia-members"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-compo" hidden>
+    <div class="card"><div class="card-head"><h2>Compositions SPX / NDX / RTY — statistiques par titre</h2><div class="controls"><div class="chips" id="compo-idx"></div><select id="compo-sector"><option value="all">tous secteurs</option></select><input type="text" id="compo-q" placeholder="ticker ou nom"></div><span class="hint" id="compo-hint"></span></div><div class="tscroll" id="tbl-compo"></div></div>
+    <div class="card"><div class="card-head"><h2>Secteurs de l'indice (équipondéré)</h2></div><div class="tscroll" id="tbl-compo-sec"></div></div>
+  </section>
+
   <section class="panel" id="tab-sources" hidden>
     <div class="grid">
       <div class="card"><div class="card-head"><h2>Dernier run</h2></div><dl class="kv" id="run-kv"></dl></div>
@@ -231,7 +277,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
 <script>
 (function () {
   'use strict';
-  const FILES = ['universe', 'prices', 'quotes', 'events', 'breadth', 'constituents', 'sa_13f', 'risk', 'sectors', 'run_status', 'backtest'];
+  const FILES = ['universe', 'prices', 'quotes', 'events', 'breadth', 'constituents', 'sa_13f', 'risk', 'sectors', 'baskets', 'asia', 'constituents_stats', 'run_status', 'backtest'];
   const D = {};
   const $ = (id) => document.getElementById(id);
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -332,7 +378,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   function renderAllCharts() { charts.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } }); }
 
   // ---------------------------------------------------------------- state
-  const state = { group: new Set(['all']), groupF: new Set(['all']), heat: 'r_1d', volPick: new Set(), bench: new Set(['SPX']), thresholds: null, region: new Set(['US']), secHeat: 'r_1d', secRs: new Set(), secTh: null };
+  const state = { group: new Set(['all']), groupF: new Set(['all']), heat: 'r_1d', volPick: new Set(), bench: new Set(['SPX']), thresholds: null, region: new Set(['US']), secHeat: 'r_1d', secRs: new Set(), secTh: null, basket: null, relH: '1M', asiaPick: 'Asie IA', compoIdx: new Set(['SPX']), compoSector: 'all', compoQ: '' };
 
   // ---------------------------------------------------------------- header
   function renderStatus() {
@@ -359,7 +405,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   function renderStocks() {
     const rows = stockRows(state.group);
     const cols = [
-      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.group)}</span>`, src: (r) => r.name },
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.group)}</span>${(r.r.baskets || []).filter((b) => b !== r.group).map((b) => ` <span class="tag" style="font-size:10px;padding:0 5px">${esc(b)}</span>`).join('')}`, src: (r) => r.name + ' · paniers : ' + ((r.r.baskets || []).join(', ') || '—') },
       { key: 'last', label: 'Prix', render: (r) => `${px(r.last)} <span class="${r.m.stale ? 'stale' : 'muted'}" title="${r.m.stale ? 'clôture absente pour la date attendue' : ''}">${esc((r.m.last_date || '').slice(5))}</span>`, src: (r) => src('yfinance.download · dernière clôture ' + (r.m.last_date || NA), (P().symbols[r.t] || {}).fetched_at) },
       retCol('r_1d', '1D'), retCol('r_5d', '5D'), retCol('r_1m', '1M'), retCol('r_3m', '3M'), retCol('r_ytd', 'YTD'),
       { key: 'vol_3m', label: 'Vol 3M', render: (r) => pctAbs(r.vol_3m, 0), src: (r) => 'écart-type des rendements log 63 j × √252' },
@@ -436,7 +482,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     plot('ch-base100', traces, { hovermode: 'x unified', legend: { orientation: 'h', y: -0.15 } });
   }
   function volChipsInit() {
-    const cands = [...U().groups['Mag7+AMD'], ...U().groups.Indices.slice(0, 2), 'SMGB.L', ...(U().groups['13F Situational Awareness'] || []).slice(0, 4)].filter(series);
+    const cands = [...(U().groups.Mag7 || []), ...(U().groups.AMD || []), ...U().groups.Indices.slice(0, 2), 'SMGB.L', ...((U().baskets || {}).Leopold || []).slice(0, 4)].filter(series);
     if (!state.volPick.size) ['NVDA', 'AAPL', '^GSPC', 'SMGB.L', 'MU'].forEach((t) => { if (series(t)) state.volPick.add(t); });
     chips('vol-chips', cands.map((t) => ({ value: t, label: t.replace(/^\^/, '') })), state.volPick, chartRollVol, true);
   }
@@ -874,6 +920,165 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     renderSecSigCtl(); renderSectors();
   }
 
+  // ---------------------------------------------------------------- EARNINGS CALENDAR
+  function renderEarningsCalendar() {
+    const ev = E(); const list = ev.earnings_calendar || []; const today = new Date(ev.today + 'T00:00:00Z');
+    const byDate = {}; list.forEach((e) => { (byDate[e.date] = byDate[e.date] || []).push(e); });
+    (ev.recent_earnings || []).forEach((e) => { (byDate[e.date] = byDate[e.date] || []).push({ ...e, past: true }); });
+    // 8 weeks Monday-Friday starting the Monday of the current week minus one week
+    const start = new Date(today); start.setUTCDate(start.getUTCDate() - ((start.getUTCDay() + 6) % 7) - 7);
+    let html = '';
+    for (let w = 0; w < 9; w++) for (let d = 0; d < 5; d++) {
+      const dt = new Date(start); dt.setUTCDate(start.getUTCDate() + w * 7 + d); const iso = dt.toISOString().slice(0, 10); const items = byDate[iso] || [];
+      const isToday = iso === ev.today, past = dt < today;
+      html += `<div class="day ${isToday ? 'today' : ''} ${past ? 'past' : ''}"><div class="d"><span>${['lun', 'mar', 'mer', 'jeu', 'ven'][d]} ${iso.slice(8)}/${iso.slice(5, 7)}</span><span>${items.length ? items.length : ''}</span></div>` +
+        items.map((e) => `<div class="e" title="${esc((e.group || '') + (e.baskets && e.baskets.length ? ' · ' + e.baskets.join(', ') : '') + (e.past ? ` · réaction ${pct(e.reaction)} (anormale ${pct(e.abnormal)}, surprise ${isNum(e.surprise_pct) ? e.surprise_pct.toFixed(1) + '%' : 'n/a'})` : ` · consensus ${isNum(e.eps_consensus) ? e.eps_consensus.toFixed(2) : 'n/a'} · move impl. ${pctAbs(e.implied_move)} vs hist ${pctAbs(e.hist_avg_abs_move)}`))}"><b>${esc(e.ticker)}</b><span class="muted">${esc(e.timing || '')}${e.confirmed === false ? '?' : ''}</span>${e.past ? `<span class="mono ${sgnClass(e.reaction)}">${pct(e.reaction)}</span>` : (isNum(e.implied_move) ? `<span class="mono">${pctAbs(e.implied_move, 0)}</span>` : '')}</div>`).join('') + '</div>';
+    }
+    $('ecal').innerHTML = html;
+    table('tbl-recent-earn', [
+      { key: 'ticker', label: 'Titre', left: true, render: (e) => `<b>${esc(e.ticker)}</b> <span class="muted">${esc(e.group)}</span>` }, { key: 'date', label: 'Date', left: true, render: (e) => `${e.date} <span class="muted">${e.timing}</span>` },
+      { key: 'surprise_pct', label: 'Surprise', render: (e) => isNum(e.surprise_pct) ? e.surprise_pct.toFixed(1) + '%' : NA, cls: (e) => sgnClass(e.surprise_pct) },
+      { key: 'reaction', label: 'Réaction', render: (e) => pct(e.reaction), cls: (e) => sgnClass(e.reaction) }, { key: 'abnormal', label: 'Anormale', render: (e) => pct(e.abnormal), cls: (e) => sgnClass(e.abnormal) },
+      { key: 'pead_5d', label: 'PEAD 5 j', render: (e) => pct(e.pead_5d), cls: (e) => sgnClass(e.pead_5d) },
+    ], ev.recent_earnings || [], { defaultSort: 'date' });
+    table('tbl-ecal-list', [
+      { key: 'date', label: 'Date', left: true, render: (e) => `<b>${e.date}</b> <span class="muted">J+${e.days_to}${e.confirmed === false ? ' ?' : ''}</span>` }, { key: 'ticker', label: 'Titre', left: true, render: (e) => `<b>${esc(e.ticker)}</b> <span class="muted">${esc(e.group)}</span>` },
+      { key: 'timing', label: 'Horaire', left: true }, { key: 'eps_consensus', label: 'EPS cons.', render: (e) => isNum(e.eps_consensus) ? e.eps_consensus.toFixed(2) : NA },
+      { key: 'implied_move', label: 'Move impl.', render: (e) => pctAbs(e.implied_move) }, { key: 'hist_avg_abs_move', label: 'Hist.', render: (e) => pctAbs(e.hist_avg_abs_move) }, { key: 'ratio', label: '×', render: (e) => isNum(e.ratio) ? e.ratio.toFixed(2) : NA, cls: (e) => isNum(e.ratio) ? (e.ratio > 1 ? 'down' : 'up') : '' },
+    ], list, { defaultSort: 'date', defaultDir: 1 });
+  }
+
+  // ---------------------------------------------------------------- PANIERS & RELATIF
+  const BK = () => D.baskets || { baskets: {}, order: [] };
+  function renderBaskets() {
+    const bk = BK(); const order = (bk.order || []).filter((n) => bk.baskets[n] && !bk.baskets[n].missing);
+    if (!order.length) { $('bk-hint').textContent = 'baskets.json absent : relancer update_monitor.py'; return; }
+    $('bk-hint').textContent = `${order.length} paniers · ${(bk.generated_at || '').replace('T', ' ')} · membres configurables dans monitor_config.json (Leopold = 13F)`;
+    $('bk-tiles').innerHTML = order.map((n) => { const b = bk.baskets[n]; const m = b.market || {}, rel = b.relative || {}; return `<div class="tile" title="${esc((b.theme || '') + ' · membres : ' + b.members.join(', '))}"><div class="k">${esc(b.label.split(' (')[0])} <span class="muted">${b.n_with_data}/${b.members.length}</span></div><div class="v ${sgnClass(m.r_1d)}">${pct(m.r_1d)}</div><div class="s">1M ${pct(m.r_1m)} · vs ${b.benchmark} <span class="${sgnClass(rel['1M'])}">${pct(rel['1M'])}</span><br>z 1a <span class="${isNum(rel.ratio_z_1y) && Math.abs(rel.ratio_z_1y) > 2 ? 'warn' : ''}">${num(rel.ratio_z_1y, 1)}</span> · ${isNum(b.breadth.pct_above_ma50) ? b.breadth.pct_above_ma50.toFixed(0) : NA}% > MM50</div></div>`; }).join('');
+    const rows = order.map((n) => ({ n, b: bk.baskets[n], m: bk.baskets[n].market || {}, rel: bk.baskets[n].relative || {}, be: bk.baskets[n].betas || {} }));
+    const rc = (k, lab) => ({ key: k, label: lab, render: (r) => pct(r.m[k]), cls: (r) => sgnClass(r.m[k]), sortVal: (r) => r.m[k] });
+    const rl = (k, lab) => ({ key: 'rel' + k, label: lab, render: (r) => pct(r.rel[k]), cls: (r) => sgnClass(r.rel[k]), sortVal: (r) => r.rel[k], src: (r) => `panier − ${r.b.benchmark}` });
+    table('tbl-baskets', [
+      { key: 'n', label: 'Panier', left: true, render: (r) => `<b>${esc(r.b.label)}</b> <span class="muted">${r.b.n_with_data} titres · bench ${r.b.benchmark}</span>`, src: (r) => r.b.note },
+      rc('r_1d', '1D'), rc('r_5d', '5D'), rc('r_1m', '1M'), rc('r_3m', '3M'), rc('r_ytd', 'YTD'), rl('1M', 'Rel. 1M'), rl('3M', 'Rel. 3M'), rl('YTD', 'Rel. YTD'),
+      { key: 'z', label: 'z ratio 1a', render: (r) => num(r.rel.ratio_z_1y, 1), cls: (r) => isNum(r.rel.ratio_z_1y) && Math.abs(r.rel.ratio_z_1y) > 2 ? 'warn' : '', sortVal: (r) => r.rel.ratio_z_1y },
+      { key: 'rma', label: 'Ratio / MM50', render: (r) => pct(r.rel.ratio_vs_ma50), cls: (r) => sgnClass(r.rel.ratio_vs_ma50), sortVal: (r) => r.rel.ratio_vs_ma50 },
+      { key: 'vol', label: 'Vol 3M', render: (r) => pctAbs(r.m.vol_3m, 0), sortVal: (r) => r.m.vol_3m },
+      { key: 'bspx', label: 'β SPX', render: (r) => num((r.be.SPX || {}).beta_1y), sortVal: (r) => (r.be.SPX || {}).beta_1y }, { key: 'bndx', label: 'β NDX', render: (r) => num((r.be.NDX || {}).beta_1y) }, { key: 'bsox', label: 'β SOX', render: (r) => num((r.be.SOX || {}).beta_1y) },
+      { key: 'br', label: '% > MM50 / MM200', render: (r) => `${isNum(r.b.breadth.pct_above_ma50) ? r.b.breadth.pct_above_ma50.toFixed(0) : NA}% / ${isNum(r.b.breadth.pct_above_ma200) ? r.b.breadth.pct_above_ma200.toFixed(0) : NA}%`, sortVal: (r) => r.b.breadth.pct_above_ma50 },
+      { key: 'corr', label: 'Corr. moy. 60 j', render: (r) => num(r.b.avg_pair_corr_60d), sortVal: (r) => r.b.avg_pair_corr_60d }, { key: 'disp', label: 'Dispersion 1M', render: (r) => pctAbs(r.b.breadth.dispersion_1m), sortVal: (r) => r.b.breadth.dispersion_1m },
+      { key: 'rsi', label: 'RSI 14', render: (r) => rsiCell(r.m), sortVal: (r) => r.m.rsi_14 }, { key: 'cross', label: 'MM 50/200', render: (r) => crossCell(r.m.cross_50_200), src: (r) => crossTitle(r.m.cross_50_200) },
+    ], rows, { defaultSort: 'r_1d' });
+    const sel = $('bk-pick'); if (!sel.options.length) { sel.innerHTML = order.map((n) => `<option value="${n}">${esc(bk.baskets[n].label)}</option>`).join(''); sel.addEventListener('change', renderBasketMembers); }
+    if (!state.basket) state.basket = order[0];
+    renderBasketMembers(); renderRelative(); $('bk-period').addEventListener('change', chartBaskets);
+  }
+  function renderBasketMembers() {
+    const b = BK().baskets[$('bk-pick').value || state.basket]; if (!b) return; state.basket = $('bk-pick').value || state.basket;
+    const rows = (b.members_table || []).filter((x) => !x.missing);
+    table('tbl-bk-members', [
+      { key: 'ticker', label: 'Titre', left: true, render: (x) => `<b>${esc(x.ticker)}</b> <span class="muted">${esc(sym(x.ticker).name && sym(x.ticker).name !== x.ticker ? sym(x.ticker).name : '')}</span>${x.stale ? ' <span class="stale">●</span>' : ''}` },
+      { key: 'last', label: 'Prix', render: (x) => px(x.last) }, { key: 'r_1d', label: '1D', render: (x) => pct(x.r_1d), cls: (x) => sgnClass(x.r_1d) }, { key: 'r_5d', label: '5D', render: (x) => pct(x.r_5d), cls: (x) => sgnClass(x.r_5d) },
+      { key: 'r_1m', label: '1M', render: (x) => pct(x.r_1m), cls: (x) => sgnClass(x.r_1m) }, { key: 'r_3m', label: '3M', render: (x) => pct(x.r_3m), cls: (x) => sgnClass(x.r_3m) }, { key: 'r_ytd', label: 'YTD', render: (x) => pct(x.r_ytd), cls: (x) => sgnClass(x.r_ytd) },
+      { key: 'contrib_1m', label: 'Contrib. 1M', title: 'contribution équipondérée à la perf 1M du panier', render: (x) => pct(x.contrib_1m), cls: (x) => sgnClass(x.contrib_1m) },
+      { key: 'vol_3m', label: 'Vol 3M', render: (x) => pctAbs(x.vol_3m, 0) }, { key: 'rsi_14', label: 'RSI', render: (x) => num(x.rsi_14, 0) },
+      { key: 'ma', label: 'MM50 / MM200', left: true, render: (x) => `<span class="${x.above_ma50 ? 'up' : 'down'}">${x.above_ma50 ? '>' : '<'} MM50</span> <span class="${x.above_ma200 ? 'up' : 'down'}">${x.above_ma200 ? '>' : '<'} MM200</span>`, sortVal: (x) => (x.above_ma50 ? 1 : 0) + (x.above_ma200 ? 1 : 0) },
+    ], rows, { defaultSort: 'r_1d' });
+  }
+  function chartBaskets() {
+    const bk = BK(); const n = Number($('bk-period').value); const cols = SERIES(); const tr = [];
+    (bk.order || []).forEach((name, i) => { const b = bk.baskets[name]; if (!b || b.missing || !b.history) return; const h = b.history; const i0 = Math.max(0, h.values.length - n); const base = h.values[i0]; tr.push({ type: 'scatter', mode: 'lines', name: b.label.split(' (')[0], x: h.dates.slice(i0), y: h.values.slice(i0).map((v) => v / base * 100), line: { color: cols[i % 8], width: 1.8 } }); });
+    for (const [k, t] of [['NDX', U().index_keys.NDX], ['SOX', U().index_keys.SOX]]) { const s = series(t); if (!s) continue; const i0 = Math.max(0, s.close.length - n); tr.push({ type: 'scatter', mode: 'lines', name: k, x: s.dates.slice(i0), y: base100(s, i0), line: { color: css('--muted'), width: 1.2, dash: k === 'NDX' ? 'dot' : 'dash' } }); }
+    plot('ch-baskets', tr, { hovermode: 'x unified', yaxis: { type: 'log', gridcolor: css('--border') } });
+  }
+  function renderRelative() {
+    const rel = BK().relative; if (!rel) return; $('rel-note').textContent = BK().relative_note || '';
+    chips('rel-h', (rel.horizons || []).map((h) => ({ value: h, label: h })), new Set([state.relH]), () => { state.relH = [...document.querySelectorAll('#rel-h .chip[aria-pressed="true"]')].map((b) => b.dataset.v)[0] || '1M'; renderRelative(); });
+    const h = state.relH; const ex = rel.excess[h] || {}; const lab = (n) => n.startsWith('basket:') ? ((BK().baskets[n.slice(7)] || {}).label || n.slice(7)).split(' (')[0] : n;
+    const rows = rel.rows.map((r) => ({ r }));
+    const cols = [{ key: 'r', label: `ligne \\ colonne (${h})`, left: true, render: (x) => `<b>${esc(lab(x.r))}</b>`, sortVal: (x) => x.r }];
+    rel.benchmarks.forEach((b) => cols.push({ key: b, label: 'vs ' + b, render: (x) => { const v = (ex[x.r] || {})[b]; const z = (rel.ratio_z_1y[x.r] || {})[b]; return v == null ? '' : `${pct(v)}${isNum(z) && Math.abs(z) > 2 ? ' <span class="warn" title="z 1 an ' + z.toFixed(1) + '">!</span>' : ''}`; }, cls: (x) => sgnClass((ex[x.r] || {})[b]), sortVal: (x) => (ex[x.r] || {})[b], src: (x) => `z 1a ${num((rel.ratio_z_1y[x.r] || {})[b], 1)} · ratio / MM50 ${pct((rel.ratio_vs_ma50[x.r] || {})[b])}` }));
+    table('tbl-rel', cols, rows, { defaultSort: rel.benchmarks[0] });
+  }
+  function chartPairs() {
+    const pairs = BK().pairs || []; const cols = SERIES(); const lab = (n) => n.startsWith('basket:') ? n.slice(7) : n;
+    plot('ch-pairs', pairs.map((p, i) => ({ type: 'scatter', mode: 'lines', name: `${lab(p.a)} / ${lab(p.b)}`, x: p.dates, y: p.values, line: { color: cols[i % 8], width: 1.5, dash: i >= 8 ? 'dot' : 'solid' }, hovertemplate: `${lab(p.a)}/${lab(p.b)} %{y:.1f}<extra></extra>` })), { hovermode: 'x unified', yaxis: { gridcolor: css('--border') }, legend: { orientation: 'h', y: -0.15, font: { size: 10 } } });
+    table('tbl-pairs', [{ key: 'p', label: 'Paire', left: true, render: (p) => `<b>${esc(lab(p.a))} / ${esc(lab(p.b))}</b>` }, { key: 'r_1m', label: 'Relatif 1M', render: (p) => pct(p.r_1m), cls: (p) => sgnClass(p.r_1m) }, { key: 'r_3m', label: 'Relatif 3M', render: (p) => pct(p.r_3m), cls: (p) => sgnClass(p.r_3m) }, { key: 'vs_ma50', label: 'Ratio / MM50', render: (p) => pct(p.vs_ma50), cls: (p) => sgnClass(p.vs_ma50) }, { key: 'y', label: 'Base 100 → aujourd\'hui', render: (p) => num(p.values[p.values.length - 1], 1), sortVal: (p) => p.values[p.values.length - 1] }], pairs);
+  }
+
+  // ---------------------------------------------------------------- ASIE → US
+  const AS = () => D.asia || { asia_series: {}, results: {} };
+  function renderAsia() {
+    const a = AS(); const keys = Object.keys(a.asia_series || {}); if (!keys.length) { $('asia-hint').textContent = 'asia.json absent : relancer update_monitor.py'; return; }
+    $('asia-hint').textContent = `Run ${a.run_time_utc || ''} UTC · séances Tokyo / Taipei / Séoul closes avant 06:30 UTC, Hong Kong 08:10 UTC · ${a.lookback_days} séances d'historique`;
+    $('asia-tiles').innerHTML = keys.map((k) => { const s = a.asia_series[k]; return `<div class="tile" title="${esc((a.asia_members || {})[k] ? Object.entries(a.asia_members[k]).map(([t, n]) => t + ' ' + n).join(', ') : ((a.asia_indices || {})[k] || {}).ticker || '')}"><div class="k">${esc(k)}</div><div class="v ${sgnClass(s.last)}">${pct(s.last)}</div><div class="s">${s.is_today ? '<span class="up">séance du jour</span>' : '<span class="warn">dernière séance ' + s.last_date + '</span>'} · 5 j ${pct(s.r_5d_sum)}</div></div>`; }).join('');
+    $('asia-method').textContent = a.method || '';
+    chips('asia-pick', keys.map((k) => ({ value: k, label: k })), new Set([state.asiaPick]), () => { state.asiaPick = [...document.querySelectorAll('#asia-pick .chip[aria-pressed="true"]')].map((b) => b.dataset.v)[0] || keys[0]; renderAsiaTable(); chartAsia(); });
+    if (!a.asia_series[state.asiaPick]) state.asiaPick = keys[0];
+    const tgt = $('asia-target'); tgt.innerHTML = (a.us_targets || []).map((u) => `<option value="${u}">${u.replace('basket:', 'panier ')}</option>`).join(''); tgt.addEventListener('change', chartAsia);
+    renderAsiaTable();
+    const rows = a.members_snapshot || [];
+    table('tbl-asia-members', [{ key: 'basket', label: 'Panier', left: true }, { key: 'ticker', label: 'Titre', left: true, render: (x) => `<b>${esc(x.ticker)}</b> <span class="muted">${esc(x.name)}</span>` }, { key: 'last_date', label: 'Séance', left: true, render: (x) => `${x.last_date}${x.is_today ? ' <span class="up">●</span>' : ''}` }, { key: 'r_1d', label: '1D', render: (x) => pct(x.r_1d), cls: (x) => sgnClass(x.r_1d) }, { key: 'r_5d', label: '5D', render: (x) => pct(x.r_5d), cls: (x) => sgnClass(x.r_5d) }, { key: 'r_1m', label: '1M', render: (x) => pct(x.r_1m), cls: (x) => sgnClass(x.r_1m) }], rows, { defaultSort: 'r_1d' });
+  }
+  function renderAsiaTable() {
+    const a = AS(); const res = a.results[state.asiaPick] || {}; const rows = Object.entries(res).map(([u, r]) => ({ u, r }));
+    const o = (r, k, f_) => (r[k] || {})[f_];
+    const tcls = (t) => isNum(t) && Math.abs(t) > 2 ? 'warn' : 'muted';
+    table('tbl-asia', [
+      { key: 'u', label: 'Cible US', left: true, render: (x) => `<b>${esc(x.u.replace('basket:', 'panier '))}</b> <span class="muted">n=${x.r.n}</span>` },
+      { key: 'cg', label: 'Corr. gap', title: 'corrélation Asie → gap d\'ouverture US', render: (x) => num(o(x.r, 'gap_on_asia', 'corr')), sortVal: (x) => o(x.r, 'gap_on_asia', 'corr'), src: (x) => `beta ${num(o(x.r, 'gap_on_asia', 'beta'))}, t ${num(o(x.r, 'gap_on_asia', 't_stat'), 1)}` },
+      { key: 'ci', label: 'Corr. intraday', title: 'corrélation Asie → séance US ouverture→clôture', render: (x) => num(o(x.r, 'intra_on_asia', 'corr')), sortVal: (x) => o(x.r, 'intra_on_asia', 'corr'), src: (x) => `beta ${num(o(x.r, 'intra_on_asia', 'beta'))}, t ${num(o(x.r, 'intra_on_asia', 't_stat'), 1)}` },
+      { key: 'ti', label: 't intraday | gap', title: 'statistique t du beta de l\'Asie sur l\'intraday US, gap en contrôle', render: (x) => `<span class="${tcls(o(x.r, 'intra_on_asia_and_gap', 't_asia'))}">${num(o(x.r, 'intra_on_asia_and_gap', 't_asia'), 1)}</span>`, sortVal: (x) => o(x.r, 'intra_on_asia_and_gap', 't_asia'), src: (x) => `beta Asie ${num(o(x.r, 'intra_on_asia_and_gap', 'beta_asia'), 3)} · beta gap ${num(o(x.r, 'intra_on_asia_and_gap', 'beta_gap'), 3)} (t ${num(o(x.r, 'intra_on_asia_and_gap', 't_gap'), 1)})` },
+      { key: 'cc', label: 'Corr. close-close', render: (x) => num(o(x.r, 'cc_on_asia', 'corr')), sortVal: (x) => o(x.r, 'cc_on_asia', 'corr') },
+      { key: 'rev', label: 'US veille → Asie', title: 'corrélation du close-close US de la veille avec la séance asiatique (les US mènent l\'Asie)', render: (x) => num(o(x.r, 'asia_on_prev_us', 'corr')), sortVal: (x) => o(x.r, 'asia_on_prev_us', 'corr') },
+      { key: 'hg', label: 'Signe gap', render: (x) => pctAbs(x.r.hit_rate_gap, 0), sortVal: (x) => x.r.hit_rate_gap }, { key: 'hi', label: 'Signe intraday', render: (x) => pctAbs(x.r.hit_rate_intra, 0), sortVal: (x) => x.r.hit_rate_intra },
+      { key: 'cu', label: `Intraday si Asie > +${(AS().threshold * 100).toFixed(1)}%`, render: (x) => x.r.cond_intra_up ? `${pct(x.r.cond_intra_up.mean, 2)} <span class="muted">(${x.r.cond_intra_up.n}, ${pctAbs(x.r.cond_intra_up.hit, 0)} ↑)</span>` : NA, cls: (x) => sgnClass((x.r.cond_intra_up || {}).mean), sortVal: (x) => (x.r.cond_intra_up || {}).mean },
+      { key: 'cd', label: `Intraday si Asie < −${(AS().threshold * 100).toFixed(1)}%`, render: (x) => x.r.cond_intra_down ? `${pct(x.r.cond_intra_down.mean, 2)} <span class="muted">(${x.r.cond_intra_down.n}, ${pctAbs(x.r.cond_intra_down.hit, 0)} ↑)</span>` : NA, cls: (x) => sgnClass((x.r.cond_intra_down || {}).mean), sortVal: (x) => (x.r.cond_intra_down || {}).mean },
+      { key: 'rule', label: 'Règle long si Asie ↑ (net)', render: (x) => x.r.rule ? `${pct(x.r.rule.total)} <span class="muted">vs ${pct(x.r.rule.always_long_intraday_total)} toujours long · Sharpe ${num(x.r.rule.sharpe, 1)}</span>` : NA, cls: (x) => sgnClass((x.r.rule || {}).total), sortVal: (x) => (x.r.rule || {}).total, src: (x) => x.r.rule ? `${x.r.rule.days_in} jours investis · max DD ${pct(x.r.rule.max_dd)} · coût ${AS().cost_bps_per_side || 2} bp par côté` : '' },
+    ], rows, { defaultSort: 'ti' });
+  }
+  function chartAsia() {
+    const a = AS(); const r = ((a.results || {})[state.asiaPick] || {})[$('asia-target').value]; const cols = SERIES();
+    if (!r || !r.rolling_corr_intra_60d) { $('ch-asia-roll').innerHTML = '<div class="note">n/a</div>'; $('ch-asia-rule').innerHTML = ''; return; }
+    plot('ch-asia-roll', [
+      { type: 'scatter', mode: 'lines', name: 'corr. 60 j Asie → gap', x: r.rolling_corr_gap_60d.dates, y: r.rolling_corr_gap_60d.values, line: { color: cols[0], width: 1.8 } },
+      { type: 'scatter', mode: 'lines', name: 'corr. 60 j Asie → intraday', x: r.rolling_corr_intra_60d.dates, y: r.rolling_corr_intra_60d.values, line: { color: cols[1], width: 1.8 } },
+    ], { hovermode: 'x unified', yaxis: { range: [-0.6, 0.9], gridcolor: css('--border'), zerolinecolor: css('--muted') } });
+    $('asia-rule-hint').textContent = `${state.asiaPick} > +${(a.threshold * 100).toFixed(1)} % → long ${$('asia-target').value.replace('basket:', 'panier ')} de l'ouverture à la clôture ; ${r.rule.days_in} jours investis sur ${r.n} ; coût ${a.cost_bps_per_side || 2} bp par côté.`;
+    plot('ch-asia-rule', [
+      { type: 'scatter', mode: 'lines', name: 'règle (net)', x: r.rule.equity.dates, y: r.rule.equity.rule, line: { color: cols[2], width: 2 } },
+      { type: 'scatter', mode: 'lines', name: 'toujours long intraday', x: r.rule.equity.dates, y: r.rule.equity.always, line: { color: css('--muted'), width: 1.2, dash: 'dot' } },
+    ], { hovermode: 'x unified', yaxis: { gridcolor: css('--border') } });
+    const h = a.history || {}; const tr = Object.entries(h).map(([k, v], i) => ({ type: 'scatter', mode: 'lines', name: k, x: v.dates, y: v.values, line: { color: cols[i % 8], width: 1.5, dash: (a.asia_indices || {})[k] ? 'dot' : 'solid' } }));
+    plot('ch-asia-hist', tr, { hovermode: 'x unified', yaxis: { gridcolor: css('--border') } });
+  }
+
+  // ---------------------------------------------------------------- COMPOSITIONS
+  const CS = () => D.constituents_stats || { rows: {}, indices: {} };
+  function renderCompo() {
+    const cs = CS(); const idx = Object.keys(cs.indices || {}); if (!idx.length) { $('compo-hint').textContent = 'constituents_stats.json absent'; return; }
+    chips('compo-idx', idx.map((k) => ({ value: k, label: `${k} (${(cs.indices[k] || {}).n || 0})` })), state.compoIdx, () => renderCompoTable());
+    const sectors = [...new Set(Object.values(cs.rows).map((r) => r.sector).filter(Boolean))].sort();
+    $('compo-sector').innerHTML = '<option value="all">tous secteurs</option>' + sectors.map((s_) => `<option value="${esc(s_)}">${esc(s_)}</option>`).join('');
+    $('compo-sector').addEventListener('change', () => { state.compoSector = $('compo-sector').value; renderCompoTable(); });
+    $('compo-q').addEventListener('input', () => { state.compoQ = $('compo-q').value.toLowerCase(); renderCompoTable(); });
+    renderCompoTable();
+  }
+  function renderCompoTable() {
+    const cs = CS(); const k = [...state.compoIdx][0]; const info = cs.indices[k] || {};
+    $('compo-hint').textContent = info.n ? `${k} : ${info.n} titres (${info.source || ''}${info.fetched_at ? ' ' + info.fetched_at.slice(0, 10) : ''}) · prix yfinance 1 an · ${cs.note || ''}` : `${k} : ${info.reason || info.error || 'non disponible'}`;
+    const rows = Object.entries(cs.rows).filter(([t, r]) => r.indices.includes(k) && !r.missing && (state.compoSector === 'all' || r.sector === state.compoSector) && (!state.compoQ || t.toLowerCase().includes(state.compoQ) || (r.name || '').toLowerCase().includes(state.compoQ))).map(([t, r]) => ({ t, ...r }));
+    const rc = (key, lab) => ({ key, label: lab, render: (r) => pct(r[key]), cls: (r) => sgnClass(r[key]) });
+    table('tbl-compo', [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.name || '')}</span>${r.in_universe ? ' <span class="tag" style="font-size:10px">suivi</span>' : ''}` },
+      { key: 'sector', label: 'Secteur', left: true, render: (r) => esc(r.sector || '') }, { key: 'idx', label: 'Indices', left: true, render: (r) => r.indices.join(' '), sortVal: (r) => r.indices.length },
+      { key: 'last', label: 'Prix', render: (r) => px(r.last) }, rc('r_1d', '1D'), rc('r_5d', '5D'), rc('r_1m', '1M'), rc('r_3m', '3M'), rc('r_ytd', 'YTD'), rc('mom_6_1', 'Mom 6-1'),
+      rc('pct_vs_ma50', 'vs MM50'), rc('pct_vs_ma200', 'vs MM200'), rc('pct_vs_52w_high', 'vs haut 52 s.'), { key: 'rsi_14', label: 'RSI', render: (r) => num(r.rsi_14, 0), cls: (r) => isNum(r.rsi_14) ? (r.rsi_14 <= 30 ? 'up' : (r.rsi_14 >= 70 ? 'down' : '')) : '' }, { key: 'vol_3m', label: 'Vol 3M', render: (r) => pctAbs(r.vol_3m, 0) },
+    ], rows.slice(0, 2500), { defaultSort: 'r_1d' });
+    const agg = (cs.sector_aggregates || {})[k] || {};
+    table('tbl-compo-sec', [{ key: 's', label: 'Secteur', left: true }, { key: 'n', label: 'N' }, { key: 'ew_1d', label: 'EW 1D', render: (r) => pct(r.ew_1d), cls: (r) => sgnClass(r.ew_1d) }, { key: 'ew_1m', label: 'EW 1M', render: (r) => pct(r.ew_1m), cls: (r) => sgnClass(r.ew_1m) }, { key: 'ew_3m', label: 'EW 3M', render: (r) => pct(r.ew_3m), cls: (r) => sgnClass(r.ew_3m) }, { key: 'pct_above_ma50', label: '% > MM50', render: (r) => isNum(r.pct_above_ma50) ? r.pct_above_ma50.toFixed(0) + '%' : NA }], Object.entries(agg).map(([s_, v]) => ({ s: s_, ...v })), { defaultSort: 'ew_1m' });
+  }
+
   // ---------------------------------------------------------------- SOURCES
   function renderSources() {
     const rs = D.run_status || {};
@@ -896,7 +1101,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   }
 
   // ---------------------------------------------------------------- tabs
-  const TABS = ['monitor', 'fonda', 'events', 'risk', 'sectors', 'sources'];
+  const TABS = ['monitor', 'fonda', 'events', 'risk', 'sectors', 'baskets', 'asia', 'compo', 'sources'];
   function showTab(name) {
     if (!TABS.includes(name)) name = 'monitor';
     TABS.forEach((t) => { $('tab-' + t).hidden = t !== name; });
@@ -925,9 +1130,9 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     const safe = (fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } };
     [renderStocks, renderIndices, renderHeat, volChipsInit, etfPickInit, techPickInit, renderTech, renderTechBacktest, renderFonda, render13f, renderCalendar, renderReact, renderReactDetail].forEach(safe);
     chips('bench-chips', ['SPX', 'NDX', 'SOX'].map((b) => ({ value: b, label: b })), state.bench, renderBeta);
-    [renderBeta, renderVol, renderBreadth, renderSigControls, renderSignals, renderBacktest, initSectors, renderSources, renderReading].forEach(safe);
+    [renderBeta, renderVol, renderBreadth, renderSigControls, renderSignals, renderBacktest, initSectors, renderEarningsCalendar, renderBaskets, renderAsia, renderCompo, renderSources, renderReading].forEach(safe);
     $('base-period').addEventListener('change', chartBase100); $('base-ccy').addEventListener('change', chartBase100); $('contrib-h').addEventListener('change', chartContrib);
-    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat, chartRRG, chartSecRs, chartSecPairs, renderSecRefs, renderSecHeat, chartTech, renderTechBacktest);
+    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat, chartRRG, chartSecRs, chartSecPairs, renderSecRefs, renderSecHeat, chartTech, renderTechBacktest, chartBaskets, chartPairs, chartAsia);
     showTab(location.hash.slice(1) || 'monitor');
   }
   load().then(init).catch((e) => { console.error(e); $('loading').textContent = 'Erreur de chargement : ' + e.message; });

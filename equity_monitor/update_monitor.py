@@ -22,9 +22,12 @@ from em_common import SymbolLog, load_config, now_iso, output_dir, read_json, se
 from em_metrics import (TRADING_DAYS, beta_block, breadth_block, correlation_matrix, earnings_reactions, f,
                         horizon_return, idio_contribution, market_stats, mean_reversion_signal, momentum_signal,
                         next_13f_deadline, option_expiries, percentile_of_last, realized_vol, timing_from_hour, to_usd)
+from em_baskets import asia_lead, basket_block, pair_history, relative_matrix
 from em_sectors import region_summary, sector_table
-from em_sources import (SecClient, download_closes, fetch_constituents, fetch_fundamentals, fetch_option_metrics,
-                        figi_ticker_to_yahoo, long_equity_positions, map_cusips_openfigi)
+from em_sources import (SecClient, download_closes, download_ohlc, fetch_constituents, fetch_fundamentals, fetch_option_metrics,
+                        figi_ticker_to_yahoo, load_iwm_holdings_csv, long_equity_positions, map_cusips_openfigi)
+
+LEOPOLD_GROUP = "Leopold (13F)"
 
 
 def previous_weekday(d: date) -> date:
@@ -179,19 +182,34 @@ class MonitorRun:
         for gname, tickers in cfg["stock_groups"].items():
             groups[gname] = list(tickers)
             for t in tickers:
-                symbols[t] = {"key": t, "name": t, "type": "stock", "group": gname, "currency": "USD"}
-        sa_group = "13F Situational Awareness"
-        groups[sa_group] = []
+                symbols[t] = {"key": t, "name": t, "type": "stock", "group": gname, "currency": "USD", "baskets": []}
+        baskets = {}
+        for bname, bc in cfg.get("baskets", {}).items():
+            if bc.get("source") == "sa_13f":
+                continue
+            members = list(bc["members"])
+            baskets[bname] = members
+            for t in members:
+                if t not in symbols:
+                    symbols[t] = {"key": t, "name": t, "type": "stock", "group": bc.get("label", bname), "currency": "USD", "baskets": []}
+                    groups.setdefault(bc.get("label", bname), []).append(t)
+                symbols[t]["baskets"].append(bname)
+        groups[LEOPOLD_GROUP] = []
+        leopold = []
         for p in (sa13f or {}).get("positions", []):
             y = p.get("yahoo")
             if not y:
                 continue
-            if y in symbols:  # overlap with Mag7+AMD: keep the first group, record the weight
+            leopold.append(y)
+            if y in symbols:  # already in a basket: keep its group, record the 13F weight
                 symbols[y]["weight_13f"] = p["weight"]
+                symbols[y]["change_13f"] = p["change_vs_prior"]
+                symbols[y]["baskets"].append("Leopold")
                 continue
-            symbols[y] = {"key": y, "name": p.get("figi_name") or p["issuer"], "type": "stock", "group": sa_group, "currency": "USD",
-                          "weight_13f": p["weight"], "cusip": p["cusip"], "change_13f": p["change_vs_prior"]}
-            groups[sa_group].append(y)
+            symbols[y] = {"key": y, "name": p.get("figi_name") or p["issuer"], "type": "stock", "group": LEOPOLD_GROUP, "currency": "USD",
+                          "weight_13f": p["weight"], "cusip": p["cusip"], "change_13f": p["change_vs_prior"], "baskets": ["Leopold"]}
+            groups[LEOPOLD_GROUP].append(y)
+        baskets["Leopold"] = leopold
         for rk, rc in cfg.get("sectors", {}).items():
             g = f"Secteurs {rk}"
             groups[g] = []
@@ -206,7 +224,8 @@ class MonitorRun:
             symbols[e["ticker"]] = {"key": e["ticker"], "name": f"{e['name']} — {e['line']}", "type": "etf", "group": "ETFs", "currency": None,
                                     "underlying": e["underlying"], "line": e["line"], "held": e.get("held", True)}
             groups["ETFs"].append(e["ticker"])
-        return {"generated_at": now_iso(), "groups": groups, "symbols": symbols,
+        return {"generated_at": now_iso(), "groups": groups, "symbols": symbols, "baskets": baskets,
+                "basket_labels": {k: v.get("label", k) for k, v in cfg.get("baskets", {}).items()},
                 "index_keys": {k: v["ticker"] for k, v in cfg["indices"].items()},
                 "fx_keys": {k: v["ticker"] for k, v in cfg["fx"].items()},
                 "note_13f": "Panier issu du dernier 13F-HR de Situational Awareness LP (sa_13f.json), jamais code en dur."}
@@ -275,7 +294,7 @@ class MonitorRun:
             prev = read_json(self.out / "breadth.json")
             if prev:
                 prev["reused_from_previous_run"] = True
-                return prev, {}
+                return prev, pd.DataFrame()
         mag7 = set(self.cfg["mag7"])
         all_members = []
         for key, idx in constituents.get("indices", {}).items():
@@ -307,6 +326,133 @@ class MonitorRun:
                                              "mag7_members": m7, "n_rest": len(rest)}
             res["indices"][key] = block
         return res, cons_closes
+
+    # ------------------------------------------------------------------ baskets + relative matrix
+    def run_baskets(self, universe, closes, prices_payload):
+        cfg = self.cfg
+        usd = self._usd
+        spx, ndx, sox = closes[universe["index_keys"]["SPX"]], closes[universe["index_keys"]["NDX"]], self._sox
+        bench_series = {k: usd.get(t) if t in usd else (closes[t] if t in closes.columns else None) for k, t in universe["index_keys"].items()}
+        bench_series = {k: v for k, v in bench_series.items() if v is not None}
+        out = {"generated_at": now_iso(), "baskets": {}, "order": list(cfg["baskets"].keys())}
+        series = {}
+        for bname, bc in cfg["baskets"].items():
+            members = universe["baskets"].get(bname, [])
+            blk = basket_block(bname, bc, members, closes, usd, bench_series, spx, ndx, sox, prices_payload)
+            out["baskets"][bname] = blk
+            if not blk.get("missing"):
+                idx, _ = __import__("em_baskets").ew_index(closes, members)
+                series["basket:" + bname] = idx
+        for k, v in bench_series.items():
+            series[k] = v
+        rel_cfg = cfg["relative"]
+        out["relative"] = relative_matrix(series, rel_cfg["benchmarks"], rel_cfg["horizons"])
+        out["pairs"] = pair_history(series, [tuple(p) for p in rel_cfg["pairs"]])
+        out["relative_note"] = ("Toutes les series en USD (indices europeens convertis) ; exces = perf ligne − perf benchmark sur l'horizon ; z 1 an = ecart-type du log-ratio "
+                                "sur 252 seances (|z| > 2 = ecart extreme par rapport a l'annee ecoulee) ; ratio / MM50 = tendance relative.")
+        return out
+
+    # ------------------------------------------------------------------ Asia -> US
+    def run_asia(self, universe):
+        acfg = self.cfg["asia"]
+        asia_t = [v["ticker"] for v in acfg["indices"].values()] + [t for b in acfg["baskets"].values() for t in b["members"]]
+        us_t = list(acfg["us_targets"].values()) + [m for b in acfg["us_basket_targets"] for m in universe["baskets"].get(b, [])]
+        now_utc = datetime.now(timezone.utc).strftime("%H:%M")
+
+        def closed_now(t):
+            for suf, hhmm in acfg["close_utc"].items():
+                if t == suf or t.endswith(suf):
+                    return now_utc >= hhmm
+            return False
+        opens, closes = download_ohlc(list(dict.fromkeys(asia_t + us_t)), "2y", self.log, keep_today_for=closed_now)
+        for t in asia_t + us_t:
+            self.symlog.add(t, "yfinance.download(ohlc)", "ok" if t in closes.columns and closes[t].notna().sum() > 100 else "missing", "", now_iso())
+        us_baskets = {b: universe["baskets"].get(b, []) for b in acfg["us_basket_targets"]}
+        res = asia_lead(opens, closes, acfg, acfg["us_targets"], us_baskets, acfg["lookback_days"], acfg["signal_threshold"], acfg["cost_bps_per_side"])
+        res["generated_at"] = now_iso()
+        res["run_time_utc"] = now_utc
+        res["asia_members"] = {b: v["members"] for b, v in acfg["baskets"].items()}
+        res["asia_indices"] = {k: v for k, v in acfg["indices"].items()}
+        # 1y history of the Asian baskets and indices (base 100) for the chart
+        hist = {}
+        for k, ic in acfg["indices"].items():
+            t = ic["ticker"]
+            if t in closes.columns:
+                sx = closes[t].dropna().iloc[-252:]
+                hist[k] = {"dates": [str(d.date()) for d in sx.index], "values": [f(v / sx.iloc[0] * 100) for v in sx.values]}
+        for b, v in acfg["baskets"].items():
+            idx, _ = __import__("em_baskets").ew_index(closes, list(v["members"]))
+            if idx is not None:
+                sx = idx.iloc[-252:]
+                hist[b] = {"dates": [str(d.date()) for d in sx.index], "values": [f(x / sx.iloc[0] * 100) for x in sx.values]}
+        res["history"] = hist
+        # member snapshot (today's or last session)
+        snap = []
+        for b, v in acfg["baskets"].items():
+            for t, name in v["members"].items():
+                if t in closes.columns:
+                    sx = closes[t].dropna()
+                    snap.append({"basket": b, "ticker": t, "name": name, "last_date": str(sx.index[-1].date()), "r_1d": f(sx.iloc[-1] / sx.iloc[-2] - 1) if len(sx) > 1 else None,
+                                 "r_5d": f(sx.iloc[-1] / sx.iloc[-6] - 1) if len(sx) > 6 else None, "r_1m": f(sx.iloc[-1] / sx.iloc[-22] - 1) if len(sx) > 22 else None, "is_today": bool(sx.index[-1] == pd.Timestamp(self.today))})
+        res["members_snapshot"] = snap
+        return res
+
+    # ------------------------------------------------------------------ constituents stats (SPX / NDX / RTY)
+    def run_constituent_stats(self, constituents, cons_closes, universe):
+        ccfg = self.cfg["constituents_stats"]
+        out = {"generated_at": now_iso(), "indices": {}, "rows": {}, "note": ccfg["note"]}
+        members = {}
+        for key in ("SPX", "NDX"):
+            idx = constituents.get("indices", {}).get(key)
+            if idx:
+                for m in idx["members"]:
+                    if m.get("yahoo"):
+                        members.setdefault(m["yahoo"], {"name": m["name"], "sector": m.get("sector"), "indices": []})["indices"].append(key)
+                out["indices"][key] = {"n": idx["count"], "source": "wikipedia", "fetched_at": idx.get("fetched_at")}
+        rty_path = self.out / ccfg["russell_csv"]
+        if rty_path.exists():
+            try:
+                rows = load_iwm_holdings_csv(rty_path)
+                for m in rows:
+                    members.setdefault(m["yahoo"], {"name": m["name"], "sector": m.get("sector"), "indices": []})["indices"].append("RTY")
+                    members[m["yahoo"]]["weight_rty"] = m.get("weight_pct")
+                out["indices"]["RTY"] = {"n": len(rows), "source": f"fichier local {ccfg['russell_csv']}", "file_mtime": datetime.fromtimestamp(rty_path.stat().st_mtime, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+                extra = [t for t in members if "RTY" in members[t]["indices"] and t not in cons_closes.columns]
+                if extra:
+                    sub = SymbolLog()
+                    more, meta = download_closes(extra, "1y", self.log, sub, source_tag="yfinance.download(russell)", batch_size=100)
+                    if not more.empty:
+                        cons_closes = pd.concat([cons_closes, more], axis=1)
+                    out["indices"]["RTY"]["missing_on_yahoo"] = [t for t, m in meta.items() if not m["status"].startswith("ok")]
+            except Exception as exc:  # noqa: BLE001
+                out["indices"]["RTY"] = {"n": 0, "error": str(exc)[:200]}
+        else:
+            out["indices"]["RTY"] = {"n": 0, "source": None, "reason": f"fichier {ccfg['russell_csv']} absent : {ccfg['note']}"}
+        for t, meta in members.items():
+            if t not in cons_closes.columns:
+                out["rows"][t] = {**meta, "missing": True}
+                continue
+            sx = cons_closes[t].dropna()
+            if len(sx) < 30:
+                out["rows"][t] = {**meta, "missing": True}
+                continue
+            ms = market_stats(sx)
+            out["rows"][t] = {**meta, "last": ms["last"], "last_date": ms["last_date"], "r_1d": ms["r_1d"], "r_5d": ms["r_5d"], "r_1m": ms["r_1m"], "r_3m": ms["r_3m"], "r_ytd": ms["r_ytd"],
+                              "vol_3m": ms["vol_3m"], "pct_vs_ma50": ms["pct_vs_ma50"], "pct_vs_ma200": ms["pct_vs_ma200"], "rsi_14": ms["rsi_14"], "pct_vs_52w_high": ms["pct_vs_52w_high"],
+                              "mom_6_1": ms.get("mom_6_1"), "in_universe": t in universe["symbols"]}
+        # sector aggregates per index (equal weight)
+        agg = {}
+        for key in out["indices"]:
+            rows = [r for r in out["rows"].values() if key in r["indices"] and not r.get("missing")]
+            by = {}
+            for r in rows:
+                by.setdefault(r.get("sector") or "n/a", []).append(r)
+            agg[key] = {sec: {"n": len(v), "ew_1d": f(np.mean([x["r_1d"] for x in v if x["r_1d"] is not None])), "ew_1m": f(np.mean([x["r_1m"] for x in v if x["r_1m"] is not None])),
+                             "ew_3m": f(np.mean([x["r_3m"] for x in v if x["r_3m"] is not None])), "pct_above_ma50": f(np.mean([1 if (x["pct_vs_ma50"] or 0) > 0 else 0 for x in v]) * 100)}
+                        for sec, v in by.items()}
+        out["sector_aggregates"] = agg
+        out["n_rows"] = len(out["rows"])
+        return out
 
     # ------------------------------------------------------------------ sectors
     def run_sectors(self, universe, closes, prices_payload):
@@ -356,7 +502,7 @@ class MonitorRun:
                 continue
             fd = fundamentals.get(t) or {}
             info = fd.get("info") or {}
-            row = {"ticker": t, "name": info.get("longName") or s["name"], "group": s["group"], "currency": "USD",
+            row = {"ticker": t, "name": info.get("longName") or s["name"], "group": s["group"], "baskets": s.get("baskets", []), "currency": "USD",
                    "sector": info.get("sector"), "industry": info.get("industry"), "fetched_at": fd.get("fetched_at"), "sources": fd.get("blocks", {})}
             if t in closes.columns:
                 row["market"] = market_stats(closes[t])
@@ -591,6 +737,21 @@ class MonitorRun:
                 events["calendar"].append({"date": e["date"], "type": "rebalancement", "symbol": "SPX", "label": "Rebalancement trimestriel S&P (effectif après clôture)", "source": "calendrier S&P DJI"})
         events["calendar"] = sorted([c for c in events["calendar"] if c["date"] and (date.fromisoformat(c["date"]) - self.today).days <= 45], key=lambda c: c["date"])
         events["horizon_days"] = 30
+        # earnings calendar: every stock of the universe over 90 days, plus the last 14 days with the realised reaction
+        ecal = []
+        for t, u in events["upcoming"].items():
+            if u.get("date") and u.get("days_to") is not None and 0 <= u["days_to"] <= cfg.get("earnings_calendar_days", 90):
+                ecal.append({"date": u["date"], "ticker": t, "timing": u.get("timing"), "days_to": u["days_to"], "eps_consensus": u.get("eps_consensus"), "confirmed": u.get("confirmed"),
+                             "implied_move": u.get("implied_move"), "hist_avg_abs_move": u.get("hist_avg_abs_move"), "ratio": u.get("ratio_implied_hist"),
+                             "group": syms[t]["group"], "baskets": syms[t].get("baskets", []), "source": u.get("source")})
+        recent = []
+        for t, r in events["reactions"].items():
+            for row in r.get("rows", []):
+                if 0 <= (self.today - date.fromisoformat(row["date"])).days <= 14:
+                    recent.append({"ticker": t, **row, "group": syms[t]["group"], "baskets": syms[t].get("baskets", [])})
+        events["earnings_calendar"] = sorted(ecal, key=lambda e: (e["date"], e["ticker"]))
+        events["recent_earnings"] = sorted(recent, key=lambda e: e["date"], reverse=True)
+        events["earnings_calendar_days"] = cfg.get("earnings_calendar_days", 90)
         # signals
         sig = {"momentum_us": {}, "mean_reversion_eu": {}, "earnings_flag_days": cfg["signals"]["momentum_us"]["earnings_flag_days"]}
         for t, row in quotes["stocks"].items():
@@ -647,8 +808,8 @@ class MonitorRun:
                 corr["smgb_vs_universe"] = sorted([{"symbol": s_, "corr": cm["matrix"][i][j]} for j, s_ in enumerate(cm["symbols"]) if s_ != smgb and cm["matrix"][i][j] is not None],
                                                   key=lambda x: -x["corr"])
                 corr["smgb_note"] = "SMGB.L converti en USD (GBPUSD) ; cloture Londres 16:30 vs New York 16:00 : correlations quotidiennes sous-estimees pour les titres US."
-        basket = [t for t in universe["groups"].get("13F Situational Awareness", []) if t in usd]
-        extra = [t for t in cfg["stock_groups"].get("Mag7+AMD", []) if t in usd and t in ("NVDA", "AMD")]
+        basket = [t for t in universe["baskets"].get("Leopold", []) if t in usd]
+        extra = [t for t in ("NVDA", "AMD") if t in usd and t not in basket]
         bframe = pd.DataFrame({t: usd[t] for t in basket + extra})
         cm = correlation_matrix(bframe, win)
         pairs = []
@@ -714,6 +875,30 @@ class MonitorRun:
                          f"entrées (top {sec['thresholds']['top_n']} momentum 12-1 + score ≥ {sec['thresholds']['entry_min_score']}/6) : {', '.join(lab(t) for t in sm.get('entries', [])) or 'aucune'} ; "
                          f"à surveiller : {', '.join(lab(t) for t in sm.get('watch', [])[:4]) + (' …' if len(sm.get('watch', [])) > 4 else '') or 'aucun'} ; sorties : {', '.join(lab(t) for t in sm.get('exits', [])) or 'aucune'}")
         lines.append("Rotation sectorielle — " + (" | ".join(parts) if parts else "non calculée") + ".")
+        bk = getattr(self, "_baskets", None) or {}
+        bparts = []
+        for name in bk.get("order", []):
+            b = bk.get("baskets", {}).get(name) or {}
+            if b.get("missing"):
+                continue
+            m, rel = b.get("market", {}), b.get("relative", {})
+            bparts.append(f"{b.get('label', name).split(' (')[0]} {pct(m.get('r_1d'))} / 1M {pct(m.get('r_1m'))} (vs {b.get('benchmark')} {pct(rel.get('1M'))}, z {rel.get('ratio_z_1y') and round(rel['ratio_z_1y'], 1)})")
+        lines.append("Paniers — " + ("; ".join(bparts) if bparts else "non calculés") + ". z = écart du ratio panier/indice vs son année (|z| > 2 = extrême).")
+        az = getattr(self, "_asia", None) or {}
+        aparts = []
+        for k in ("Asie IA", "Asie mémoire", "Asie serveurs IA", "Asie photonique", "N225", "KOSPI", "TWII"):
+            sr = az.get("asia_series", {}).get(k)
+            if sr:
+                aparts.append(f"{k} {pct(sr.get('last'))}{' (séance du jour)' if sr.get('is_today') else ' (' + str(sr.get('last_date')) + ')'}")
+        res = az.get("results", {}).get("Asie IA", {})
+        tests = []
+        for u in ("SOX", "basket:Mémoire", "basket:Neo-clouds", "NDX"):
+            r = res.get(u) or {}
+            g, pi = r.get("gap_on_asia") or {}, r.get("intra_on_asia_and_gap") or {}
+            if g:
+                tests.append(f"{u.replace('basket:', '')} : corr gap {g.get('corr') and round(g['corr'], 2)}, t intraday {pi.get('t_asia') and round(pi['t_asia'], 1)}")
+        lines.append("Asie → US — " + ("; ".join(aparts) if aparts else "séries indisponibles") + ". Asie IA vs séance US (" + str(az.get("lookback_days")) + " j) : " + ("; ".join(tests) if tests else "n/a") +
+                     ". Lecture : le gap d'ouverture absorbe l'Asie ; |t| > 2 sur l'intraday = l'Asie prédit encore quelque chose après l'ouverture.")
         return lines
 
     # ------------------------------------------------------------------ main
@@ -730,7 +915,11 @@ class MonitorRun:
             options = self.step("Options : move implicite et IV (yfinance)", lambda: self.run_options(universe, fundamentals, closes, upcoming)) or {}
             breadth_res = self.step("Breadth locale (constituants)", lambda: self.run_breadth(constituents, closes, universe))
             breadth = breadth_res[0] if breadth_res else {"indices": {}, "error": "breadth non calculee"}
+            cons_closes = breadth_res[1] if breadth_res and isinstance(breadth_res[1], pd.DataFrame) else pd.DataFrame()
             self._sectors = self.step("Rotation sectorielle US / Europe", lambda: self.run_sectors(universe, closes, prices_payload)) or {}
+            self._baskets = self.step("Paniers thématiques et matrice relative", lambda: self.run_baskets(universe, closes, prices_payload)) or {}
+            self._asia = self.step("Asie → US (gap / intraday)", lambda: self.run_asia(universe)) or {}
+            self._cons_stats = self.step("Compositions SPX / NDX / RTY par titre", lambda: self.run_constituent_stats(constituents, cons_closes, universe)) or {}
             quotes, risk, events = self.step("Signaux, corrélations, lecture", lambda: self.finish(universe, closes, quotes, risk, events, upcoming, options, breadth), critical=True)
             status = "ok" if not self.errors else "partial"
         except Exception as exc:  # noqa: BLE001
@@ -749,6 +938,9 @@ class MonitorRun:
         write_json(self.out / "breadth.json", breadth)
         write_json(self.out / "risk.json", risk)
         write_json(self.out / "sectors.json", self._sectors)
+        write_json(self.out / "baskets.json", self._baskets)
+        write_json(self.out / "asia.json", self._asia)
+        write_json(self.out / "constituents_stats.json", self._cons_stats)
         self.write_status(status)
         self.bundle()
         if status == "ok" and (self.out.parent / "LAST_ERROR.txt").exists():
@@ -773,7 +965,7 @@ class MonitorRun:
 
     def bundle(self):
         """data.js: every JSON in one global so index.html works from file:// (no fetch) as well as from a server."""
-        names = ["universe", "prices", "quotes", "events", "breadth", "constituents", "sa_13f", "risk", "sectors", "run_status", "backtest"]
+        names = ["universe", "prices", "quotes", "events", "breadth", "constituents", "sa_13f", "risk", "sectors", "baskets", "asia", "constituents_stats", "run_status", "backtest"]
         parts = []
         for n in names:
             p = self.out / f"{n}.json"
