@@ -1,7 +1,11 @@
-streamlit
-yfinance
-pandas
-numpy
-plotly
+streamlit>=1.40
+yfinance>=0.2.50
+pandas>=2.2
+numpy>=1.26
+plotly>=5.22
 requests
 PyYAML
+pyarrow
+# optional
+# fredapi        # faster FRED pulls when FRED_API_KEY is set
+# ib_insync      # datahub/ibkr_refresh.py, live strips from TWS/Gateway
