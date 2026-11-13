@@ -48,6 +48,10 @@ def load(keys: Iterable[str], years: int = 12, fill_limit: int = 7, start: Optio
 
     if raw.empty:
         return LoadResult(raw, raw, _status(keys, raw, raw))
+    # weekend-dated prints (e.g. weekly claims stamped on Saturdays, crypto) move to the next business day
+    idx = pd.DatetimeIndex(raw.index)
+    shifted = idx.where(idx.weekday < 5, idx + pd.offsets.BDay(0))
+    raw = raw.groupby(shifted).last().sort_index()
     cal = pd.bdate_range(raw.index.min(), max(raw.index.max(), pd.Timestamp.today().normalize()))
     re = raw.reindex(cal)
     observed = re.notna()

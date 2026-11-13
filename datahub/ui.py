@@ -43,7 +43,7 @@ def health(status: pd.DataFrame, title: str = "Data provenance"):
     n_bad = int((status["status"] != "loaded").sum())
     st.markdown(f"**{title}** — {len(status) - n_bad} series loaded, {n_bad} unavailable")
     show = status[["key", "name", "source", "ticker", "quality", "freq", "status", "last", "value", "note"]].copy()
-    st.dataframe(show, use_container_width=True, hide_index=True, height=min(600, 38 + 35 * len(show)))
+    st.dataframe(show, width="stretch", hide_index=True, height=min(600, 38 + 35 * len(show)))
 
 
 def kpi_row(items):
