@@ -19,20 +19,25 @@ def loader(ds, title, conids, own, other_period, desc):
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const fetchOne = async (code, id, extra) => {{
       let last;
-      for (let attempt = 0; attempt < 4; attempt++) {{
-        if (attempt) await wait(1000 * 2 ** (attempt - 1));
+      // Retry anything but a clear permanent refusal, backing off up to ~30 s in total.
+      const permanent = /permission|not found|invalid|no such|unknown contract/i;
+      for (const delay of [0, 1000, 2000, 4000, 8000, 15000]) {{
+        if (delay) await wait(delay);
         try {{
           const r = toRows(code, await call("get_price_history", {{ ...args, ...extra, contract_id: id }}));
-          if (r.rows || !/unavailable|retry|timeout|timed out|rate|busy|try again/i.test(r.error)) return r;
+          if (r.rows || permanent.test(r.error)) return r;
           last = r;
-        }} catch (e) {{ last = {{ code, error: String((e && e.message) || e) }}; }}
+        }} catch (e) {{
+          last = {{ code, error: String((e && e.message) || e) }};
+          if (permanent.test(last.error)) return last;
+        }}
       }}
       return last;
     }};
     const results = [toRows(OWN, answer)];
     if (!results[0].rows) results[0] = await fetchOne(OWN, CONTRACTS[OWN], {{}});
     for (const [code, id] of Object.entries(CONTRACTS)) {{
-      if (code !== OWN) results.push(await fetchOne(code, id, {{ {period_line}}}));
+      if (code !== OWN) {{ await wait(300); results.push(await fetchOne(code, id, {{ {period_line}}})); }}
     }}
     const ok = results.filter((r) => r.rows && r.rows.length);
     if (!ok.length) throw new Error("IBKR returned no bars: " + results.map((r) => r.code + " " + r.error).join("; "));

@@ -125,6 +125,8 @@
       const paths = sessions.map((s) => {
         const strip = {};
         for (const c of USE) { const r = by[c] && STIR.lastOnOrBefore(by[c], s); if (r) strip[c] = 100 - r.close; }
+        // The fit needs the front of the strip; without U26, Z26 and H27 it is not identified.
+        if (!["U26", "Z26", "H27"].every((c) => c in strip) || Object.keys(strip).length < 5) return [];
         return STIR.stripPath(BOC, strip, s);
       });
       const rows = [];
@@ -170,7 +172,7 @@
   const argmaxAbs = (vals) => { let i = -1, b = 0; vals.forEach((v, k) => { if (v != null && Math.abs(v) > b) { b = Math.abs(v); i = k; } }); return i; };
   function placeholder(box, st, h) {
     box.replaceChildren(el("div", { class: "s-ph", style: h ? `min-height:${h}px` : null },
-      st.status === "error" ? "Failed to load" : st.status === "ok" ? "No data" : "—"));
+      st.status === "error" ? "Failed to load" : st.note ? "Not enough contracts loaded to price the meetings. Refresh to retry." : st.status === "ok" ? "No data" : "—"));
   }
   function labelCell(curve) {
     const td = el("td", { class: "lab" });
@@ -314,7 +316,9 @@
   function pricedDraw(name, id, meetings) {
     dash.draw(name, (box) => {
       const d = dash.data(id);
-      if (d.status !== "ok" || !d.data || !d.data.length) return placeholder(box, d, 300);
+      if (d.status !== "ok" || !d.data || !d.data.length) {
+        return placeholder(box, d.status === "ok" ? { status: "ok", note: true } : d, 300);
+      }
       const maxN = Math.max(...d.data.map((r) => r.days_ago));
       const n = Math.min(UI[name + "_n"], maxN);
       const rows = d.data.filter((r) => r.days_ago === n);
