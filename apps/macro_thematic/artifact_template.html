@@ -1,0 +1,562 @@
+<title>Macro Thematic Toolkit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: companion to the "Investment Process — Macro Thematic" document: sticky topbar + parts nav,
+     one band per process step, dense tables, inputs inline with the numbers they change. */
+  :root {
+    --navy: #1F3550; --navy2: #16273C; --slate: #55677C; --bronze: #A9814F;
+    --hair: #D9DEE5; --bg-soft: #F5F7FA; --bg-callout: #F8F6F2;
+    --bg: #FFFFFF; --fg: #23303F; --card-fg: #EDF1F6; --input-bg: #FFFFFF;
+    --good: #2E7D32; --warn: #B26A00; --bad: #B71C1C; --muted: #9AA7B5;
+    --s1: #1F3550; --s2: #A9814F; --s3: #4C78A8; --s4: #C77C3A; --s5: #6AA84F; --s6: #8FA0B2;
+    --font-body: "Segoe UI", Calibri, Carlito, Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12181F; --fg: #DCE3EA; --bg-soft: #1B232D; --bg-callout: #1E2019; --input-bg: #0F151C;
+      --hair: #303C48; --navy: #B9CBE0; --navy2: #0E1620; --slate: #8FA0B2; --bronze: #D9B98A;
+      --card-fg: #DCE3EA; --good: #6CC070; --warn: #E0A64A; --bad: #E57373; --muted: #6F7E8E;
+      --s1: #B9CBE0; --s2: #D9B98A; --s3: #7FA6DB; --s4: #E09A5C; --s5: #8FD07A; --s6: #8FA0B2;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12181F; --fg: #DCE3EA; --bg-soft: #1B232D; --bg-callout: #1E2019; --input-bg: #0F151C;
+    --hair: #303C48; --navy: #B9CBE0; --navy2: #0E1620; --slate: #8FA0B2; --bronze: #D9B98A;
+    --card-fg: #DCE3EA; --good: #6CC070; --warn: #E0A64A; --bad: #E57373; --muted: #6F7E8E;
+    --s1: #B9CBE0; --s2: #D9B98A; --s3: #7FA6DB; --s4: #E09A5C; --s5: #8FD07A; --s6: #8FA0B2;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: calc(104px + env(safe-area-inset-top, 0px)); }
+  body { font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--fg); background: var(--bg); margin: 0; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--navy2); }
+  a { color: var(--bronze); }
+  .stick { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+  .topbar { background: var(--navy2); color: #EDF1F6; padding-block: 9px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .topbar .title { font-weight: 700; font-size: 14px; }
+  .topbar .sub { color: #B9C6D6; font-size: 11px; }
+  .topbar .right { display: flex; gap: 8px; align-items: center; }
+  .topbar button { background: transparent; border: 1px solid #4A5F78; color: #EDF1F6; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .saved { font-size: 11px; color: #B9C6D6; min-width: 70px; text-align: right; }
+  .parts { background: var(--bg); border-bottom: 1px solid var(--hair); }
+  .parts nav { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; gap: 2px; overflow-x: auto; }
+  .parts a { flex: 0 0 auto; padding: 8px 10px; font-size: 12.5px; font-weight: 600; color: var(--slate); text-decoration: none; border-bottom: 3px solid transparent; }
+  .parts a:hover, .parts a:focus-visible { color: var(--navy); border-bottom-color: var(--bronze); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-block: 0 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .hero { padding: 34px 0 20px 0; border-bottom: 1px solid var(--hair); margin-bottom: 10px; }
+  .hero .rule { width: 54px; height: 5px; background: var(--bronze); border-radius: 2px; margin-bottom: 14px; }
+  .hero h1 { font-size: 27px; color: var(--navy); margin: 0 0 6px 0; text-wrap: balance; }
+  .hero h2 { font-size: 14px; color: var(--slate); font-weight: 400; margin: 0 0 12px 0; }
+  .hero p { max-width: 700px; margin: 0 0 8px 0; }
+  .chain { color: var(--navy); font-weight: 600; font-size: 13px; margin-top: 8px; }
+  .chain span { color: var(--bronze); }
+  .meta-line { color: var(--slate); font-size: 12.5px; margin-top: 10px; }
+  .part { margin-top: 44px; padding: 16px 18px; background: var(--navy2); border-radius: 8px; color: #EDF1F6; scroll-margin-top: 110px; }
+  .part h1 { margin: 0; font-size: 21px; color: #FFFFFF; }
+  .part p { margin: 4px 0 0 0; color: #B9C6D6; font-size: 13px; }
+  .part .k { color: #D9B98A; font-weight: 700; font-size: 12.5px; }
+  section.block { padding-top: 22px; }
+  h2 { font-size: 16px; color: var(--navy); margin: 22px 0 8px 0; }
+  h3 { font-size: 14px; color: var(--navy); margin: 16px 0 6px 0; }
+  p { margin: 0 0 8px 0; }
+  .q { font-style: italic; color: var(--slate); font-size: 13px; margin: 0 0 10px 0; }
+  .small { font-size: 12px; color: var(--slate); }
+  .tblwrap { overflow-x: auto; margin: 8px 0 14px 0; -webkit-overflow-scrolling: touch; min-width: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  th { background: var(--bg-soft); color: var(--navy); font-weight: 700; text-align: left; padding: 6px 8px; border-top: 2px solid var(--navy); border-bottom: 1px solid var(--navy); white-space: nowrap; }
+  th.sortable { cursor: pointer; } th.sortable:hover { text-decoration: underline; }
+  td { padding: 5px 8px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  td.num, th.num { text-align: right; }
+  tr:last-child td { border-bottom: 2px solid var(--navy); }
+  .callout { background: var(--bg-callout); border-left: 4px solid var(--bronze); padding: 10px 14px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+  .callout .t { font-weight: 700; color: var(--navy); font-size: 13px; display: block; margin-bottom: 4px; }
+  .formula { background: var(--bg-soft); border: 1px solid var(--hair); border-radius: 6px; padding: 10px 14px; margin: 8px 0 12px 0; font-size: 13px; text-align: center; overflow-x: auto; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 14px 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0 14px 0; }
+  @media (max-width: 720px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+  .cell { border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; background: var(--bg-soft); font-size: 13px; min-width: 0; }
+  .cell b.h { display: block; color: var(--navy); margin-bottom: 3px; }
+  .cell.lit { border-color: var(--bronze); box-shadow: inset 0 0 0 2px var(--bronze); }
+  .kpis { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 12px 0; }
+  .kpi { flex: 1 1 150px; min-width: 0; border-top: 2px solid var(--bronze); background: var(--bg-soft); padding: 8px 10px; }
+  .kpi .l { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--slate); }
+  .kpi .v { font-size: 20px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+  .kpi .d { font-size: 12px; color: var(--slate); }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 10.5px; font-weight: 700; color: #fff; margin-left: 4px; vertical-align: middle; letter-spacing: .03em; }
+  .b-live { background: var(--good); } .b-proxy { background: var(--warn); } .b-manual { background: #455A64; } .b-estimated { background: var(--warn); }
+  .b-synthetic { background: var(--bad); } .b-unavailable { background: #9E9E9E; } .b-example { background: #607D8B; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 9px; font-size: 11px; font-weight: 700; border: 1px solid var(--hair); }
+  .pos { color: var(--good); } .neg { color: var(--bad); } .warnc { color: var(--warn); }
+  .ok { background: color-mix(in srgb, var(--good) 15%, transparent); } .fail { background: color-mix(in srgb, var(--bad) 15%, transparent); } .mid { background: color-mix(in srgb, var(--warn) 15%, transparent); }
+  input, select, textarea, button { font: inherit; color: var(--fg); }
+  input[type=text], input[type=number], select, textarea { background: var(--input-bg); border: 1px solid var(--hair); border-radius: 5px; padding: 5px 7px; max-width: 100%; }
+  input[type=number] { width: 7.5em; font-variant-numeric: tabular-nums; }
+  textarea { width: 100%; min-height: 54px; }
+  input[type=range] { width: 100%; accent-color: var(--bronze); }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--bronze); outline-offset: 1px; }
+  .btn { background: var(--navy); color: #fff; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 13px; }
+  .btn.sec { background: transparent; color: var(--navy); border: 1px solid var(--navy); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 6px 0 10px 0; }
+  .field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .field label { font-size: 11.5px; color: var(--slate); text-transform: uppercase; letter-spacing: .04em; }
+  .chart { width: 100%; height: 300px; min-width: 0; }
+  .chart.short { height: 130px; }
+  .ribbon { display: flex; height: 22px; border-radius: 4px; overflow: hidden; margin: 6px 0; }
+  .ribbon div { flex: 1 1 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 12px; color: var(--slate); margin: 4px 0 10px 0; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  details { margin: 8px 0; } summary { cursor: pointer; color: var(--navy); font-weight: 600; font-size: 13.5px; }
+  .verdict { background: color-mix(in srgb, var(--bronze) 14%, transparent); border: 1px solid var(--bronze); border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+  .verdict b { color: var(--navy); }
+  .alert { border-left: 4px solid var(--bad); background: color-mix(in srgb, var(--bad) 8%, transparent); padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+  .notice { border-left: 4px solid var(--warn); background: color-mix(in srgb, var(--warn) 8%, transparent); padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+  .sliders { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px 16px; }
+  .sliders label { font-size: 12px; color: var(--slate); display: block; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; }
+  pre.onepager { background: var(--bg-soft); border: 1px solid var(--hair); border-radius: 6px; padding: 12px 14px; font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; overflow-x: auto; }
+  footer { text-align: center; color: var(--slate); font-size: 11.5px; padding: 30px 0 10px 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (max-width: 600px) { .topbar .sub { display: none; } .hero h1 { font-size: 23px; } }
+</style>
+
+<div class="stick">
+  <div class="topbar">
+    <div><div class="title">Macro Thematic Toolkit</div><div class="sub" id="subline">Regime → Theme → Confirmation → Pillars → Crowding → Leg → Size → Stress</div></div>
+    <div class="right"><span class="saved" id="saved"></span>
+      <button id="themeBtn" type="button" aria-label="Toggle light and dark theme">☀/☾ Theme</button></div>
+  </div>
+  <div class="parts"><nav aria-label="Toolkit parts">
+    <a href="#p1">T1·T2 Regime</a><a href="#p2">T13 Themes</a><a href="#p3">T3 Confirmation</a><a href="#p4">T4–T8 Screener</a>
+    <a href="#p5">T9·T10 Crowding</a><a href="#p6">§2 Leg choice</a><a href="#p7">§3 Size &amp; stress</a><a href="#p8">T14 One-pager</a><a href="#p9">Data</a>
+  </nav></div>
+</div>
+
+<div class="wrap" id="top">
+  <div class="hero">
+    <div class="rule"></div>
+    <h1>Macro Thematic Toolkit</h1>
+    <h2>The working tool behind <a href="https://claude.ai/artifact/NfSsqEKh7yMY5bwRCRdWLK">Investment Process — Macro Thematic</a>: every step of the chain with today's numbers, and the desk's inputs kept between visits.</h2>
+    <p>Public data only (Yahoo Finance, FRED, the fed-funds strip); what has no public source is typed in and badged. Example themes and an example book are pre-filled so every block shows what it does. Edit anything: the page saves it.</p>
+    <div class="chain">Regime <span>→</span> Theme &amp; scenarios <span>→</span> Confirmation <span>→</span> Four pillars <span>→</span> Crowding <span>→</span> Leg choice <span>→</span> Size <span>→</span> Stress</div>
+    <div class="meta-line" id="metaline"></div>
+    <div class="legend" style="margin-top:10px">
+      <span><span class="badge b-live">LIVE</span> observed market / official print</span><span><span class="badge b-proxy">PROXY</span> public data, documented approximation</span>
+      <span><span class="badge b-estimated">ESTIMATED</span> model or rule, verify</span><span><span class="badge b-manual">MANUAL</span> typed by the desk</span>
+      <span><span class="badge b-example">EXAMPLE</span> pre-filled illustration</span><span><span class="badge b-unavailable">UNAVAILABLE</span> no public source, not faked</span>
+    </div>
+  </div>
+
+  <div class="part" id="p1"><span class="k">T1 · T2 — §1.3</span><h1>Regime engine &amp; transition state</h1><p>Which quadrant are we in, how confident is the read, and is the regime stable or in transition?</p></div>
+  <section class="block" id="regime"></section>
+
+  <div class="part" id="p2"><span class="k">T13 — §1.4–1.5</span><h1>Theme tracker — theme &amp; scenarios</h1><p>What question is the market asking, what are the answers with odds, and where is the edge versus what is priced?</p></div>
+  <section class="block" id="themes"></section>
+
+  <div class="part" id="p3"><span class="k">T3 — §1.5</span><h1>Cross-asset confirmation &amp; divergence</h1><p>Is the narrative ratified across independent asset classes, and which contradictions need a written resolution?</p></div>
+  <section class="block" id="confirmation"></section>
+
+  <div class="part" id="p4"><span class="k">T4–T8 — §1.6–1.7</span><h1>Four screening pillars &amp; Trade Screener</h1><p>Which instrument expresses the theme best: cheap, paid to wait, seasonally supported, not already crowded?</p></div>
+  <section class="block" id="screener"></section>
+
+  <div class="part" id="p5"><span class="k">T9 · T10 — §1.8</span><h1>Crowding score, quality ladder, unwind tree</h1><p>Where does the book lose together, and which trades are too crowded to add to?</p></div>
+  <section class="block" id="crowding"></section>
+
+  <div class="part" id="p6"><span class="k">§2.1–2.3</span><h1>Leg choice &amp; the three vol alphas</h1><p>Is the premium itself rich or cheap, and separately rising or falling, across the theme's basket? Then conviction, then loss budget.</p></div>
+  <section class="block" id="legs"></section>
+
+  <div class="part" id="p7"><span class="k">§3.1–3.6</span><h1>Sizing, exposure, stress, control, theta</h1><p>Can every line be held through a normal two-week wobble, and does the book survive the tail with its convexity intact?</p></div>
+  <section class="block" id="risk"></section>
+
+  <div class="part" id="p8"><span class="k">T14 — §4.3–4.4</span><h1>Daily one-pager &amp; operating cycle</h1><p>State · Evidence · Positioning · Action, out before the market opens.</p></div>
+  <section class="block" id="onepager"></section>
+
+  <div class="part" id="p9"><span class="k">Data</span><h1>Data &amp; provenance</h1><p>What is observed, what is approximated, what is typed in, and the public-data build plan.</p></div>
+  <section class="block" id="data"></section>
+
+  <footer>Macro Thematic Toolkit · internal research tooling, not investment advice · all calibrations illustrative until connected to live desk data · <a href="#top">↑ top</a></footer>
+</div>
+
+<script type="application/json" id="data">__PAYLOAD__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  const P = JSON.parse(document.getElementById("data").textContent);
+  const $ = (id) => document.getElementById(id);
+  const h = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+  const isNum = (x) => typeof x === "number" && isFinite(x);
+  const fmt = (x, nd = 2, suf = "", sign = false) => !isNum(x) ? "n/a" : ((sign && x > 0 ? "+" : "") + x.toLocaleString("en-US", {minimumFractionDigits: nd, maximumFractionDigits: nd}) + suf);
+  const money = (x, nd = 0) => !isNum(x) ? "n/a" : (x < 0 ? "−" : "") + "$" + Math.abs(x).toLocaleString("en-US", {maximumFractionDigits: nd});
+  const badge = (q) => q ? `<span class="badge b-${h(q).replace(/[^a-z]/g, "")}">${h(q).toUpperCase()}</span>` : "";
+  const cls = (x) => !isNum(x) ? "" : x > 0 ? "pos" : x < 0 ? "neg" : "";
+  const mean = (a) => a.length ? a.reduce((s, v) => s + v, 0) / a.length : NaN;
+  const std = (a) => { if (a.length < 2) return NaN; const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) ** 2, 0) / (a.length - 1)); };
+  const quantile = (a, q) => { const s = [...a].sort((x, y) => x - y); if (!s.length) return NaN; const i = (s.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return s[lo] + (s[hi] - s[lo]) * (i - lo); };
+  const clip = (x, a, b) => Math.min(b, Math.max(a, x));
+  const deep = (o) => JSON.parse(JSON.stringify(o));
+  const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const SERIES = () => ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6"].map(cssVar);
+
+  // ---------------------------------------------------------------- state & persistence
+  const DEFAULT_STATE = () => ({
+    v: 1, themes: deep(P.themes.examples), quality: {}, whyNow: {}, layers: {}, divNotes: {}, horizon: 20,
+    weights: deep(P.screener.weights), classes: null, book: deep(P.risk.example_book), manualIV: {}, skewRatio: 1.0,
+    nav: 100000000, lossLimit: 2500000, legSel: {theme: null, asset: "S&P 500", level: null, direction: null, conviction: "high directional", headroom: true},
+    eventInputs: {be: 15, rr: 0}, shock: Object.keys(P.crowding.shocks)[0], corrOneUnwind: false, corrOneStress: false, likelihoods: {}, updated: null,
+  });
+  let S = DEFAULT_STATE();
+  let db = null, saveTimer = null, savedEl;
+  const setSaved = (t) => { if (savedEl) savedEl.textContent = t; };
+  function persistNow() {
+    S.updated = new Date().toISOString();
+    const body = deep(S);
+    if (db) { setSaved("saving…"); db.doc("inputs/th").set(body).then(() => setSaved("saved")).catch((e) => { setSaved("not saved"); try { localStorage.setItem("th_state", JSON.stringify(body)); } catch (_) {} }); }
+    else { try { localStorage.setItem("th_state", JSON.stringify(body)); setSaved("saved locally"); } catch (_) { setSaved(""); } }
+  }
+  function save() { clearTimeout(saveTimer); setSaved("…"); saveTimer = setTimeout(persistNow, 800); }
+  function applyLoaded(obj) {
+    if (!obj || typeof obj !== "object") return;
+    const base = DEFAULT_STATE();
+    for (const k of Object.keys(base)) if (obj[k] !== undefined && obj[k] !== null) S[k] = obj[k];
+    if (!Array.isArray(S.themes) || !S.themes.length) S.themes = base.themes;
+    if (!Array.isArray(S.book)) S.book = base.book;
+  }
+  async function connectStore() {
+    try { const raw = localStorage.getItem("th_state"); if (raw) applyLoaded(JSON.parse(raw)); } catch (_) {}
+    renderAll();
+    try {
+      if (window.claude && window.claude.use) db = await window.claude.use("db");
+    } catch (_) { db = null; }
+    if (!db) { setSaved("local only"); return; }
+    try {
+      const snap = await db.doc("inputs/th").get();
+      if (snap.exists) { applyLoaded(snap.data()); renderAll(); setSaved("loaded"); } else setSaved("ready");
+    } catch (e) { setSaved("store unavailable"); }
+  }
+
+  // ---------------------------------------------------------------- plotly helpers
+  function plotLayout(extra) {
+    const fg = cssVar("--fg"), slate = cssVar("--slate"), hair = cssVar("--hair");
+    return Object.assign({paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: {color: fg, family: cssVar("--font-body"), size: 11},
+      margin: {l: 44, r: 10, t: 28, b: 34}, legend: {orientation: "h", y: -0.18, font: {color: slate}},
+      xaxis: {gridcolor: hair, zerolinecolor: hair, tickfont: {color: slate}}, yaxis: {gridcolor: hair, zerolinecolor: hair, tickfont: {color: slate}},
+      hovermode: "x unified"}, extra || {});
+  }
+  const charts = [];
+  function plot(id, traces, layout) {
+    const el = $(id); if (!el) return;
+    if (!window.Plotly) { el.innerHTML = '<p class="small">Chart library not loaded; the table above carries the numbers.</p>'; return; }
+    Plotly.react(el, traces, plotLayout(layout), {displayModeBar: false, responsive: true});
+    if (!charts.includes(id)) charts.push(id);
+  }
+  function redrawCharts() { renderAll(); }
+
+  // ---------------------------------------------------------------- shared maths
+  function normalise(p) { const a = p.map((x) => Math.max(0, +x || 0)); const s = a.reduce((x, y) => x + y, 0); return s > 0 ? a.map((x) => x / s) : a.map(() => 1 / a.length); }
+  function moments(probs, outs) {
+    const p = normalise(probs), x = outs.map(Number);
+    const mu = p.reduce((s, pi, i) => s + pi * x[i], 0);
+    const v = p.reduce((s, pi, i) => s + pi * (x[i] - mu) ** 2, 0);
+    const ent = -p.reduce((s, pi) => s + (pi > 0 ? pi * Math.log(pi) : 0), 0);
+    const sk = v > 0 ? p.reduce((s, pi, i) => s + pi * (x[i] - mu) ** 3, 0) / v ** 1.5 : 0;
+    return {mean: mu, var: v, std: Math.sqrt(v), entropy: ent, skew: sk};
+  }
+  const tbl = (cols, rowsHtml, opts = {}) => `<div class="tblwrap"><table${opts.id ? ` id="${opts.id}"` : ""}><thead><tr>${cols.map((c) => `<th class="${c.num ? "num " : ""}${c.sort ? "sortable" : ""}" ${c.key ? `data-key="${c.key}"` : ""}>${c.label}</th>`).join("")}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+  const kpis = (items) => `<div class="kpis">${items.map((it) => `<div class="kpi"><div class="l">${it[0]}</div><div class="v">${it[1]}</div>${it[2] ? `<div class="d">${it[2]}</div>` : ""}</div>`).join("")}</div>`;
+
+  // ---------------------------------------------------------------- T1/T2 regime
+  const QUAD = {Reflation: ["up", "up"], Goldilocks: ["up", "down"], Stagflation: ["down", "up"], "Deflation / slowdown": ["down", "down"]};
+  const QCOL = {Reflation: "#B26A00", Goldilocks: "#2E7D32", Stagflation: "#B71C1C", "Deflation / slowdown": "#1F3550"};
+  function renderRegime() {
+    const R = P.regime; if (!R) { $("regime").innerHTML = '<p class="small">Regime block unavailable in this export.</p>'; return; }
+    const vars = R.variables;
+    let html = kpis([["Quadrant", h(R.quadrant), h(R.playbook)], ["Regime confidence RC", fmt(R.rc, 2), "Σ w·1[confirms] / Σ w"], ["Days in quadrant", R.days_in, ""],
+      ["Transition state", h(R.state), h(R.behaviour)], ["Variables moving against", R.against, "|m| &gt; 0.5 against the quadrant"]]);
+    html += `<p class="q">z on 3y (winsorised ±3), m = z − z(−20d). Label and RC are always published together.</p>`;
+    html += tbl([{label: "State variable"}, {label: "z", num: true}, {label: "m (20d)", num: true}, {label: "Primary indicator"}, {label: "Confirmation", num: true}, {label: "Market confirmation"}],
+      vars.map((v) => `<tr><td><b>${h(v.variable)}</b>${badge(v.quality)}</td><td class="num ${cls(v.z)}">${fmt(v.z, 2, "", true)}</td><td class="num ${cls(v.m)}">${fmt(v.m, 2, "", true)}</td><td>${h(v.primary)}</td><td class="num ${cls(v.confirmation)}">${fmt(v.confirmation, 2, "", true)}</td><td>${h(v.confirmation_desc)}</td></tr>`).join(""));
+    html += `<div class="grid2">${Object.keys(QUAD).map((q) => `<div class="cell ${q === R.quadrant ? "lit" : ""}"><b class="h">${q === R.quadrant ? "● " : ""}${h(q)} — growth ${QUAD[q][0] === "up" ? "↑" : "↓"}, inflation ${QUAD[q][1] === "up" ? "↑" : "↓"}</b>${{Reflation: "Short duration, long cyclicals, steepener bias.", Goldilocks: "Long risk, carry-friendly, short vol.", Stagflation: "Long real assets, short duration and risk, long vol.", "Deflation / slowdown": "Long duration, long quality."}[q]}</div>`).join("")}</div>`;
+    html += `<h3>State variables, 2y (z)</h3><div class="chart" id="ch_regime"></div>`;
+    html += `<h3>2y regime ribbon</h3><div class="ribbon" id="ribbon"></div><div class="legend">${Object.keys(QCOL).map((q) => `<span><i style="background:${QCOL[q]}"></i>${h(q)}</span>`).join("")}</div>`;
+    html += `<h3>Transition state machine</h3>` + tbl([{label: "State"}, {label: "Entry condition"}, {label: "Desk behaviour"}],
+      [["Stable", "Quadrant unchanged 20d+, RC ≥ 0.6", "Full thematic risk; carry and mean reversion allowed"], ["Early transition", "|m| &gt; 0.5 on ≥ 2 variables against quadrant", "No new old-regime positions; open the competing-narrative file"],
+       ["Confirmed transition", "Sign flip + ≥ 2 confirmations + RC(new) ≥ 0.5", "Rotate expressions; prefer convexity while RC &lt; 0.7"], ["New regime", "Held 20d, RC ≥ 0.6", "Back to Stable rules"]]
+        .map((r) => `<tr class="${R.state.startsWith(r[0].split(" ")[0]) ? "mid" : ""}"><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join(""));
+    const c = R.credibility || {};
+    html += `<h3>Credibility overlay ${badge("proxy")}</h3>` + kpis([["β(5y5y BE → CPI surprise), 2y", fmt(c.beta, 2, "", true), "monthly; surprise = CPI m/m − 12m mean"], ["ACM 10Y term premium, 60D", fmt(c.tp_trend_bp, 0, " bp", true), ""],
+      ["30Y, 60D", fmt(c.y30_60d_bp, 0, " bp", true), ""], ["DXY, 60D", fmt(c.dxy_60d, 1, " %", true), ""], ["Switch", h(c.switch || "n/a"), "currency down + long end up + TP up = fiscal dominance"]]);
+    html += `<div class="callout"><span class="t">Credibility switch, sign before size</span>A hot CPI is a bear flattener under credible targeting and a bear steepener under fiscal dominance. Decompose the long end (ACM) before reading it as macro. UK September 2022 is the canonical case.</div>`;
+    const pp = R.policy_path;
+    html += `<h3>G10 gauges &amp; curve routing (summary)</h3><p class="small">Fed path priced over 12m from the fed-funds strip: <b>${pp ? fmt(pp.cum_12m_bp, 0, " bp", true) : "n/a"}</b> ${pp ? badge("live") : badge("unavailable")} ${pp ? "(" + h(pp.source) + ", spot EFFR " + fmt(pp.spot, 2, "%") + ")" : ""}. Full 3×2 gauge grid, reaction functions and meeting-dated pricing live in the G3 Central Bank toolkit.</p>`;
+    html += tbl([{label: "Cell"}, {label: "Curve reaction"}, {label: "Segment"}], [["Overheating — spot hot, forward hot", "Front and belly bear-flatten; policy-path trade", "Cash–2y, 2s5s"], ["Late cycle — spot hot, forward cool", "Peak rates, hump in 2s5s10s; supply shock → 5s30s/10s30s", "2s5s10s fly, 5s30s"],
+      ["Early reacceleration — spot cool, forward hot", "Belly leads; 2s5s bear-steepener", "2s5s"], ["Slowdown — spot cool, forward cool", "Bull-steepener then bull-flatten; front rallies first", "Cash–2y, 2s10s"]].map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join(""));
+    $("regime").innerHTML = html;
+    const H = R.history, colours = SERIES();
+    const names = Object.keys(H).filter((k) => k !== "dates");
+    plot("ch_regime", names.map((n, i) => ({x: H.dates, y: H[n], name: n, mode: "lines", line: {width: 1.6, color: colours[i % colours.length]}})), {yaxis: {zeroline: true, title: "z"}, shapes: [{type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: {color: cssVar("--muted"), width: 1}}]});
+    const rb = $("ribbon"); if (rb) rb.innerHTML = R.ribbon.labels.map((l, i) => `<div style="background:${QCOL[l] || "#999"}" title="${R.ribbon.dates[i]} · ${h(l)}"></div>`).join("");
+  }
+
+  // ---------------------------------------------------------------- T13 themes
+  const LIFECYCLE = (B, Sat) => !isNum(Sat) ? "n/a" : Sat < 40 ? (B >= 2 ? "Emerging — entry zone" : "Emerging (thin breadth) — small") : Sat < 65 ? (B >= 3 ? "Established — hold, add on dislocation" : "Established (narrow) — watch breadth") : B >= 3 ? "Consensus — no adds, convex fades only" : "Decaying — exit";
+  let themeIdx = 0;
+  function themeStats(t) {
+    const sc = (t.scenarios || []).filter((s) => isNum(+s.prob) && isNum(+s.outcome));
+    if (sc.length < 2) return null;
+    const m = moments(sc.map((s) => +s.prob), sc.map((s) => +s.outcome));
+    const edge = m.mean - (+t.priced_bp || 0);
+    const B = P.themes.breadth_by_narrative[t.narrative] ?? 0;
+    const parts = {"price extension": [P.themes.price_extension_by_narrative[t.narrative], "live"], positioning: [null, "unavailable"], "news intensity": [+t.news_intensity || 50, "manual"],
+      "valuation gap": [m.std > 0 ? Math.min(100, 100 * (1 - Math.exp(-Math.abs(edge) / m.std))) : 0, "live"]};
+    const vals = Object.values(parts).map((v) => v[0]).filter(isNum);
+    const Sat = vals.length ? mean(vals) : NaN;
+    return {m, edge, B, Sat, parts, stage: LIFECYCLE(B, Sat), sc};
+  }
+  function renderThemes() {
+    const el = $("themes"); if (!S.themes.length) { el.innerHTML = '<p class="small">No themes. <button class="btn" id="newTheme">Create one</button></p>'; return; }
+    themeIdx = clip(themeIdx, 0, S.themes.length - 1);
+    const t = S.themes[themeIdx];
+    const narratives = Object.keys(P.narratives);
+    let html = `<div class="row"><div class="field"><label for="themeSel">Theme</label><select id="themeSel">${S.themes.map((x, i) => `<option value="${i}" ${i === themeIdx ? "selected" : ""}>${h(x.name)}</option>`).join("")}</select></div>
+      <div class="field"><label for="newName">New theme</label><input type="text" id="newName" placeholder="name"></div><button class="btn sec" id="newTheme" type="button">Create</button><button class="btn sec" id="delTheme" type="button">Delete current</button></div>`;
+    html += `<h2>Record ${badge(t.status || "manual")}</h2><div class="row">
+      <div class="field"><label for="t_kind">Classed as</label><select id="t_kind"><option ${t.kind === "regime" ? "selected" : ""}>regime</option><option ${t.kind === "event" ? "selected" : ""}>event</option></select></div>
+      <div class="field"><label for="t_nar">Confirmation narrative</label><select id="t_nar">${narratives.map((n) => `<option ${n === t.narrative ? "selected" : ""}>${h(n)}</option>`).join("")}</select></div>
+      <div class="field" style="flex:1 1 260px"><label for="t_cat">Catalyst</label><input type="text" id="t_cat" value="${h(t.catalyst)}"></div></div>
+      <div class="grid2"><div class="field"><label for="t_mech">Mechanism (transmission)</label><textarea id="t_mech">${h(t.mechanism)}</textarea></div>
+      <div class="field"><label for="t_comp">Competing narrative (mandatory)</label><textarea id="t_comp">${h(t.competing)}</textarea></div></div>
+      ${!(t.competing || "").trim() ? '<div class="alert">Competing narrative is mandatory: the record is incomplete.</div>' : ""}
+      <div class="grid3"><div class="field"><label for="t_am">Expected asset map</label><input type="text" id="t_am" value="${h(t.asset_map)}"></div>
+      <div class="field"><label for="t_ex">Preferred expression</label><input type="text" id="t_ex" value="${h(t.expression)}"></div>
+      <div class="field"><label for="t_inv">Invalidation (so a colleague could enforce it)</label><input type="text" id="t_inv" value="${h(t.invalidation)}"></div></div>`;
+    html += `<h2>Scenarios, mutually exclusive and exhaustive on the axis ${badge("manual")}</h2>`;
+    html += tbl([{label: "Scenario"}, {label: "prob", num: true}, {label: `outcome (${h(t.unit || "bp")})`, num: true}, {label: ""}],
+      (t.scenarios || []).map((s, i) => `<tr><td><input type="text" data-sc="${i}" data-f="name" value="${h(s.name)}" style="width:100%"></td><td class="num"><input type="number" step="0.05" min="0" max="1" data-sc="${i}" data-f="prob" value="${s.prob}"></td><td class="num"><input type="number" step="1" data-sc="${i}" data-f="outcome" value="${s.outcome}"></td><td><button class="btn sec" data-delsc="${i}" type="button" aria-label="remove scenario">×</button></td></tr>`).join(""));
+    html += `<div class="row"><button class="btn sec" id="addSc" type="button">+ scenario</button>
+      <div class="field"><label for="t_unit">Outcome unit</label><input type="text" id="t_unit" value="${h(t.unit || "bp")}" style="width:10em"></div>
+      <div class="field"><label for="t_pr">Δ priced by the market</label><input type="number" id="t_pr" step="1" value="${t.priced_bp}"></div>
+      <div class="field" style="flex:1 1 200px"><label for="t_ni">News intensity percentile (manual): <span id="t_ni_v">${t.news_intensity}</span></label><input type="range" id="t_ni" min="0" max="100" value="${t.news_intensity}"></div></div>
+      <p class="small">Odds bands: near-certain ≥85 · likely 60–85 · toss-up 40–60 · unlikely 15–40 · tail &lt;15. Written before the event, anchored to prediction markets, OIS-implied odds and nowcasts; updated mechanically.</p>`;
+    const st = themeStats(t);
+    if (st) {
+      const u = h(t.unit || "bp"), maxH = Math.log(st.sc.length);
+      html += `<div class="formula">E[Δ] = Σ pᵢ mᵢ · Var[Δ] = Σ pᵢ(mᵢ − E[Δ])² · H = −Σ pᵢ ln pᵢ · edge = E[Δ] − Δ_priced</div>`;
+      html += kpis([["E[Δ]", fmt(st.m.mean, 1, " " + u, true)], ["σ[Δ]", fmt(st.m.std, 1)], ["Entropy H", `${fmt(st.m.entropy, 2)} / ${fmt(maxH, 2)}`, "max for this many scenarios"], ["Skew", fmt(st.m.skew, 2, "", true)], ["Edge = E[Δ] − Δ_priced", `<span class="${cls(st.edge)}">${fmt(st.edge, 1, " " + u, true)}</span>`]]);
+      if (Math.abs(st.m.skew) > 0.5 && Math.abs(st.edge) < 0.5 * st.m.std) html += `<div class="notice">Modal scenario roughly priced but tails lopsided → skewed distribution: favour a convex expression (see Leg choice).</div>`;
+      html += `<div class="chart" id="ch_scen" style="height:230px"></div>`;
+      const lk = S.likelihoods[t.name] || st.sc.map(() => 0.5);
+      const prior = normalise(st.sc.map((s) => +s.prob)); const post = normalise(prior.map((p, i) => p * (lk[i] ?? 0.5)));
+      html += `<details><summary>Bayesian update: p_post ∝ p_prior · L(evidence | sᵢ)</summary><div class="sliders">${st.sc.map((s, i) => `<label>L(evidence | ${h(s.name)}): <b id="lk_v${i}">${fmt(lk[i] ?? 0.5, 2)}</b><input type="range" min="0" max="1" step="0.05" data-lk="${i}" value="${lk[i] ?? 0.5}"></label>`).join("")}</div>
+        ${tbl([{label: "Scenario"}, {label: "prior", num: true}, {label: "likelihood", num: true}, {label: "posterior", num: true}], st.sc.map((s, i) => `<tr><td>${h(s.name)}</td><td class="num">${fmt(prior[i], 2)}</td><td class="num">${fmt(lk[i] ?? 0.5, 2)}</td><td class="num"><b>${fmt(post[i], 2)}</b></td></tr>`).join(""))}
+        <button class="btn" id="adoptPost" type="button">Adopt posterior as new odds</button></details>`;
+      html += `<h2>Lifecycle: breadth B and saturation S</h2><div class="formula">Breadth B ∈ {0…6} = independent asset classes confirming the narrative · Saturation S = mean percentile of [price extension, positioning, news intensity, valuation gap]</div>`;
+      html += kpis([["Breadth B", `${st.B} / 6`, h(t.narrative) + " confirmations (T3, 20D)"], ["Saturation S", fmt(st.Sat, 0)], ["Stage", h(st.stage)]]);
+      html += `<p class="small">${Object.entries(st.parts).map(([k, v]) => `${h(k)}: ${isNum(v[0]) ? fmt(v[0], 0) : "n/a"} ${badge(v[1])}`).join(" · ")} — positioning needs CFTC files (${h(P.cftc_status || "")}).</p>`;
+      html += `<p class="small">Emerging (B↑, S low) → entry zone · Established (B high, S mid) → hold, add on dislocation · Consensus (B high, S high) → no adds, convex fades only · Decaying (B↓, S high) → exit.</p>`;
+    } else html += `<p class="notice">Add at least two scenarios with probabilities and outcomes.</p>`;
+    html += `<h3>Theme transmission templates (§1.4)</h3>` + tbl([{label: "Active theme"}, {label: "Transmission"}, {label: "Where the expression lives"}],
+      [["Stagflation / supply shock", "Energy ↑, term premium ↑, growth equities ↓", "5s30s / 10s30s bear-steepener, gold and oil calls, long EUR puts"], ["Fiscal-dominance shift", "Long end cheapens independent of policy path; sovereign spreads widen", "Steepeners, ASW, sovereign CDS, curve options"],
+       ["Disinflation / soft landing", "Cuts repriced in, bull-steepening, risk-on", "Front-end receivers, long equity and EM FX, carry baskets"], ["Banking / liquidity stress", "Front-end rally, credit wider, USD bid", "Long 2y, long CDX IG protection, long USD, index puts vs basket"],
+       ["Trade policy / tariffs", "Goods-price impulse, growth drag, CNH/AUD weak", "Bear-steepener, long Brent, short risk FX, long convex vol"]].map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join(""));
+    el.innerHTML = html;
+    if (st) plot("ch_scen", [{type: "bar", x: st.sc.map((s) => s.name), y: normalise(st.sc.map((s) => +s.prob)), marker: {color: cssVar("--s1")}, text: st.sc.map((s) => fmt(+s.outcome, 0, "", true)), textposition: "outside", hovertemplate: "%{x}: p=%{y:.2f}, outcome %{text}<extra></extra>"}], {title: {text: "Scenario probabilities (labels = outcome)", font: {size: 12}}, yaxis: {title: "p", range: [0, 1]}, hovermode: "closest"});
+    // wiring
+    $("themeSel").onchange = (e) => { themeIdx = +e.target.value; renderThemes(); };
+    $("newTheme").onclick = () => { const n = $("newName").value.trim(); if (!n) return; S.themes.push({name: n, kind: "regime", status: "manual", catalyst: "", mechanism: "", competing: "", asset_map: "", narrative: narratives[0], expression: "", invalidation: "", priced_bp: 0, unit: "bp", news_intensity: 50, scenarios: [{name: "Base", prob: 0.5, outcome: 0}, {name: "Alt", prob: 0.5, outcome: 0}]}); themeIdx = S.themes.length - 1; save(); renderThemes(); };
+    $("delTheme").onclick = () => { S.themes.splice(themeIdx, 1); themeIdx = 0; save(); renderThemes(); renderDependents(); };
+    const bind = (id, key, conv = (v) => v) => { const n = $(id); if (n) n.onchange = () => { t[key] = conv(n.value); save(); renderThemes(); renderDependents(); }; };
+    bind("t_kind", "kind"); bind("t_nar", "narrative"); bind("t_cat", "catalyst"); bind("t_mech", "mechanism"); bind("t_comp", "competing"); bind("t_am", "asset_map"); bind("t_ex", "expression"); bind("t_inv", "invalidation");
+    bind("t_unit", "unit"); bind("t_pr", "priced_bp", Number);
+    $("t_ni").oninput = () => { $("t_ni_v").textContent = $("t_ni").value; }; $("t_ni").onchange = () => { t.news_intensity = +$("t_ni").value; save(); renderThemes(); };
+    el.querySelectorAll("input[data-sc]").forEach((inp) => { inp.onchange = () => { const s = t.scenarios[+inp.dataset.sc]; s[inp.dataset.f] = inp.dataset.f === "name" ? inp.value : +inp.value; save(); renderThemes(); renderDependents(); }; });
+    el.querySelectorAll("button[data-delsc]").forEach((b) => { b.onclick = () => { t.scenarios.splice(+b.dataset.delsc, 1); save(); renderThemes(); renderDependents(); }; });
+    $("addSc").onclick = () => { t.scenarios.push({name: "New", prob: 0.1, outcome: 0}); save(); renderThemes(); };
+    el.querySelectorAll("input[data-lk]").forEach((r) => { r.oninput = () => { $("lk_v" + r.dataset.lk).textContent = fmt(+r.value, 2); }; r.onchange = () => { const arr = S.likelihoods[t.name] || st.sc.map(() => 0.5); arr[+r.dataset.lk] = +r.value; S.likelihoods[t.name] = arr; save(); renderThemes(); }; });
+    const ad = $("adoptPost"); if (ad) ad.onclick = () => { const prior = normalise(st.sc.map((s) => +s.prob)); const lk = S.likelihoods[t.name] || st.sc.map(() => 0.5); const post = normalise(prior.map((p, i) => p * (lk[i] ?? 0.5))); t.scenarios.forEach((s, i) => { s.prob = +post[i].toFixed(3); }); save(); renderThemes(); renderDependents(); };
+  }
+
+  // ---------------------------------------------------------------- T3 confirmation
+  function renderConfirmation() {
+    const hz = String(S.horizon || 20);
+    const conf = P.confirmation[hz], dv = P.divergences[hz];
+    let html = `<div class="row"><span class="small">Horizon</span>${["20", "60"].map((x) => `<label><input type="radio" name="hz" value="${x}" ${x === hz ? "checked" : ""}> ${x}D</label>`).join(" ")}</div>`;
+    html += `<h2>Narrative confirmations ${badge("live")}</h2>` + tbl([{label: "Narrative"}, {label: "Confirmed"}, {label: "Asset classes (B)", num: true}, {label: "Evidence"}, {label: "Typical false positive"}],
+      conf.map((r) => `<tr><td><b>${h(r.narrative)}</b></td><td>${h(r.confirmed)}</td><td class="num">${r.breadth_classes}</td><td class="small">${h(r.detail)}</td><td class="small">${h(r.false_positive)}</td></tr>`).join(""));
+    html += `<h2>Divergence alerts: investigate, don't fade</h2>`;
+    html += tbl([{label: ""}, {label: "Divergence"}, {label: "Evidence"}, {label: "One-line written resolution"}],
+      dv.map((d) => `<tr class="${d.active ? "fail" : ""}"><td>${d.active ? '<span class="dot" style="background:var(--bad)"></span>' : '<span class="dot" style="background:var(--muted)"></span>'}</td><td><b>${h(d.divergence)}</b></td><td class="small">${h(d.evidence)}</td><td><input type="text" data-dv="${h(d.divergence)}" value="${h(S.divNotes[d.divergence] || "")}" placeholder="${d.active ? "required while active" : "optional"}" style="width:100%"></td></tr>`).join(""));
+    const unresolved = dv.filter((d) => d.active && !(S.divNotes[d.divergence] || "").trim()).map((d) => d.divergence);
+    if (unresolved.length) html += `<div class="alert">Unresolved active divergences: ${h(unresolved.join(", "))}</div>`;
+    html += `<p class="small">The thread between layers: slow diffusion of macro information shows up early in fundamentals and scenarios and late in positioning. Conflict between layers is information.</p>`;
+    $("confirmation").innerHTML = html;
+    document.querySelectorAll('input[name="hz"]').forEach((r) => { r.onchange = () => { S.horizon = +r.value; save(); renderConfirmation(); }; });
+    document.querySelectorAll("input[data-dv]").forEach((i) => { i.onchange = () => { S.divNotes[i.dataset.dv] = i.value; save(); renderConfirmation(); renderOnePager(); }; });
+  }
+
+  // ---------------------------------------------------------------- T4–T8 screener
+  let sortKey = "composite", sortDir = -1;
+  function scoreScreener() {
+    const W = S.weights, pil = ["S_V", "S_C", "S_S", "S_P"], wv = [W.valuation, W.carry, W.seasonality, W.positioning];
+    return P.screener.rows.map((r) => {
+      const vals = pil.map((p) => r[p]); const m = vals.map(isNum);
+      let comp = NaN, conv = NaN;
+      if (m.some(Boolean)) { const ws = wv.filter((_, i) => m[i]); const tot = ws.reduce((a, b) => a + b, 0); const vv = vals.filter(isNum); comp = tot > 0 ? vv.reduce((s, v, i) => s + v * ws[i] / tot, 0) : NaN; conv = vv.length > 1 ? clip(1 - std(vv) * Math.sqrt((vv.length - 1) / vv.length) / 3, 0, 1) : 0.5; }
+      const flags = [];
+      if ((r.crowd || 0) > 0 || (isNum(r.stretch) && r.stretch >= 80)) flags.push("CROWDED");
+      const vv = vals.filter(isNum); if (vv.length >= 2 && Math.max(...vv) >= 1 && Math.min(...vv) <= -1) flags.push("CONFLICT");
+      if (r.event) flags.push("EVENT"); if (String(r.val_note || "").includes("NON-STAT")) flags.push("NON-STAT"); if (vv.length <= 2) flags.push("THIN");
+      return Object.assign({}, r, {composite: comp, conviction: conv, flags: flags.join(" ")});
+    });
+  }
+  function renderScreener() {
+    const el = $("screener"); const W = S.weights;
+    const classes = [...new Set(P.screener.rows.map((r) => r.asset_class))].sort();
+    if (!S.classes) S.classes = classes.slice();
+    const rowsAll = scoreScreener().filter((r) => S.classes.includes(r.asset_class));
+    rowsAll.sort((a, b) => { const x = a[sortKey], y = b[sortKey]; if (!isNum(x) && !isNum(y)) return String(x).localeCompare(String(y)) * sortDir; if (!isNum(x)) return 1; if (!isNum(y)) return -1; return (x - y) * sortDir; });
+    const gate = P.screener.gate, R = P.regime || {};
+    let html = `<div class="formula">S_V = clip(median resid z over agreeing lenses, ±3)·q_V · S_C = clip(z_xsec(carry/vol IR), ±3) − penalties · S_S = dir·min(|t|/2.25, 1.5)·prox·(1−λ) if both gates pass · S_P = align − crowd<br>Score = w_V·S_V + w_C·S_C + w_S·S_S + w_P·S_P · Conviction = 1 − dispersion/3</div>`;
+    html += `<div class="sliders">${[["valuation", "Valuation"], ["carry", "Carry"], ["seasonality", "Seasonality"], ["positioning", "Positioning"]].map(([k, l]) => `<label>${l}: <b id="w_${k}_v">${fmt(W[k], 2)}</b><input type="range" min="0" max="1" step="0.05" data-w="${k}" value="${W[k]}"></label>`).join("")}</div>`;
+    html += `<p class="small" style="margin-top:8px">Carry gating from the regime engine: state <b>${h(R.state)}</b> → ${gate > 0 ? "carry score × " + gate : "carry-longs ≤ 0 (only negative carry counts)"} (full in Stable, halved in Early transition, carry-longs ≤ 0 in Confirmed transition). Seasonality window: month ${P.screener.month}. Asset classes: ${classes.map((c) => `<label><input type="checkbox" data-cls="${c}" ${S.classes.includes(c) ? "checked" : ""}> ${c}</label>`).join(" ")}</p>`;
+    const cols = [{label: "Instrument", key: "label", sort: true}, {label: "Class", key: "asset_class", sort: true}, {label: "Composite", key: "composite", num: true, sort: true}, {label: "Conviction", key: "conviction", num: true, sort: true},
+      {label: "S_V", key: "S_V", num: true, sort: true}, {label: "S_C", key: "S_C", num: true, sort: true}, {label: "S_S", key: "S_S", num: true, sort: true}, {label: "S_P", key: "S_P", num: true, sort: true}, {label: "Flags", key: "flags", sort: true}, {label: "Long means"}];
+    const row = (r) => `<tr><td><b>${h(r.label)}</b>${r.quality !== "live" ? badge(r.quality) : ""}</td><td>${h(r.asset_class)}</td><td class="num ${cls(r.composite)}"><b>${fmt(r.composite, 2, "", true)}</b></td><td class="num">${fmt(r.conviction, 2)}</td><td class="num ${cls(r.S_V)}">${fmt(r.S_V, 2, "", true)}</td><td class="num ${cls(r.S_C)}">${fmt(r.S_C, 2, "", true)}</td><td class="num ${cls(r.S_S)}">${fmt(r.S_S, 2, "", true)}</td><td class="num ${cls(r.S_P)}">${fmt(r.S_P, 2, "", true)}</td><td class="small">${h(r.flags)}</td><td class="small">${h(r.long_means)}</td></tr>`;
+    const top = rowsAll.filter((r) => r.conviction >= 0.5).sort((a, b) => Math.abs(b.composite) - Math.abs(a.composite)).slice(0, 12);
+    const conf = rowsAll.filter((r) => /CONFLICT|CROWDED/.test(r.flags));
+    html += `<h2>Read 1, high composite and high conviction</h2>` + tbl(cols, top.map(row).join("") || `<tr><td colspan="10">none at conviction ≥ 0.5</td></tr>`);
+    html += `<h2>Read 2, conflict rows</h2><p class="small">Cheap but crowded-short = squeeze; rich but strong and uncrowded = don't fight it yet. The composite is a prior the macro view updates, never the other way round.</p>` + tbl(cols, conf.map(row).join("") || `<tr><td colspan="10">none flagged</td></tr>`);
+    html += `<h2>Full table (click a header to sort)</h2>` + tbl(cols.concat([{label: "Valuation note"}, {label: "Carry"}, {label: "Seas. t", num: true}, {label: "Sub-periods"}, {label: "Align", num: true}, {label: "Crowd", num: true}, {label: "Stretch", num: true}, {label: "Pos. source"}, {label: "Adverse 2w", num: true}]),
+      rowsAll.map((r) => row(r).replace(/<\/tr>$/, "") + `<td class="small">${h(r.val_note)}</td><td class="small">${h(r.carry_detail)}${r.carry_q && r.carry_q !== "live" ? badge(r.carry_q) : ""}</td><td class="num">${fmt(r.seas_t, 2, "", true)}</td><td class="small">${h(r.seas_sub)} <i>${h(r.seas_note)}</i></td><td class="num">${fmt(r.align, 2, "", true)}</td><td class="num">${fmt(r.crowd, 2)}</td><td class="num">${fmt(r.stretch, 0)}</td><td class="small">${h(r.pos_src)}${r.pos_src === "CTA model" ? badge("estimated") : badge("live")}</td><td class="num">${fmt(r.adv_2w, 2)}</td></tr>`).join(""), {id: "scrFull"});
+    html += `<p class="small">${badge("live")} valuation and positioning (CTA model) · ${badge("proxy")} carry for futures and FX (cash curve, policy rates) · ${badge("unavailable")} commodity convenience yield, FX carry without a public short rate, CFTC crowd when the file is missing. Seasonality: gate 1 |t| ≥ 2.25 on Apr-2021→now, gate 2 same-sign in ≥ 3 of 4 fixed sub-periods; with 12 years of history only two sub-periods exist, so S_S is 0 by construction until longer history is loaded.</p>`;
+    const pc = P.screener.curve_pca;
+    if (pc && Object.keys(pc).length) html += `<details><summary>Valuation pillar: PCA lens on the UST curve (2 PCs, 2y window; explained ${(P.screener.pca_explained || []).map((e) => fmt(e * 100, 0, "%")).join(", ")})</summary>${tbl([{label: "Tenor"}, {label: "PC residual", num: true}, {label: "z", num: true}], Object.entries(pc).map(([k, v]) => `<tr><td>${h(k)}</td><td class="num">${fmt(v.pc_resid, 2, "", true)}</td><td class="num ${cls(v.pc_resid_z)}">${fmt(v.pc_resid_z, 2, "", true)}</td></tr>`).join(""))}<p class="small">Cheap on both the univariate and PCA lenses is the highest-quality signal.</p></details>`;
+    html += `<div class="chart" id="ch_sv" style="height:260px"></div>`;
+    el.innerHTML = html;
+    el.querySelectorAll("input[data-w]").forEach((r) => { r.oninput = () => { $("w_" + r.dataset.w + "_v").textContent = fmt(+r.value, 2); }; r.onchange = () => { S.weights[r.dataset.w] = +r.value; save(); renderScreener(); renderOnePager(); }; });
+    el.querySelectorAll("input[data-cls]").forEach((c) => { c.onchange = () => { S.classes = classes.filter((k) => el.querySelector(`input[data-cls="${k}"]`).checked); save(); renderScreener(); }; });
+    el.querySelectorAll("th.sortable").forEach((th) => { th.onclick = () => { const k = th.dataset.key; if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = k === "label" || k === "asset_class" || k === "flags" ? 1 : -1; } renderScreener(); }; });
+    const sv = rowsAll.filter((r) => isNum(r.S_V));
+    plot("ch_sv", [{type: "bar", x: sv.map((r) => r.label), y: sv.map((r) => r.S_V), marker: {color: sv.map((r) => r.S_V > 0 ? cssVar("--good") : cssVar("--bad"))}, hovertemplate: "%{x}: S_V %{y:+.2f}<extra></extra>"}], {title: {text: "S_V by instrument (+ = cheap in the common frame)", font: {size: 12}}, margin: {l: 40, r: 10, t: 28, b: 90}, xaxis: {tickangle: -45, tickfont: {size: 9}}, hovermode: "closest"});
+  }
+
+  // ---------------------------------------------------------------- T9/T10 crowding, quality ladder, unwind tree
+  const SHOCK_TO_FACTOR = {spx: "SPX", dxy: "DXY", ust10: "10Y", vix: "VIX", brent: "Brent", gold: "Gold"};
+  function unwindTree(shockName, corrOne) {
+    const sh = P.crowding.shocks[shockName] || {}; const R = P.risk;
+    const fm = {}; for (const [k, f] of Object.entries(SHOCK_TO_FACTOR)) if (isNum(sh[k])) fm[f] = sh[k];
+    if (isNum(sh.ust10) && isNum(sh.ust2)) fm["2s10s"] = sh.ust10 - sh.ust2;
+    const n = Object.keys(fm).length;
+    return Object.entries(R.instruments).map(([k, ins]) => {
+      let est = 0; const parts = [];
+      for (const [f, mv] of Object.entries(fm)) { let b = R.betas[k][f]?.beta; if (!isNum(b)) continue; if (corrOne) b = Math.sign(b) * (ins.std_1d / (R.factor_sigma[f] || 1)); est += b * mv / n; parts.push(`${f} ${fmt(b * mv, 1, "", true)}`); }
+      const longLoses = ins.mode === "bp" || ins.unit === "bp" ? (ins.legs ? est < 0 : est > 0) : est < 0;
+      const C = (P.crowding.rows.find((r) => r.key === k) || {}).C;
+      return {key: k, label: ins.label, asset_class: ins.asset_class, est, unit: ins.unit, parts: parts.slice(0, 4).join(" · "), longLoses, C};
+    });
+  }
+  function renderCrowding() {
+    const el = $("crowding"); const rows = P.crowding.rows; const W = P.crowding.weights;
+    let html = `<div class="formula">C = ${fmt(W.positioning, 2)}·positioning + ${fmt(W.flow, 2)}·marginal flow + ${fmt(W.volskew, 2)}·vol &amp; skew + ${fmt(W.concentration, 2)}·concentration + ${fmt(W.liquidity, 2)}·liquidity (renormalised over available components)<br>C &lt; 40 clean · 40–65 monitored · 65–80 crowded, no adds · &gt; 80 fragile, convex-only, unwind tree armed</div>`;
+    html += `<p class="small">${badge("live")} CFTC percentile when available (${h(P.crowding.cftc_status)}) · ${badge("estimated")} CTA-model percentile · ${badge("proxy")} ETF volume z stands in for flow and liquidity · ${badge("unavailable")} top-4/top-8 concentration without CFTC</p>`;
+    const bandCls = (C) => !isNum(C) ? "" : C >= 80 ? "fail" : C >= 65 ? "mid" : "";
+    html += tbl([{label: "Instrument"}, {label: "Class"}, {label: "C", num: true}, {label: "Band"}, {label: "Crowd side"}, {label: "Positioning", num: true}, {label: "Flow", num: true}, {label: "Vol & skew", num: true}, {label: "Concentration", num: true}, {label: "Liquidity", num: true}, {label: "Trend"}],
+      rows.map((r) => `<tr class="${bandCls(r.C)}"><td><b>${h(r.label)}</b></td><td>${h(r.asset_class)}</td><td class="num"><b>${fmt(r.C, 0)}</b></td><td>${h(r.band)}</td><td>${h(r.crowd_direction)}</td><td class="num">${fmt(r.positioning, 0)}${badge(r.q_positioning)}</td><td class="num">${fmt(r.flow, 0)}${badge(r.q_flow)}</td><td class="num">${fmt(r.volskew, 0)}${badge(r.q_volskew)}</td><td class="num">${fmt(r.concentration, 0)}${badge(r.q_concentration)}</td><td class="num">${fmt(r.liquidity, 0)}${badge(r.q_liquidity)}</td><td class="small">${r.mature ? "mature" : ""} ${r.split ? "split" : ""}</td></tr>`).join(""));
+    const fragile = rows.filter((r) => isNum(r.C) && r.C >= 65);
+    if (fragile.length) html += `<div class="alert"><b>Fragile / crowded list:</b> ${fragile.map((r) => `${h(r.label)} (${fmt(r.C, 0)}, ${h(r.crowd_direction)})`).join(", ")}</div>`;
+    html += `<p class="small">Crowding is directional and a sizing input; it never initiates a fade without a catalyst. Extreme positioning becomes dangerous when it meets deteriorating marginal flow, rising vol and weakening liquidity. Flow has no edge, fragility does.</p>`;
+    // quality ladder
+    const names = S.themes.map((t) => t.name); const tq = S.quality._sel && names.includes(S.quality._sel) ? S.quality._sel : names[0];
+    const q = (S.quality[tq] = S.quality[tq] || Object.fromEntries(P.themes.quality_criteria.map((c) => [c, 1])));
+    const why = (S.whyNow[tq] = S.whyNow[tq] || [false, false, false]); const lay = (S.layers[tq] = S.layers[tq] || []);
+    const total = P.themes.quality_criteria.reduce((s, c) => s + (+q[c] || 0), 0); const nWhy = why.filter(Boolean).length;
+    const pass = total >= 14 && nWhy >= 2 && lay.length >= 3;
+    html += `<h2>Quality ladder: ten criteria scored 0–2, enter at ≥ 14/20 ${badge("manual")}</h2><div class="row"><div class="field"><label for="qTheme">Theme</label><select id="qTheme">${names.map((n) => `<option ${n === tq ? "selected" : ""}>${h(n)}</option>`).join("")}</select></div></div>`;
+    html += `<div class="sliders">${P.themes.quality_criteria.map((c) => `<label>${h(c)}: <b id="q_${h(c).replace(/\W/g, "_")}_v">${q[c]}</b><input type="range" min="0" max="2" step="1" data-q="${h(c)}" value="${q[c]}"></label>`).join("")}</div>`;
+    html += `<div class="row" style="margin-top:8px">${["Catalyst in horizon", "Momentum turning", "Positioning washout"].map((w, i) => `<label><input type="checkbox" data-why="${i}" ${why[i] ? "checked" : ""}> ${w}</label>`).join("")}</div>
+      <div class="row"><span class="small">Layers aligned (3 of 4 rule):</span>${["Fundamentals", "Price/Trend", "Positioning/Crowding", "Options/Liquidity"].map((l) => `<label><input type="checkbox" data-lay="${l}" ${lay.includes(l) ? "checked" : ""}> ${l}</label>`).join("")}</div>`;
+    html += kpis([["Quality", `${total}/20`], ["Why-now", `${nWhy}/3`], ["Layers aligned", `${lay.length}/4`], ["Entry test", `<span class="${pass ? "pos" : "neg"}">${pass ? "PASS" : "FAIL"}</span>`]]);
+    html += `<p class="small">Enter: Quality ≥ 14/20 ∧ Why-Now ≥ 2 of {catalyst in horizon, momentum turning, positioning washout} ∧ 3 of 4 layers aligned. A post-shock opportunity is fundamentals intact with the other three temporarily dislocated.</p>`;
+    // unwind tree
+    const shockName = P.crowding.shocks[S.shock] ? S.shock : Object.keys(P.crowding.shocks)[0];
+    const ut = unwindTree(shockName, S.corrOneUnwind);
+    const losers = ut.filter((r) => r.longLoses).sort((a, b) => Math.abs(b.est) - Math.abs(a.est)); const hot = losers.filter((r) => isNum(r.C) && r.C > 65);
+    html += `<h2>Unwind tree: which positions lose together</h2><div class="row"><div class="field"><label for="shockSel">Stored shock</label><select id="shockSel">${Object.keys(P.crowding.shocks).map((k) => `<option ${k === shockName ? "selected" : ""}>${h(k)}</option>`).join("")}</select></div><label><input type="checkbox" id="c1u" ${S.corrOneUnwind ? "checked" : ""}> correlation-to-one (tail) version</label></div>
+      <p class="small">Shock → vol shock → VaR expansion → deleveraging → forced flow → consensus trades hit → correlation convergence → market de-anchors. Each instrument's move is propagated through its 60D univariate betas to the shocked factors ${badge("estimated")}.</p>`;
+    html += tbl([{label: "Instrument"}, {label: "Class"}, {label: "Est. move", num: true}, {label: "Unit"}, {label: "Long P&L"}, {label: "Drivers"}, {label: "C", num: true}],
+      [...losers, ...ut.filter((r) => !r.longLoses).sort((a, b) => Math.abs(b.est) - Math.abs(a.est))].map((r) => `<tr class="${r.longLoses && isNum(r.C) && r.C > 65 ? "fail" : ""}"><td><b>${h(r.label)}</b></td><td>${h(r.asset_class)}</td><td class="num">${fmt(r.est, 1, "", true)}</td><td>${h(r.unit)}</td><td class="${r.longLoses ? "neg" : "pos"}">${r.longLoses ? "loses" : "gains"}</td><td class="small">${h(r.parts)}</td><td class="num">${fmt(r.C, 0)}</td></tr>`).join(""));
+    html += `<p><b>Lose together as longs:</b> ${losers.length} instruments · <b>crowded among them (C &gt; 65):</b> ${hot.map((r) => h(r.label)).join(", ") || "none"}.</p>`;
+    el.innerHTML = html;
+    $("qTheme").onchange = (e) => { S.quality._sel = e.target.value; save(); renderCrowding(); };
+    el.querySelectorAll("input[data-q]").forEach((r) => { r.oninput = () => { $("q_" + r.dataset.q.replace(/\W/g, "_") + "_v").textContent = r.value; }; r.onchange = () => { q[r.dataset.q] = +r.value; save(); renderCrowding(); }; });
+    el.querySelectorAll("input[data-why]").forEach((c) => { c.onchange = () => { why[+c.dataset.why] = c.checked; save(); renderCrowding(); }; });
+    el.querySelectorAll("input[data-lay]").forEach((c) => { c.onchange = () => { S.layers[tq] = ["Fundamentals", "Price/Trend", "Positioning/Crowding", "Options/Liquidity"].filter((l) => el.querySelector(`input[data-lay="${l}"]`).checked); save(); renderCrowding(); }; });
+    $("shockSel").onchange = (e) => { S.shock = e.target.value; save(); renderCrowding(); }; $("c1u").onchange = (e) => { S.corrOneUnwind = e.target.checked; save(); renderCrowding(); };
+  }
+
+  // ---------------------------------------------------------------- §2 leg choice
+  function legChoice(level, direction, tailBid, conviction, headroom) {
+    if (level === "rich" && direction === "rising" && tailBid) return ["Long vol and tail-correlation", "Premium itself in an uptrend: long ATM straddles / OTM strangles on theme assets; index OTM puts vs single-name puts; scale in while premium rises, exit on vol-of-vol rollover."];
+    if (!headroom && (conviction === "high directional" || conviction === "asymmetric / tail")) return ["Switch to options: defined max loss", "Δ1 size breaches L_stomach: the defined premium collapses the loss to a known number."];
+    if (level === "rich" && (direction === "stable" || direction === "falling")) return conviction === "high directional" ? ["Delta-one, don't pay rich vol", "Bank the drift linearly; carry observable in advance; size on the 2w rule."] : ["Sell premium, delta-hedged", "Short straddles/strangles or put skew; ring-fenced, small, always tail-hedged, first to be cut."];
+    if (level === "cheap") return conviction === "asymmetric / tail" ? ["Long OTM optionality on the asymmetric side", "Cheap convexity where the scenario tree is lopsided."] : conviction === "high directional" ? ["Long gamma: calls, puts, straddles", "Cheap with a brewing move: own the move before the crowd and the vol market catch up."] : ["Long gamma (small) / wait", "Cheap vol without direction: small long-gamma or wait for the catalyst."];
+    if (conviction === "high directional" && headroom) return ["Delta-one", "Fair premium, high conviction, loss-budget headroom: no convexity premium paid unnecessarily."];
+    return ["Wait / small defined-risk", "Fair premium and low conviction: no edge in either space yet."];
+  }
+  function premiumRows() {
+    return Object.entries(P.vol.assets).map(([lab, a]) => {
+      if (a.quality && a.quality !== "manual") return Object.assign({asset: lab}, a);
+      const iv = +S.manualIV[lab]; if (!(iv > 0) || !isNum(a.e_rv)) return {asset: lab, iv_source: a.iv_source, quality: "unavailable", e_rv: a.e_rv};
+      const vrp = iv - a.e_rv; return {asset: lab, iv_source: "manual", quality: "manual", iv, erv: a.e_rv, vrp, vrp_d20: null, vrp_pct: null, iv_pct: null, level: vrp > 3 ? "rich" : vrp < 0 ? "cheap" : "fair", direction: "stable"};
+    });
+  }
+  function renderLegs() {
+    const el = $("legs"); const pr = premiumRows(); const T_ = P.vol.tail;
+    let html = `<h2>Premium state per theme asset</h2><div class="formula">VRP = IV₁ₘ − E[RV], E[RV] = 0.6·RV20 + 0.4·RV60 · level from the 3y percentile of VRP (rich ≥ 60, cheap ≤ 35) · direction = 20D change</div>`;
+    html += tbl([{label: "Asset"}, {label: "IV source"}, {label: "IV", num: true}, {label: "E[RV]", num: true}, {label: "VRP", num: true}, {label: "VRP 20D", num: true}, {label: "VRP pct", num: true}, {label: "IV pct", num: true}, {label: "Level"}, {label: "Direction"}],
+      pr.map((r) => `<tr><td><b>${h(r.asset)}</b>${badge(r.quality)}</td><td class="small">${h(r.iv_source)}</td><td class="num">${fmt(r.iv, 1)}</td><td class="num">${fmt(r.erv ?? r.e_rv, 1)}</td><td class="num ${cls(r.vrp)}">${fmt(r.vrp, 1, "", true)}</td><td class="num ${cls(r.vrp_d20)}">${fmt(r.vrp_d20, 1, "", true)}</td><td class="num">${fmt(r.vrp_pct, 0)}</td><td class="num">${fmt(r.iv_pct, 0)}</td><td>${h(r.level || "")}</td><td>${h(r.direction || "")}</td></tr>`).join(""));
+    html += `<details><summary>Manual 1M implied vols (%) for assets without a public index</summary><div class="row">${Object.entries(P.vol.assets).filter(([, a]) => a.quality === "manual").map(([lab]) => `<div class="field"><label for="iv_${h(lab).replace(/\W/g, "_")}">${h(lab)}</label><input type="number" step="0.5" min="0" data-iv="${h(lab)}" id="iv_${h(lab).replace(/\W/g, "_")}" value="${S.manualIV[lab] ?? ""}" placeholder="IV %"></div>`).join("")}</div></details>`;
+    html += `<p class="small">${badge("live")} VIX / MOVE / OVX / GVZ · ${badge("proxy")} MOVE converted to price vol of a ~7-duration bond · ${badge("manual")} typed IV; without a history its level is read from the VRP sign only.</p>`;
+    html += `<div class="chart" id="ch_vrp"></div>`;
+    const tailBid = (S.skewRatio > 1.1) || (isNum(T_.vvix_pct) && T_.vvix_pct > 80 && T_.vvix_20d > 0);
+    html += `<h2>Tail-correlation and vol-of-vol signals</h2>` + kpis([["CBOE SKEW", fmt(T_.skew, 0), fmt(T_.skew_20d, 1, " 20D", true) + " " + badge("live")], ["VVIX", fmt(T_.vvix, 0), `${fmt(T_.vvix_20d, 1, " 20D", true)} · pct ${fmt(T_.vvix_pct, 0)}`], ["VIX / VIX3M", fmt(T_.vix_term, 2), "&gt; 1 = front above back"],
+      ["Realised corr proxy (SPX vs sectors)", fmt(T_.corr_proxy, 2), fmt(T_.corr_proxy_20d, 2, " 20D", true) + " " + badge("proxy")], ["Index/basket 25Δ skew ratio", `<input type="number" id="skewRatio" step="0.05" min="0" value="${S.skewRatio}">`, "manual; &gt; 1 and rising = systemic tail insurance bid"]]);
+    html += `<p><b>Tail-correlation regime:</b> ${tailBid ? '<span class="warnc">bid: rising premia, fading compounds the bleed</span>' : "not bid"}.</p>`;
+    html += `<div class="formula">q(K) = e^{rT} ∂²C/∂K² · ρ_imp = (σ²_index − Σ wᵢ² σᵢ²) / (Σ_{i≠j} wᵢ wⱼ σᵢ σⱼ) · tail-corr signal = IV_index(25Δ put) / IV_basket(25Δ put)</div>`;
+    // leg-choice matrix
+    const names = S.themes.map((t) => t.name); const L_ = S.legSel; const tn = names.includes(L_.theme) ? L_.theme : names[0];
+    const available = pr.filter((r) => r.quality !== "unavailable").map((r) => r.asset); const asset = available.includes(L_.asset) ? L_.asset : available[0];
+    const arow = pr.find((r) => r.asset === asset) || {}; const level = L_.level || arow.level || "fair"; const direction = L_.direction || arow.direction || "stable";
+    const [leg, why] = legChoice(level, direction, tailBid, L_.conviction, L_.headroom !== false);
+    html += `<h2>Leg-choice matrix for a theme</h2><div class="row">
+      <div class="field"><label for="legTheme">Theme</label><select id="legTheme">${names.map((n) => `<option ${n === tn ? "selected" : ""}>${h(n)}</option>`).join("")}</select></div>
+      <div class="field"><label for="legAsset">Theme asset (premium read)</label><select id="legAsset">${available.map((a) => `<option ${a === asset ? "selected" : ""}>${h(a)}</option>`).join("")}</select></div>
+      <div class="field"><label for="legLevel">Premium level</label><select id="legLevel">${["rich", "fair", "cheap"].map((x) => `<option ${x === level ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+      <div class="field"><label for="legDir">Premium direction</label><select id="legDir">${["rising", "stable", "falling"].map((x) => `<option ${x === direction ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+      <div class="field"><label for="legConv">Conviction</label><select id="legConv">${["high directional", "asymmetric / tail", "low or mixed"].map((x) => `<option ${x === L_.conviction ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+      <label><input type="checkbox" id="legHead" ${L_.headroom !== false ? "checked" : ""}> loss-budget headroom (Δ1 size at conviction fits L_stomach)</label></div>`;
+    html += `<div class="verdict"><b>Leg: ${h(leg)}</b> — ${h(why)}</div>`;
+    html += tbl([{label: "Premium state"}, {label: "Conviction"}, {label: "Loss budget"}, {label: "Leg"}], [["Rich and stable/falling", "Low or mixed", "Any", "Sell premium, delta-hedged"], ["Rich and stable/falling", "High directional", "Headroom", "Delta-one, don't pay rich vol"], ["Cheap with a brewing move", "High directional", "Any", "Long gamma: calls, puts, straddles"],
+      ["Cheap with a brewing move", "Asymmetric / tail", "Any", "Long OTM optionality on the asymmetric side"], ["Rich and rising, tail-corr bid", "Any", "Any", "Long vol and tail-correlation"], ["Any", "High", "Δ1 size breaches L_stomach", "Switch to options: defined max loss"]].map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><b>${r[3]}</b></td></tr>`).join(""));
+    html += `<p class="small">Order of decision: premium regime (level and direction) → conviction in direction → loss budget. "I'm bullish" alone never picks the leg. Not used: variance, correlation or dispersion swaps, autocallables, exotics.</p>`;
+    // event block
+    const t = S.themes.find((x) => x.name === tn); const st = t ? themeStats(t) : null; const E = S.eventInputs;
+    html += `<h2>Event-driven block: implied event move vs scenario mean</h2><div class="formula">B_e ≈ ATM straddle premium / spot · 25Δ RR = IV(25Δ call) − IV(25Δ put) · edge_Δ1 = |E[Δ]_scenario| − B_e</div><div class="row">
+      <div class="field"><label for="ev_be">Implied event move B_e (same unit as the theme)</label><input type="number" id="ev_be" step="1" value="${E.be}"></div><div class="field"><label for="ev_rr">25Δ risk reversal (vol pts)</label><input type="number" id="ev_rr" step="0.1" value="${E.rr}"></div></div>`;
+    if (st) { const edge = Math.abs(st.m.mean) - (+E.be || 0);
+      html += kpis([["|E[Δ]| scenario", fmt(Math.abs(st.m.mean), 1, " " + h(t.unit || ""))], ["B_e implied", fmt(+E.be, 1) + " " + badge("manual")], ["edge_Δ1 = |E[Δ]| − B_e", `<span class="${cls(edge)}">${fmt(edge, 1, "", true)}</span>`], ["RR vs scenario skew", `RR ${fmt(+E.rr, 1, "", true)} / skew ${fmt(st.m.skew, 2, "", true)}`]]);
+      html += `<div class="notice">${edge > 0 && level !== "cheap" ? "Implied &lt; expected and vol not cheap → delta-one wins: no convexity premium, drift banked linearly, sized to the worst 2-week move (optional small option hedge)." : edge > 0 ? "Implied &lt; expected and vol cheap → own the move with long gamma, switch to delta-one once engaged." : "Implied ≥ expected: the market already pays for the move; only a shape (skew/tails) view or a premium-selling sleeve has edge."}</div>`; }
+    html += `<details><summary>Worked reads from the process</summary><p><b>Disinflation into FOMC.</b> 2y vol cheap (VRP 0.5 pts), straddle ±18 bp, internal view a 25–30 bp dovish surprise. Implied &lt; expected, no tail-correlation regime → long 2y outright sized to the worst 2-week move, optional small payer-spread hedge.</p><p><b>Middle-East war.</b> Brent IV 38 vs realised 34 looks "rich, sell". But implied correlation of Brent, gold and defence equities 0.35 → 0.55, index/basket skew ratio 1.0 → 1.4, VVIX 85th pct and rising. Premium in an uptrend → Brent strangle, gold calls, SPX OTM puts vs single-name puts; half-Kelly; exit when VVIX rolls over and the ratio falls back through 1.1.</p><p><b>Three alphas:</b> premium harvesting (short the gap, negative skew, ring-fenced); drift capture (long gamma early then delta-one); long vol / tail-correlation (own the regime while premia rise).</p></details>`;
+    el.innerHTML = html;
+    const colours = SERIES(); const vs = P.vol.vrp_series;
+    plot("ch_vrp", Object.keys(vs).map((lab, i) => ({x: vs[lab].dates, y: vs[lab].values, name: lab, mode: "lines", line: {width: 1.4, color: colours[i % colours.length]}})), {title: {text: "VRP, 2y (vol pts)", font: {size: 12}}, shapes: [{type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: {color: cssVar("--muted"), width: 1}}]});
+    el.querySelectorAll("input[data-iv]").forEach((i) => { i.onchange = () => { S.manualIV[i.dataset.iv] = +i.value || null; save(); renderLegs(); }; });
+    $("skewRatio").onchange = (e) => { S.skewRatio = +e.target.value; save(); renderLegs(); };
+    const sel = (id, key) => { $(id).onchange = (e) => { S.legSel[key] = e.target.type === "checkbox" ? e.target.checked : e.target.value; save(); renderLegs(); }; };
+    $("legTheme").onchange = (e) => { S.legSel.theme = e.target.value; save(); renderLegs(); }; $("legAsset").onchange = (e) => { S.legSel.asset = e.target.value; S.legSel.level = null; S.legSel.direction = null; save(); renderLegs(); };
+    sel("legLevel", "level"); sel("legDir", "direction"); sel("legConv", "conviction"); sel("legHead", "headroom");
+    $("ev_be").onchange = (e) => { S.eventInputs.be = +e.target.value; save(); renderLegs(); }; $("ev_rr").onchange = (e) => { S.eventInputs.rr = +e.target.value; save(); renderLegs(); };
+  }

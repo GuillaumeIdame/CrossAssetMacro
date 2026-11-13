@@ -1,0 +1,870 @@
+<title>Macro FX Toolkit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: companion tool to the Investment Process — Macro FX document. One scrolling page, nine process steps,
+     sticky topbar + parts nav, navy/bronze identity, tables in scroll containers, Plotly charts redrawn on theme change. */
+  :root {
+    --navy: #1F3550; --navy2: #16273C; --slate: #55677C; --bronze: #A9814F;
+    --hair: #D9DEE5; --bg-soft: #F5F7FA; --bg-callout: #F8F6F2;
+    --bg: #FFFFFF; --fg: #23303F; --card-fg: #EDF1F6; --muted: #6B7A8C;
+    --pos: #2E7D32; --neg: #B71C1C; --warn: #B26A00; --grid: #E6EAF0;
+    --font-body: "Segoe UI", Calibri, Carlito, Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12181F; --fg: #DCE3EA; --bg-soft: #1B232D; --bg-callout: #1E2019;
+      --hair: #303C48; --navy: #B9CBE0; --navy2: #0E1620; --slate: #8FA0B2; --bronze: #D9B98A;
+      --card-fg: #DCE3EA; --muted: #93A1B1; --pos: #7BC67E; --neg: #EF9A9A; --warn: #E3B04B; --grid: #263240;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12181F; --fg: #DCE3EA; --bg-soft: #1B232D; --bg-callout: #1E2019;
+    --hair: #303C48; --navy: #B9CBE0; --navy2: #0E1620; --slate: #8FA0B2; --bronze: #D9B98A;
+    --card-fg: #DCE3EA; --muted: #93A1B1; --pos: #7BC67E; --neg: #EF9A9A; --warn: #E3B04B; --grid: #263240;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: calc(104px + env(safe-area-inset-top, 0px)); }
+  body { font-family: var(--font-body); font-size: 15px; line-height: 1.5; color: var(--fg); background: var(--bg); margin: 0; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--navy2); }
+  a { color: var(--bronze); }
+  .stick { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+  .topbar { background: var(--navy2); color: #EDF1F6; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .topbar .title { font-weight: 700; font-size: 14px; }
+  .topbar .sub { color: #B9C6D6; font-size: 11px; }
+  .topbar button { background: transparent; border: 1px solid #4A5F78; color: #EDF1F6; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .parts { background: var(--bg); border-bottom: 1px solid var(--hair); }
+  .parts nav { max-width: 1100px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); display: flex; gap: 2px; overflow-x: auto; }
+  .parts a { flex: 0 0 auto; padding: 9px 10px; font-size: 12.5px; font-weight: 600; color: var(--slate); text-decoration: none; border-bottom: 3px solid transparent; }
+  .parts a:hover, .parts a:focus-visible { color: var(--navy); border-bottom-color: var(--bronze); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-block: 0 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .hero { padding: 34px 0 20px 0; border-bottom: 1px solid var(--hair); margin-bottom: 10px; }
+  .hero .rule { width: 54px; height: 5px; background: var(--bronze); border-radius: 2px; margin-bottom: 14px; }
+  .hero h1 { font-size: 27px; color: var(--navy); margin: 0 0 6px 0; text-wrap: balance; }
+  .hero h2 { font-size: 14.5px; color: var(--slate); font-weight: 400; margin: 0 0 12px 0; }
+  .hero p { max-width: 720px; margin: 0 0 8px 0; }
+  .chain { color: var(--navy); font-weight: 600; font-size: 13.5px; margin-top: 8px; }
+  .chain span { color: var(--bronze); }
+  .meta-line { color: var(--slate); font-size: 12.5px; margin-top: 10px; }
+  .meta-line b { color: var(--navy); }
+  .part { margin-top: 44px; padding: 16px 20px; background: var(--navy2); border-radius: 8px; color: #EDF1F6; scroll-margin-top: 104px; }
+  .part h1 { margin: 0; font-size: 21px; color: #FFFFFF; }
+  .part p { margin: 4px 0 0 0; color: #B9C6D6; font-size: 13.5px; }
+  .part .k { color: #D9B98A; font-weight: 700; font-size: 12.5px; }
+  section.block { padding-top: 18px; scroll-margin-top: 104px; }
+  h2 { font-size: 16px; color: var(--navy); margin: 22px 0 8px 0; }
+  h3 { font-size: 14px; color: var(--navy); margin: 16px 0 6px 0; }
+  p { margin: 0 0 10px 0; }
+  .small { font-size: 12px; color: var(--slate); }
+  .tblwrap { overflow-x: auto; margin: 8px 0 14px 0; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  th { background: var(--bg-soft); color: var(--navy); font-weight: 700; text-align: left; padding: 6px 8px; border-top: 2px solid var(--navy); border-bottom: 1px solid var(--navy); white-space: nowrap; }
+  td { padding: 5px 8px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  tr:last-child td { border-bottom: 2px solid var(--navy); }
+  td.num, th.num { text-align: right; }
+  td.pos { color: var(--pos); } td.neg { color: var(--neg); }
+  .callout { background: var(--bg-callout); border-left: 4px solid var(--bronze); padding: 10px 14px; margin: 12px 0 14px 0; border-radius: 0 6px 6px 0; }
+  .callout .t { font-weight: 700; color: var(--navy); font-size: 13px; display: block; margin-bottom: 4px; }
+  .formula { background: var(--bg-soft); border: 1px solid var(--hair); border-radius: 6px; padding: 12px 14px; margin: 8px 0 12px 0; font-size: 13.5px; text-align: center; overflow-x: auto; }
+  .formula .lbl { display: block; color: var(--slate); font-size: 11.5px; margin-top: 6px; text-align: left; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0 14px 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 10px 0 14px 0; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 10px 0 14px 0; }
+  .grid5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 10px 0 14px 0; }
+  @media (max-width: 760px) { .grid3, .grid4, .grid5 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .grid2, .grid3, .grid4, .grid5 { grid-template-columns: 1fr; } }
+  .cell { border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; background: var(--bg-soft); font-size: 13px; min-width: 0; }
+  .cell b.h { display: block; color: var(--navy); margin-bottom: 3px; }
+  .cell.lit { border-color: var(--bronze); box-shadow: inset 0 0 0 1px var(--bronze); }
+  .kpi { border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; background: var(--bg); min-width: 0; }
+  .kpi .l { font-size: 11.5px; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; }
+  .kpi .v { font-size: 24px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .kpi .d { font-size: 12px; color: var(--muted); }
+  .kpi .d.up { color: var(--pos); } .kpi .d.dn { color: var(--neg); }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 10.5px; font-weight: 700; color: #fff; margin-left: 6px; vertical-align: middle; letter-spacing: 0.03em; }
+  .b-live { background: #2E7D32; } .b-proxy { background: #B26A00; } .b-manual { background: #455A64; } .b-estimated { background: #B26A00; }
+  .b-synthetic { background: #B71C1C; } .b-unavailable { background: #9E9E9E; } .b-confirmed { background: #2E7D32; } .b-provisional { background: #B26A00; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; margin: 8px 0 12px 0; }
+  .controls label, .field label { display: block; font-size: 11.5px; color: var(--slate); margin-bottom: 2px; }
+  select, input[type=number], input[type=text], textarea { font: inherit; font-size: 13px; color: var(--fg); background: var(--bg); border: 1px solid var(--hair); border-radius: 5px; padding: 5px 8px; max-width: 100%; }
+  input[type=number] { width: 120px; } textarea { width: 100%; min-height: 56px; }
+  input[type=range] { width: 100%; }
+  button.btn { font: inherit; font-size: 13px; background: var(--navy); color: #fff; border: 0; border-radius: 6px; padding: 7px 14px; cursor: pointer; }
+  button.btn.ghost { background: transparent; color: var(--navy); border: 1px solid var(--navy); }
+  button.btn:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--bronze); outline-offset: 1px; }
+  .chart { width: 100%; min-height: 320px; margin: 6px 0 10px 0; }
+  .chart.tall { min-height: 440px; }
+  details { border: 1px solid var(--hair); border-radius: 6px; padding: 8px 12px; margin: 10px 0; background: var(--bg); }
+  summary { cursor: pointer; color: var(--navy); font-weight: 600; font-size: 13px; }
+  .heat { display: inline-block; min-width: 46px; text-align: right; padding: 1px 6px; border-radius: 4px; }
+  .verdict { background: var(--bg-soft); border: 1px solid var(--hair); border-left: 4px solid var(--navy); padding: 10px 12px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+  .flag { color: var(--warn); font-weight: 600; }
+  .save { font-size: 11.5px; color: var(--muted); }
+  .form { border: 1px solid var(--hair); border-radius: 8px; padding: 12px 14px; background: var(--bg-soft); margin: 10px 0; }
+  .form .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
+  @media (max-width: 640px) { .form .row { grid-template-columns: 1fr; } }
+  .field { min-width: 0; } .field input, .field select { width: 100%; }
+  .checks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 14px; margin: 8px 0; }
+  @media (max-width: 640px) { .checks { grid-template-columns: 1fr 1fr; } }
+  .checks label { font-size: 11.5px; color: var(--slate); }
+  .checks .val { font-size: 12px; color: var(--navy); font-weight: 600; }
+  .inline-edit input { width: 90px; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 4px; background: var(--bg-soft); border: 1px solid var(--hair); color: var(--slate); margin-right: 4px; }
+  footer { text-align: center; color: var(--slate); font-size: 11.5px; padding: 30px 0 10px 0; }
+  code { font-family: var(--font-mono); font-size: 12px; background: var(--bg-soft); padding: 1px 4px; border-radius: 3px; }
+  pre.repo { background: var(--bg-soft); border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; font-size: 12px; line-height: 1.6; overflow-x: auto; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="stick">
+  <div class="topbar">
+    <div><div class="title">Macro FX Toolkit</div><div class="sub" id="subtitle">Investment Process — Macro FX · tools edition</div></div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="save" id="saveState"></span>
+      <button id="themeBtn" type="button">☀/☾ Theme</button></div>
+  </div>
+  <div class="parts"><nav aria-label="Process steps">
+    <a href="#f1">1 · Factors</a><a href="#f2">2 · Macro</a><a href="#f3">3 · Valuation</a><a href="#f4">4 · Positioning</a>
+    <a href="#f5">5 · Seasonality</a><a href="#f6">6 · Regime</a><a href="#f7">7 · Strategies</a><a href="#f8">8 · Risk</a><a href="#f9">9 · Data</a>
+  </nav></div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="rule"></div>
+    <h1>Macro FX Toolkit</h1>
+    <h2>The working tool behind the Macro FX investment process — factor-consistent, minimal-indicator, crash-aware</h2>
+    <p>Every currency move is decomposed into Dollar, Carry and Momentum before it is interpreted; what remains is the object the narrative has to explain. Each section below is one step of the chain, computed from public data and stamped with its provenance.</p>
+    <div class="chain">Price <span>→</span> Driver <span>→</span> Regime <span>→</span> Confirmation <span>→</span> Relative Value <span>→</span> Expression</div>
+    <div class="meta-line"><b>Data as of</b> <span id="asOf"></span> · <b>generated</b> <span id="generated"></span> · <b>Process document:</b> <a href="https://claude.ai/artifact/1cv2QGVTZjcfMFwg4SjwLG">Investment Process — Macro FX →</a></div>
+    <div class="meta-line" id="legend"></div>
+  </div>
+
+  <!-- 1 -->
+  <div class="part" id="f1"><span class="k">Step 1 · §1.1 / §4.1</span><h1>Price → Driver: factor decomposition</h1><p>Δs = β<sub>USD</sub>·F<sub>USD</sub> + β<sub>Carry</sub>·F<sub>Carry</sub> + β<sub>Mom</sub>·F<sub>Mom</sub> + ε. What is left, ε, is the object the narrative has to explain.</p></div>
+  <section class="block">
+    <div class="grid3" id="facHeads"></div>
+    <p class="small">F<sub>USD</sub> = equal-weight G10 basket vs USD (positive = USD weaker). F<sub>Carry</sub> / F<sub>Mom</sub> = top-3 vs bottom-3 G10, inverse-vol weights, rebalanced monthly with legs frozen intra-month. Carry rank uses the short-rate differential <span class="badge b-proxy">PROXY</span> (daily €STR / SONIA / EFFR, monthly OECD elsewhere); momentum rank is the 12-1 month return <span class="badge b-live">LIVE</span>.</p>
+    <div class="chart" id="chFactors"></div>
+    <h3>Betas (120D univariate) and the residual ε — last reading <span class="badge b-live">LIVE</span></h3>
+    <div class="tblwrap" id="tabFactors"></div>
+    <div class="controls"><div><label for="selEps">Narrative object ε for</label><select id="selEps"></select></div></div>
+    <div class="chart" id="chEps"></div>
+    <h3>Basket membership today</h3>
+    <p class="small" id="legsNote"></p>
+    <div class="tblwrap" id="tabRanks"></div>
+    <details><summary>Validation episodes (§4.1): Apr-2025 should be F<sub>USD</sub>-dominated, Aug-2024 a large negative F<sub>Carry</sub></summary><div id="facValidation"></div>
+      <p class="small">Failure mode: basket membership changes mid-month — legs are frozen within the month here.</p></details>
+  </section>
+
+  <!-- 2 -->
+  <div class="part" id="f2"><span class="k">Step 2 · §1.2</span><h1>Macro — four differentials</h1><p>Which economy is repricing faster, and through which channel? 60D momentum matters more than level. Each differential is A − B.</p></div>
+  <section class="block">
+    <div class="controls">
+      <div><label for="selA">Currency A (long leg)</label><select id="selA"></select></div>
+      <div><label for="selB">Currency B (short leg)</label><select id="selB"></select></div>
+      <div><label for="fiA">Fiscal impulse A (Δ CAPB, % GDP)</label><input type="number" id="fiA" step="0.1" value="0"></div>
+      <div><label for="fiB">Fiscal impulse B</label><input type="number" id="fiB" step="0.1" value="0"></div>
+    </div>
+    <div class="tblwrap" id="tabDiff"></div>
+    <p class="small">Growth: z of the 60D change across available growth series (IP, retail, payrolls, sentiment, local equities) — a true surprise index needs consensus data, not public. 1Y1Y real: US leg = 2·2y − 1y − 5y breakeven (daily); other legs = 10y nominal (monthly OECD) − CPI YoY, a weak proxy. Terms of trade: export(+)/import(−)-weighted commodity basket return. Fiscal impulse is typed from the IMF Fiscal Monitor / OECD; its sign is regime-dependent (positive under credibility, negative under fiscal dominance).</p>
+    <div class="chart" id="chDiff"></div>
+    <details><summary>Terms-of-trade weights (export + / import −), editable</summary><div class="tblwrap" id="tabTot"></div>
+      <button class="btn ghost" type="button" id="btnTotReset">Reset to defaults</button></details>
+    <div class="callout"><span class="t">By construction</span>Anything the four differentials cannot explain is a regime or flow phenomenon → steps 4 and 6.</div>
+  </section>
+
+  <!-- 3 -->
+  <div class="part" id="f3"><span class="k">Step 3 · §1.3</span><h1>Valuation — univariate short horizon, REER anchor</h1><p>Δs = α<sub>k</sub> + β<sub>k</sub> Δx<sub>k</sub> + u<sub>k</sub>, one regression per driver. |z| ≥ 2 flags dislocation; value is an anchor, not a signal.</p></div>
+  <section class="block">
+    <div class="controls"><div><label for="selWin">Window (business days)</label><select id="selWin"><option>20</option><option selected>60</option><option>120</option></select></div></div>
+    <p class="small">Regressions are on levels (log spot on the driver differential) over the rolling window; residual z = distance from the fitted relationship in units of the window's residual σ. Fits with R² &lt; 0.05 or &gt; 0.999 return blank (unmodelled regime / degenerate), never a dead fair value. <span class="badge b-live">LIVE</span> equity diff · <span class="badge b-proxy">PROXY</span> rate and inflation diffs where the foreign leg is a monthly OECD mirror.</p>
+    <div class="tblwrap" id="tabVal"></div>
+    <div id="valFlags"></div>
+    <p><b>Fade or follow</b> — tiebreakers: breadth (pair-specific or bloc-wide?), options confirmation (is skew paying for continuation?), regime stability (step 6). Fade only when the residual is local, skew unmoved and axes stable.</p>
+    <h3>REER stretch (BIS, monthly) — two uses only</h3>
+    <div class="tblwrap" id="tabReer"></div>
+    <p class="small">Use 1: conviction haircut for positions pushing beyond ±2z (modest uplift for fades). Use 2: stop placement away from REER-consistent zones. It never triggers a trade. Source: BIS REER on FRED, 10y mean z.</p>
+  </section>
+
+  <!-- 4 -->
+  <div class="part" id="f4"><span class="k">Step 4 · §1.4 / §4.1</span><h1>Flows and positioning — the state variable</h1><p>The expected reaction to any catalyst is written conditional on positioning (BIS Bulletin 124).</p></div>
+  <section class="block">
+    <h3>CFTC COT pipeline</h3>
+    <div id="cftcBlock"></div>
+    <h3>Positioning state used by the other steps <span class="badge b-manual">MANUAL</span> until CFTC files are loaded</h3>
+    <p class="small">Type the 156-week z of leveraged-fund net positioning per currency (positive = crowd long the currency). Crowded = |z| ≥ 1.5. Leave blank when unknown — the other steps then treat positioning as unavailable, never as neutral.</p>
+    <div class="tblwrap" id="tabPos"></div>
+    <h3>Event-risk overlay — next 4 weeks</h3>
+    <div class="tblwrap" id="tabAmp"></div>
+    <p class="small">Amplified → asymmetry widens; any position aligned with the crowd takes a mandatory size cut or a convex overlay. Meeting dates from the house calendar (status badge says confirmed / provisional / estimated).</p>
+    <h3>Options measures (1M)</h3>
+    <p class="small">No public OTC FX surface exists. Type the desk's 1M ATM / 25Δ RR / 25Δ BF and the values 5 days ago for direction <span class="badge b-manual">MANUAL</span>; realised vol, E[RV] = 0.6·RV20 + 0.4·RV60 <span class="badge b-live">LIVE</span> and the spot/RV correlation <span class="badge b-proxy">PROXY</span> (stands in for spot/ATM-vol) come from public data. Synthetic surface generator: OFF.</p>
+    <div class="tblwrap" id="tabSurf"></div>
+    <p class="small">Reading: RR level = insurance premium state; RR change diverging from spot = leading unwind tell; a flip of the spot/vol correlation sign (USD/JPY to "vol up when JPY up") marks a carry-unwind regime.</p>
+  </section>
+
+  <!-- 5 -->
+  <div class="part" id="f5"><span class="k">Step 5 · §1.5</span><h1>Seasonality — two gates</h1><p>Locate the window on 2000–2025 → Gate 1: |t| ≥ 2.25 on Apr-2021→now → Gate 2: same-sign significance in ≥ 3 of 4 fixed sub-periods → EV × λ (0.45).</p></div>
+  <section class="block">
+    <div class="controls"><div><label for="selSeas">Pair</label><select id="selSeas"></select></div><div><label for="selSeasWin">Inspect window</label><select id="selSeasWin"></select></div></div>
+    <p class="small" id="seasNote"></p>
+    <div class="grid3" id="seasHeads"></div>
+    <h3>Survivors (both gates) <span class="badge b-live">LIVE</span></h3>
+    <div class="tblwrap" id="tabSeasSurv"></div>
+    <div class="chart" id="chSeas"></div>
+    <details><summary>All windows (audit record)</summary><div class="tblwrap" id="tabSeasAll"></div></details>
+    <p class="small">Score S<sub>S</sub> = dir·min(|t|/2.25, 1.5)·prox·(1−λ), prox = exp(−days-to-entry/10); zero unless both gates pass. EV net of a 2 bp round trip. Overlay on entry timing and size of trades that exist for other reasons, ≤ 10–20% of risk; standalone only with a written flow mechanism. Governance: realised vs expected hit rate is the decay alarm; retire fading windows; re-admit annually.</p>
+  </section>
+
+  <!-- 6 -->
+  <div class="part" id="f6"><span class="k">Step 6 · §1.6 / §4.1</span><h1>Regime — five axes and one quadrant</h1><p>Each axis −100…+100 = 100·tanh(z̄/2), reported as level and direction (20D change). Quadrant migration is the highest-value regime signal.</p></div>
+  <section class="block">
+    <div class="grid5" id="axesHeads"></div>
+    <p class="small">Direction and level together: "fragile and deteriorating" and "fragile but stabilising" are different trades. Components are z-scored on 2y <span class="badge b-proxy">PROXY</span>; tanh hides extremes, so the raw z is shown below.</p>
+    <div class="chart" id="chAxes"></div>
+    <details><summary>Raw component z-scores (last reading)</summary><div id="rawZ"></div></details>
+    <div class="tblwrap" id="tabDecides"></div>
+    <h3>Quadrant — USD × real yield (10D centroid, ≥ 5-day persistence)</h3>
+    <div class="grid2" id="quadCells"></div>
+    <div id="quadStatus"></div>
+    <div class="chart tall" id="chQuad"></div>
+    <details><summary>Validation episodes (§4.1): Mar-2020 risk-off, 2022 rates shock, Apr-2025 confidence</summary><div id="quadValidation"></div></details>
+  </section>
+
+  <!-- 7 -->
+  <div class="part" id="f7"><span class="k">Step 7 · §2.1–2.5</span><h1>Sub-strategies — lifecycle, carry basket, short vol, leg choice, trade card</h1><p>Diagnosed, not felt: each state has a proxy signature and a playbook. One crash, two expressions.</p></div>
+  <section class="block">
+    <h3>2.1 Narrative lifecycle <span class="badge b-proxy">PROXY</span></h3>
+    <div class="tblwrap" id="tabLife"></div>
+    <p class="small">Signature: ε moving against valuation + disagreement → Emerging; breadth ≥ 0.6, 5/20/60D consistent, |pos z| &lt; 1.5 → Dominant; momentum steepening with RR paying up or new longs → Accelerating; crowded / RR extreme while spot stalls → Exhausting; quadrant migrating or persistent disagreement → Competing. Positioning and RR enter only when typed in step 4.</p>
+    <h3>2.2 Long carry basket</h3>
+    <div class="controls"><div><label for="selGate">Carry-Health gate</label><select id="selGate"><option>Healthy</option><option>Fragile</option><option>Unwinding</option><option>Low-vol rotation</option></select></div><div class="small" id="gateHint"></div></div>
+    <div class="tblwrap" id="tabCarry"></div>
+    <div class="chart" id="chCarry"></div>
+    <p class="small">w ∝ rank(c/σ)·(1−h<sub>crowd</sub>)·(1−h<sub>skew</sub>), Σ|w| = gross from the gate. c = short-rate differential <span class="badge b-proxy">PROXY</span>, σ = 1M IV if typed else 60D realised. Select on carry/vol, never raw carry. Funding-side risk (JPY/CHF positioning and their meetings) is first-class — see step 4.</p>
+    <h3>2.3 Short FX volatility sleeve</h3>
+    <div class="tblwrap" id="tabShortVol"></div>
+    <p class="small">VRP = IV<sub>1M</sub> − E[RV]. Core: delta-hedged 1M ATM straddles/strangles on the 3–5 widest-VRP pairs; mandatory tail buy-back 20–30% of premium into 10Δ wings; no net short vega in &gt; 3 pairs sharing a funding currency. Carry and short vol share a single crash budget (§2.4).</p>
+    <h3>2.5 Delta-one vs options — the FX leg</h3>
+    <div class="controls"><div><label for="selLeg">Pair</label><select id="selLeg"></select></div></div>
+    <div class="verdict" id="legVerdict"></div>
+    <p class="small">Question: can a linear position survive the catalyst, or does positioning turn it into a gap? Tells: lifecycle stage; VRP level and direction; crowding flag / event amplification; spot/vol correlation sign flip; CTA distance-to-trigger (Thematic toolkit).</p>
+    <h3>Trade card — mandatory fields → scenario set → ½-Kelly × conviction</h3>
+    <div class="form" id="cardForm">
+      <div class="row">
+        <div class="field"><label for="cPair">Pair</label><select id="cPair"></select></div>
+        <div class="field"><label for="cDir">Direction (on the foreign currency)</label><select id="cDir"><option>long</option><option>short</option></select></div>
+        <div class="field"><label for="cInst">Instrument</label><select id="cInst"><option>spot/forward</option><option>futures</option><option>vanilla call</option><option>vanilla put</option><option>risk reversal</option><option>strangle</option></select></div>
+      </div>
+      <div class="field"><label for="cThesis">Thesis — narrative, transmission map, factor loaded (Dollar or residual)</label><textarea id="cThesis"></textarea></div>
+      <div class="row">
+        <div class="field"><label for="cCat">Catalyst and horizon</label><input type="text" id="cCat"></div>
+        <div class="field"><label for="cEntry">Entry</label><input type="number" id="cEntry" step="0.0001"></div>
+        <div class="field"><label for="cTarget">Target</label><input type="number" id="cTarget" step="0.0001" value="0"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="cStop">Stop (thesis invalidation, REER-checked)</label><input type="number" id="cStop" step="0.0001" value="0"></div>
+        <div class="field"><label for="cInval">Invalidation, written so a colleague could enforce it</label><input type="text" id="cInval"></div>
+        <div class="field"><label for="cRisk">Key risk: worst scenario, correlation to the book, crowd?</label><input type="text" id="cRisk"></div>
+      </div>
+      <p class="small" style="margin:6px 0 2px 0"><b>Checklist</b> (0 = fails, 1 = passes) — weights 25/15/15/15/10/10/5/5</p>
+      <div class="checks" id="checks"></div>
+      <p class="small" style="margin:6px 0 2px 0"><b>Scenario set (3–5), P&amp;L in % of notional</b></p>
+      <div class="tblwrap" id="tabScen"></div>
+      <div class="row">
+        <div class="field"><label for="cStomach">Stomachable loss, $</label><input type="number" id="cStomach" step="100000" value="1000000"></div>
+        <div class="field"><label for="cBank">Bankroll the Kelly fraction applies to, $</label><input type="number" id="cBank" step="500000" value="5000000"></div>
+        <div class="field" style="display:flex;align-items:end"><button class="btn" type="button" id="btnCard">Evaluate and save card</button></div>
+      </div>
+      <div id="cardResult"></div>
+    </div>
+    <div class="tblwrap" id="tabCards"></div>
+    <p class="small">Notional = ½f*·conviction × bankroll, capped by stomachable loss ÷ worst-scenario loss (the cap binds when tighter than Kelly). Scenario P&amp;L is in % of notional, so f* is a leverage on the bankroll. Half-Kelly is the geometric-growth-consistent haircut for estimation error in p. A card failing ≥ 2 checklist blocks is flagged, sized at a reduced fraction and post-mortemed regardless of outcome.</p>
+  </section>
+
+  <!-- 8 -->
+  <div class="part" id="f8"><span class="k">Step 8 · §3.1–3.6</span><h1>Risk — sizing, limits, factor exposure, shocks, stress, drawdown</h1><p>The Dollar-factor beta is the headline number: the exposure most likely to build unintentionally across "idiosyncratic" trades.</p></div>
+  <section class="block">
+    <div class="grid4" id="bookHeads"></div>
+    <h3>Factor exposure — $ per 1σ daily move (60D univariate) <span class="badge b-proxy">PROXY</span></h3>
+    <p class="small" id="expoNote"></p>
+    <div class="tblwrap" id="tabExpo"></div>
+    <div class="tblwrap" id="tabExpoStruct"></div>
+    <h3>Limits (illustrative levels)</h3>
+    <div class="tblwrap" id="tabLimits"></div>
+    <h3>Shock grid (propagated shock → factor → FX → position → portfolio)</h3>
+    <div class="controls"><label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--fg)"><input type="checkbox" id="chkAmp"> Positioning-amplified variant (crowded pairs' betas × 1.5)</label></div>
+    <div class="tblwrap" id="tabShock"></div>
+    <h3>Stress library — historical replay on today's exposures</h3>
+    <div class="tblwrap" id="tabStress"></div>
+    <p class="small">Every scenario should also keep the surface shift (ATM, RR, fly), cross-asset moves and duration; this public replay carries spot only.</p>
+    <h3>Drawdown control — CED and the ladder</h3>
+    <div class="controls"><div><label for="ddNow">Current drawdown from peak, $ (typed)</label><input type="number" id="ddNow" step="100000" value="0"></div></div>
+    <div class="grid3" id="ddHeads"></div>
+    <div class="tblwrap" id="tabLadder"></div>
+    <h3>Theta budget (§3.5) — long-option lines <span class="badge b-manual">MANUAL</span></h3>
+    <div class="tblwrap" id="tabTheta"></div>
+    <div class="controls"><button class="btn ghost" type="button" id="btnThetaAdd">Add line</button><div><label for="navUsd">NAV, $ (for bp/day)</label><input type="number" id="navUsd" step="10000000" value="100000000"></div></div>
+    <div class="grid3" id="thetaHeads"></div>
+    <p class="small">Operating band 5–10 bp NAV/day; soft limit 10 (no adds; lengthen tenor or move to wings); hard limit 12 (trim least efficient lines first, never the crash wings bought as insurance). Long-vol lines are exempt from vol targeting.</p>
+    <h3>Cross-book layer (§3.6)</h3>
+    <ul class="small">
+      <li><b>Pre-event calendar</b>: the Central Bank toolkit's tier-1 calendar is the house calendar; the event-amplification table (step 4) runs for any exposed pair.</li>
+      <li><b>Factor netting</b>: rates level/slope, USD, credit and vol exposure summed across the three books before any shock.</li>
+      <li><b>Combined drawdown ladder</b> on the aggregate $5M book; <b>stress replay</b> once per episode across the combined positions.</li>
+      <li>Crowding overlap read across Macro FX and Macro Thematic; excluded for Central Bank, where a crowded consensus is a caution, not a confirmation.</li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <div class="part" id="f9"><span class="k">Step 9</span><h1>Data and provenance</h1><p>Public data only; professional feeds drop in behind the same loaders.</p></div>
+  <section class="block">
+    <div class="grid3" id="provHeads"></div>
+    <div class="tblwrap" id="tabBlocks"></div>
+    <details><summary>Series loaded for this toolkit</summary><div class="tblwrap" id="tabStatus"></div></details>
+    <h3>Build plan (from the process document)</h3>
+<pre class="repo">fx-macro-monitor/  data/ factors/ macro/ valuation/ positioning/ vol/ seasonality/ regime/ risk/ dashboard/ docs/
+Weeks 1–2  data layer, cache, synthetic generators; factor module on real spot      ✔ (datahub + step 1)
+Week 3     COT pipeline end to end; replay Aug-2024                                    ◐ (loader ready, needs CFTC files)
+Week 4     valuation module; validate on Liberation Day                               ✔ proxies (step 3)
+Week 5     vol module on CME/CVOL + synthetic surface                                  ◐ manual surface (step 4)
+Week 6     regime module; seasonality screener                                         ✔ (steps 5–6)
+Week 7     risk module: amplified shocks, stress library, CED                          ✔ spot-only (step 8)
+Week 8     dashboard + scorecard contract; docs; tag v1                                this page</pre>
+    <p class="small">Refresh: <code>python -m apps.macro_fx.export_artifact</code> in the CrossAssetMacro repository rebuilds this page from Yahoo Finance and FRED; republish to the same artifact. Manual inputs on this page are kept in the artifact's database and survive a refresh.</p>
+  </section>
+
+  <footer>Macro FX Toolkit · companion to Investment Process — Macro FX · internal research tooling, not investment advice · all calibrations illustrative</footer>
+</div>
+
+<script type="application/json" id="data">/*__DATA__*/</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const PAIRS = D.meta.pairs; const CCYS = PAIRS.map(p => p.ccy); const G10 = PAIRS.filter(p => p.g10).map(p => p.ccy);
+  const LABEL = {}; PAIRS.forEach(p => LABEL[p.ccy] = p.label);
+  const $ = id => document.getElementById(id);
+  const CONV_W = D.strategies.conviction_weights;
+
+  // ---------- state (manual inputs) ----------
+  const defaultState = () => ({
+    v: 1, selA: 'EUR', selB: 'USD', fiscal: { A: 0, B: 0 }, tot: JSON.parse(JSON.stringify(D.macro.tot_weights)),
+    posManual: {}, surface: {}, cards: [], theta: [], drawdown: 0, nav: 100000000, gate: 'Healthy',
+    stomach: 1000000, bankroll: 5000000, win: '60', seasPair: 'JPY', legPair: 'EUR', epsPair: 'EUR', amp: false,
+  });
+  let S = defaultState();
+  let saveTimer = null, dbDoc = null, dbReady = false;
+  function setSave(t) { $('saveState').textContent = t; }
+  function persist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      try { localStorage.setItem('macrofx.inputs', JSON.stringify(S)); } catch (e) {}
+      if (dbDoc) {
+        try { setSave('saving…'); await dbDoc.set(S); setSave('saved to artifact store'); }
+        catch (e) { setSave('not saved (' + (e && e.code ? e.code : 'error') + ')'); }
+      } else { setSave(dbReady ? 'saved in this browser only' : 'saved in this browser'); }
+    }, 800);
+  }
+  function applyState(obj) {
+    if (!obj || typeof obj !== 'object') return;
+    const base = defaultState();
+    Object.keys(base).forEach(k => { if (obj[k] !== undefined) base[k] = obj[k]; });
+    S = base;
+  }
+  try { const raw = localStorage.getItem('macrofx.inputs'); if (raw) applyState(JSON.parse(raw)); } catch (e) {}
+
+  // ---------- helpers ----------
+  const isNum = x => typeof x === 'number' && isFinite(x);
+  const fmt = (x, nd = 2, suf = '') => isNum(x) ? x.toLocaleString('en-US', { minimumFractionDigits: nd, maximumFractionDigits: nd }) + suf : '—';
+  const sgn = (x, nd = 2, suf = '') => isNum(x) ? (x > 0 ? '+' : '') + fmt(x, nd, suf) : '—';
+  const usd = x => isNum(x) ? (x < 0 ? '−' : '') + '$' + Math.abs(x).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—';
+  const badge = q => '<span class="badge b-' + q + '">' + String(q).toUpperCase() + '</span>';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  function heat(z, max = 3) {
+    if (!isNum(z)) return '<span class="heat">—</span>';
+    const a = Math.min(Math.abs(z) / max, 1) * 0.75;
+    const col = z >= 0 ? '169,129,79' : '85,103,124';
+    return '<span class="heat" style="background:rgba(' + col + ',' + a.toFixed(2) + ')">' + sgn(z, 2) + '</span>';
+  }
+  function table(el, cols, rows, opts = {}) {
+    const node = typeof el === 'string' ? $(el) : el;
+    if (!rows || !rows.length) { node.innerHTML = '<p class="small">' + (opts.empty || 'nothing to show') + '</p>'; return; }
+    let h = '<table' + (opts.minw ? ' style="min-width:' + opts.minw + 'px"' : '') + '><thead><tr>';
+    cols.forEach(c => h += '<th class="' + (c.num ? 'num' : '') + '">' + c.label + '</th>');
+    h += '</tr></thead><tbody>';
+    rows.forEach((r, i) => {
+      h += '<tr' + (opts.rowClass ? ' class="' + opts.rowClass(r) + '"' : '') + '>';
+      cols.forEach(c => {
+        const v = typeof c.k === 'function' ? c.k(r, i) : r[c.k];
+        let txt, cls = c.num ? 'num' : '';
+        if (c.render) txt = c.render(v, r, i);
+        else if (c.heat) txt = heat(v, c.heat);
+        else if (c.fmt === 'sgn') { txt = sgn(v, c.nd == null ? 2 : c.nd, c.suf || ''); if (isNum(v)) cls += v > 0 ? ' pos' : v < 0 ? ' neg' : ''; }
+        else if (c.fmt === 'usd') { txt = usd(v); if (isNum(v)) cls += v > 0 ? ' pos' : v < 0 ? ' neg' : ''; }
+        else if (c.fmt === 'num') txt = fmt(v, c.nd == null ? 2 : c.nd, c.suf || '');
+        else if (c.fmt === 'bool') txt = v ? '✓' : '';
+        else if (c.fmt === 'badge') txt = v ? badge(v) : '';
+        else txt = esc(v);
+        h += '<td class="' + cls + '">' + txt + '</td>';
+      });
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+    node.innerHTML = h;
+  }
+  function kpi(el, items) {
+    $(el).innerHTML = items.map(it => '<div class="kpi"><div class="l">' + it[0] + '</div><div class="v">' + it[1] + '</div>' +
+      (it[2] != null ? '<div class="d ' + (it[3] || '') + '">' + it[2] + '</div>' : '') + '</div>').join('');
+  }
+  function fillSelect(id, values, labels, current) {
+    const s = $(id); s.innerHTML = values.map((v, i) => '<option value="' + v + '"' + (v === current ? ' selected' : '') + '>' + (labels ? labels[i] : v) + '</option>').join('');
+  }
+  const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
+  const std = a => { if (a.length < 2) return NaN; const m = mean(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) * (x - m), 0) / (a.length - 1)); };
+  function rollZ(arr, win = 504, minp = 126, clip = 3) {
+    const out = new Array(arr.length).fill(null);
+    for (let i = 0; i < arr.length; i++) {
+      if (!isNum(arr[i])) continue;
+      const w = []; for (let j = Math.max(0, i - win + 1); j <= i; j++) if (isNum(arr[j])) w.push(arr[j]);
+      if (w.length < minp) continue;
+      const sd = std(w); if (!(sd > 0)) continue;
+      out[i] = Math.max(-clip, Math.min(clip, (arr[i] - mean(w)) / sd));
+    }
+    return out;
+  }
+  const lastNum = arr => { for (let i = arr.length - 1; i >= 0; i--) if (isNum(arr[i])) return arr[i]; return NaN; };
+  function diffN(arr, n) { return arr.map((v, i) => (i >= n && isNum(v) && isNum(arr[i - n])) ? v - arr[i - n] : null); }
+  function alignDiff(a, b) { // a,b: {dates, values} → {dates, values: a-b on common dates}
+    const mb = new Map(); b.dates.forEach((d, i) => mb.set(d, b.values[i]));
+    const dates = [], values = [];
+    a.dates.forEach((d, i) => { if (mb.has(d) && isNum(a.values[i]) && isNum(mb.get(d))) { dates.push(d); values.push(a.values[i] - mb.get(d)); } });
+    return { dates, values };
+  }
+  function kelly(p, r) {
+    const ps = p.reduce((a, b) => a + b, 0); p = p.map(x => x / ps);
+    const ev = p.reduce((s, pi, i) => s + pi * r[i], 0);
+    if (ev <= 0) return { f: 0, half: 0, ev, growth: 0 };
+    if (r.every(x => x >= 0)) return { f: Infinity, half: Infinity, ev, growth: NaN };
+    const worst = Math.min(...r); const cap = 0.999 / Math.abs(worst);
+    let best = 0, bf = 0;
+    for (let k = 0; k <= 2000; k++) {
+      const f = cap * k / 2000; let g = 0, ok = true;
+      for (let i = 0; i < r.length; i++) { const x = 1 + f * r[i]; if (x <= 0) { ok = false; break; } g += p[i] * Math.log(x); }
+      if (ok && g > best) { best = g; bf = f; }
+    }
+    return { f: bf, half: bf / 2, ev, growth: best };
+  }
+
+  // ---------- Plotly ----------
+  const charts = {};
+  function layout(extra = {}) {
+    const fg = css('--fg'), grid = css('--grid'), muted = css('--muted');
+    return Object.assign({ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { family: css('--font-body'), size: 12, color: fg },
+      margin: { l: 48, r: 16, t: 36, b: 40 }, legend: { orientation: 'h', y: -0.18, font: { color: fg } }, hovermode: 'x unified',
+      xaxis: { gridcolor: grid, zerolinecolor: grid, linecolor: grid, tickfont: { color: muted } },
+      yaxis: { gridcolor: grid, zerolinecolor: muted, linecolor: grid, tickfont: { color: muted } } }, extra);
+  }
+  const PAL = () => [css('--navy'), css('--bronze'), css('--slate'), '#7A9CC6', '#C9A77C', '#8FA0B2', '#3E5C80', '#D9B98A'];
+  function plot(id, fn) { charts[id] = fn; draw(id); }
+  function draw(id) { const spec = charts[id](); if (!spec) return; Plotly.react($(id), spec.data, spec.layout, { displayModeBar: false, responsive: true }); }
+  function redrawAll() { Object.keys(charts).forEach(draw); }
+  function lines(series, title, ytitle, extra = {}) {
+    const pal = PAL();
+    return { data: series.map((s, i) => ({ x: s.dates, y: s.values, name: s.name, mode: 'lines', line: { width: 1.6, color: pal[i % pal.length] }, hovertemplate: '%{y:.2f}<extra>' + s.name + '</extra>' })),
+      layout: layout(Object.assign({ title: { text: title, font: { size: 13, color: css('--navy') } }, yaxis: Object.assign(layout().yaxis, { title: ytitle }), showlegend: series.length > 1 }, extra)) };
+  }
+
+  // ---------- theme ----------
+  $('themeBtn').addEventListener('click', () => {
+    const r = document.documentElement;
+    const cur = r.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    r.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    setTimeout(redrawAll, 30);
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(redrawAll, 30));
+
+  // ---------- hero ----------
+  $('asOf').textContent = D.meta.as_of; $('generated').textContent = D.meta.generated;
+  $('legend').innerHTML = badge('live') + ' observed market / official print &nbsp; ' + badge('proxy') + ' public data with a documented approximation &nbsp; ' +
+    badge('manual') + ' typed in by the desk (kept in the artifact store) &nbsp; ' + badge('estimated') + ' calendar date by rule, verify &nbsp; ' + badge('unavailable') + ' no public source — shown, never faked';
+
+  // ================= 1. Factors =================
+  function renderFactors() {
+    const F = D.factors;
+    kpi('facHeads', ['F_USD', 'F_Carry', 'F_Mom'].map(f => [f, sgn(F.heads[f].d1, 2, '% (1D)'), sgn(F.heads[f].d20, 2, '% 20D'), F.heads[f].d20 >= 0 ? 'up' : 'dn']));
+    plot('chFactors', () => lines(['F_USD', 'F_Carry', 'F_Mom'].map(f => ({ dates: F.cum[f].dates, values: F.cum[f].values, name: f })), 'Cumulative factor returns, % (3y)', '%'));
+    table('tabFactors', [{ k: 'pair', label: 'pair' }, { k: 'beta_USD', label: 'β USD', fmt: 'num' }, { k: 'beta_Carry', label: 'β Carry', fmt: 'num' }, { k: 'beta_Mom', label: 'β Mom', fmt: 'num' },
+      { k: 'eps_20D_pct', label: 'ε 20D %', fmt: 'sgn' }, { k: 'eps_20D_z', label: 'ε 20D z', heat: 3 }, { k: 'ret_20D_pct', label: 'return 20D %', fmt: 'sgn' }], F.table);
+    fillSelect('selEps', CCYS, CCYS.map(c => LABEL[c]), S.epsPair);
+    plot('chEps', () => { const e = F.eps[S.epsPair]; if (!e) return null;
+      return lines([{ dates: e.cum60_pct.dates, values: e.cum60_pct.values, name: 'ε cumulative 60D (%)' }, { dates: e.z20.dates, values: e.z20.values, name: '20D z of ε' }], LABEL[S.epsPair] + ' — residual after Dollar, Carry, Momentum', ''); });
+    $('selEps').addEventListener('change', e => { S.epsPair = e.target.value; draw('chEps'); persist(); });
+    $('legsNote').textContent = F.legs_coincide ? 'Carry and momentum legs currently coincide (same top-3 / bottom-3), so F_Carry = F_Mom this month.' : 'Legs frozen intra-month; rebalanced on the first business day using the previous day\'s ranks.';
+    table('tabRanks', [{ k: 'ccy', label: 'ccy', render: v => LABEL[v] || v }, { k: 'carry_diff_pp', label: 'carry diff (pp)', fmt: 'sgn' }, { k: 'mom_12_1', label: 'mom 12-1', fmt: 'sgn', nd: 3 },
+      { k: 'w_carry', label: 'w carry', fmt: 'sgn' }, { k: 'w_mom', label: 'w mom', fmt: 'sgn' }], F.ranks);
+    $('facValidation').innerHTML = F.validation.map(v => '<p class="small"><b>' + esc(v.label) + '</b> (' + esc(v.window) + '): ' + (v.note ? esc(v.note) : ['F_USD', 'F_Carry', 'F_Mom'].map(f => f + ' ' + sgn(v[f], 2, '%')).join(' · ')) + '</p>').join('');
+  }
+
+  // ================= 2. Macro =================
+  function totSeries(ccy) {
+    const cr = D.macro.commodity_returns; const w = S.tot[ccy] || {}; const cols = Object.keys(cr).filter(k => k !== 'dates');
+    let cum = 0; const values = cr.dates.map((d, i) => { let r = 0; cols.forEach(c => r += (w[c] || 0) * (cr[c][i] || 0)); cum += r; return cum; });
+    return { dates: cr.dates, values };
+  }
+  function diffStats(d) {
+    const v = d.values; if (v.length < 61) return null;
+    const lvl = v[v.length - 1], mom = v[v.length - 1] - v[v.length - 61];
+    const d60 = diffN(v, 60); const z = rollZ(d60); return { lvl, mom, z: lastNum(z), zser: z, dates: d.dates };
+  }
+  function renderMacro() {
+    const ccys = D.macro.ccys;
+    fillSelect('selA', ccys, ccys, S.selA); fillSelect('selB', ccys, ccys, S.selB);
+    $('fiA').value = S.fiscal.A; $('fiB').value = S.fiscal.B;
+    const upd = () => {
+      const A = S.selA, B = S.selB; const rows = []; const series = [];
+      const q = D.macro.quality;
+      const push = (name, a, b, fails, qual, unit, nd) => {
+        if (!a.values.length || !b.values.length) { rows.push({ name, q: 'unavailable', fails, note: 'missing series for one leg' }); return; }
+        const st = diffStats(alignDiff(a, b)); if (!st) { rows.push({ name, q: 'unavailable', fails }); return; }
+        rows.push({ name, q: qual, lvl: st.lvl, mom: st.mom, z: st.z, fails, unit, nd });
+        series.push({ name, dates: st.dates.slice(-504), values: st.zser.slice(-504) });
+      };
+      push('Growth surprise differential', D.macro.growth[A], D.macro.growth[B], 'the reaction function is saturated — at bounds or dominated by the inflation mandate',
+        (q[A].growth === 'unavailable' || q[B].growth === 'unavailable') ? 'unavailable' : 'proxy', '', 2);
+      push('1Y1Y real-rate differential', D.macro.real[A], D.macro.real[B], 'credibility-regime switch, where higher yields weaken the currency', 'proxy', ' pp', 2);
+      const ta = totSeries(A), tb = totSeries(B); const td = alignDiff(ta, tb); const ts = diffStats(td);
+      if (ts) { const n = td.values.length; rows.push({ name: 'Terms-of-trade differential', q: 'proxy', lvl: 100 * (td.values[n - 1] - td.values[n - 21]), mom: 100 * ts.mom, z: ts.z, fails: 'fiscal policy sterilises the windfall or hedging flows dominate', unit: '%', nd: 2, lvlLabel: '20D' });
+        series.push({ name: 'Terms-of-trade differential', dates: ts.dates.slice(-504), values: ts.zser.slice(-504) }); }
+      rows.push({ name: 'Fiscal impulse differential', q: 'manual', lvl: (S.fiscal.A || 0) - (S.fiscal.B || 0), unit: ' pp', nd: 1, fails: 'sign is regime-dependent: positive under credibility, negative under fiscal dominance' });
+      table('tabDiff', [{ k: 'name', label: 'Differential (' + A + ' − ' + B + ')', render: (v, r) => '<b>' + esc(v) + '</b>' + badge(r.q) + '<br><span class="small">Fails when: ' + esc(r.fails) + '</span>' },
+        { k: 'lvl', label: 'Level / 20D', num: true, render: (v, r) => sgn(v, r.nd == null ? 2 : r.nd, r.unit || '') }, { k: 'mom', label: '60D momentum', num: true, render: (v, r) => sgn(v, r.nd == null ? 2 : r.nd, r.unit || '') },
+        { k: 'z', label: 'z of 60D Δ (2y)', heat: 3 }], rows);
+      plot('chDiff', () => lines(series, A + ' − ' + B + ': z of 60D momentum per differential', 'z'));
+    };
+    const totCols = Object.keys(D.macro.commodity_returns).filter(k => k !== 'dates');
+    const renderTot = () => {
+      let h = '<table><thead><tr><th>ccy</th>' + totCols.map(c => '<th class="num">' + c + '</th>').join('') + '</tr></thead><tbody>';
+      Object.keys(S.tot).forEach(c => { h += '<tr><td>' + c + '</td>' + totCols.map(k => '<td class="num inline-edit"><input type="number" step="0.1" data-ccy="' + c + '" data-col="' + k + '" value="' + (S.tot[c][k] == null ? 0 : S.tot[c][k]) + '"></td>').join('') + '</tr>'; });
+      $('tabTot').innerHTML = h + '</tbody></table>';
+      $('tabTot').querySelectorAll('input').forEach(inp => inp.addEventListener('change', e => { S.tot[e.target.dataset.ccy][e.target.dataset.col] = parseFloat(e.target.value) || 0; upd(); persist(); }));
+    };
+    $('selA').addEventListener('change', e => { S.selA = e.target.value; upd(); persist(); });
+    $('selB').addEventListener('change', e => { S.selB = e.target.value; upd(); persist(); });
+    $('fiA').addEventListener('change', e => { S.fiscal.A = parseFloat(e.target.value) || 0; upd(); persist(); });
+    $('fiB').addEventListener('change', e => { S.fiscal.B = parseFloat(e.target.value) || 0; upd(); persist(); });
+    $('btnTotReset').addEventListener('click', () => { S.tot = JSON.parse(JSON.stringify(D.macro.tot_weights)); renderTot(); upd(); persist(); });
+    renderTot(); upd();
+  }
+
+  // ================= 3. Valuation =================
+  function renderValuation() {
+    $('selWin').value = S.win;
+    const upd = () => {
+      const W = D.valuation.windows[S.win]; const drivers = W.drivers;
+      const cols = [{ k: 'pair', label: 'pair' }, { k: 'composite_z', label: 'composite z', heat: 3 }, { k: 'disagreement', label: 'disagree', render: v => v ? '<span class="flag">⚑</span>' : '' }, { k: 'n_drivers', label: 'n', num: true }];
+      drivers.forEach(d => cols.push({ k: d, label: d, heat: 3 }));
+      drivers.forEach(d => cols.push({ k: d + ' R²', label: 'R² ' + d.split(' ')[0], fmt: 'num', nd: 2 }));
+      table('tabVal', cols, W.rows, { minw: 900 });
+      const dis = W.rows.filter(r => r.disagreement).map(r => r.pair);
+      const comps = W.rows.map(r => r.composite_z).filter(isNum); const med = comps.length ? comps.slice().sort((a, b) => a - b)[Math.floor(comps.length / 2)] : NaN;
+      const same = comps.length ? comps.filter(z => Math.sign(z) === Math.sign(med)).length / comps.length : NaN;
+      $('valFlags').innerHTML = (dis.length ? '<div class="callout"><span class="t">Driver-disagreement flag ON</span>' + esc(dis.join(', ')) + ' — the market has rotated to a driver the models do not carry. Response: narrative work, not mean reversion.</div>' : '') +
+        '<p class="small">Breadth check: ' + fmt(100 * same, 0) + '% of pairs share the sign of the median composite residual (' + sgn(med, 2) + ').</p>';
+    };
+    $('selWin').addEventListener('change', e => { S.win = e.target.value; upd(); persist(); });
+    upd();
+    table('tabReer', [{ k: 'currency', label: 'currency' }, { k: 'reer_z_10y', label: 'REER z (10y)', heat: 3 }, { k: 'haircut', label: 'beyond ±2z', render: v => v ? '<span class="flag">conviction haircut</span>' : '' }, { k: 'last', label: 'last print' }], D.valuation.reer);
+  }
+
+  // ================= 4. Positioning =================
+  function posZ(c) { const v = S.posManual[c]; return isNum(v) ? v : NaN; }
+  function surf(c) { return S.surface[c] || {}; }
+  function rvRow(c) { return (D.positioning.rv.find(r => r.ccy === c)) || {}; }
+  function optionsRow(c) {
+    const rv = rvRow(c), s = surf(c); const atm = isNum(s.atm) ? s.atm : NaN;
+    return { ccy: c, rv20: rv.rv20, rv60: rv.rv60, e_rv: rv.e_rv, corr: rv.spot_vol_corr_20d, atm, rr: isNum(s.rr) ? s.rr : NaN, bf: isNum(s.bf) ? s.bf : NaN,
+      vrp: isNum(atm) && isNum(rv.e_rv) ? atm - rv.e_rv : NaN, vrp_d: isNum(atm) && isNum(s.atm_prev) ? atm - s.atm_prev : NaN, rr_d: isNum(s.rr) && isNum(s.rr_prev) ? s.rr - s.rr_prev : NaN };
+  }
+  function renderPositioning() {
+    const P = D.positioning;
+    $('cftcBlock').innerHTML = '<p class="small">Status: <code>' + esc(P.cftc_status) + '</code> (source: ' + esc(P.cftc_source) + ')</p>' +
+      (P.cftc.length ? '' : '<div class="callout"><span class="t">CFTC not reachable from the build environment</span>Download the TFF history (FinFutYY.txt / zip) from cftc.gov → Historical Compressed, drop it in <code>data/cftc/</code> of the repository and rebuild this page; the z-scores, Net/OI, crowding flags and built-by tags then replace the manual column below.</div>');
+    if (P.cftc.length) table('cftcBlock', [{ k: 'key', label: 'market' }, { k: 'date', label: 'date' }, { k: 'net', label: 'net', fmt: 'num', nd: 0 }, { k: 'net_oi', label: 'net/OI', fmt: 'num' }, { k: 'z', label: 'z 156w', heat: 3 }, { k: 'dz', label: 'Δz', fmt: 'sgn' }, { k: 'crowded', label: 'crowded', fmt: 'bool' }, { k: 'built_by', label: 'built by' }], P.cftc);
+    const renderPos = () => {
+      let h = '<table><thead><tr><th>currency</th><th>CFTC market</th><th class="num">z (156w)</th><th>crowded</th><th>source</th></tr></thead><tbody>';
+      CCYS.forEach(c => { const z = posZ(c); const cf = P.cftc.find(r => r.key === P.cftc_key[c]);
+        h += '<tr><td>' + c + '</td><td>' + (P.cftc_key[c] || '—') + '</td><td class="num inline-edit"><input type="number" step="0.1" data-ccy="' + c + '" value="' + (isNum(z) ? z : '') + '" placeholder="blank"></td>' +
+          '<td>' + (cf ? (cf.crowded ? '✓' : '') : (isNum(z) && Math.abs(z) >= 1.5 ? '<span class="flag">✓ crowded</span>' : '')) + '</td><td>' + (cf ? badge('live') : isNum(z) ? badge('manual') : badge('unavailable')) + '</td></tr>'; });
+      $('tabPos').innerHTML = h + '</tbody></table>';
+      $('tabPos').querySelectorAll('input').forEach(inp => inp.addEventListener('change', e => { const v = parseFloat(e.target.value); if (isFinite(v)) S.posManual[e.target.dataset.ccy] = v; else delete S.posManual[e.target.dataset.ccy]; refreshDependents(); persist(); }));
+    };
+    const renderAmp = () => {
+      const rows = P.meetings.slice().sort((a, b) => a.date < b.date ? -1 : 1).map(m => {
+        const z = m.currency === 'USD' ? NaN : posZ(m.currency); let verdict;
+        if (isNum(z) && Math.abs(z) >= 1.5) { const side = z > 0 ? 'long' : 'short', sur = z < 0 ? 'hawkish' : 'dovish'; verdict = 'AMPLIFIED-' + sur + ': crowd is ' + side + ' ' + m.currency + '; a ' + sur + ' surprise forces it out'; }
+        else verdict = isNum(z) ? 'normal' : (m.currency === 'USD' ? 'USD positioning is read through the pairs' : 'positioning unavailable');
+        return Object.assign({}, m, { z, verdict });
+      });
+      table('tabAmp', [{ k: 'date', label: 'date' }, { k: 'currency', label: 'currency' }, { k: 'event', label: 'event' }, { k: 'status', label: 'status', fmt: 'badge' }, { k: 'z', label: 'positioning z', heat: 3 }, { k: 'verdict', label: 'verdict', render: v => v.startsWith('AMPLIFIED') ? '<span class="flag">' + esc(v) + '</span>' : esc(v) }], rows, { empty: 'No central-bank meeting in the next 4 weeks for the tracked blocs.' });
+    };
+    const renderSurf = () => {
+      const fields = ['atm', 'rr', 'bf', 'atm_prev', 'rr_prev']; const labels = ['1M ATM %', '25Δ RR (call−put) %', '25Δ BF %', 'ATM 5D ago', 'RR 5D ago'];
+      let h = '<table style="min-width:900px"><thead><tr><th>pair</th>' + labels.map(l => '<th class="num">' + l + '</th>').join('') + '<th class="num">RV20</th><th class="num">RV60</th><th class="num">E[RV]</th><th class="num">VRP</th><th class="num">VRP Δ5D</th><th class="num">RR Δ5D</th><th class="num">spot/RV corr</th></tr></thead><tbody>';
+      CCYS.forEach(c => { const o = optionsRow(c), s = surf(c);
+        h += '<tr><td>' + LABEL[c] + '</td>' + fields.map(f => '<td class="num inline-edit"><input type="number" step="0.1" data-ccy="' + c + '" data-f="' + f + '" value="' + (isNum(s[f]) ? s[f] : '') + '"></td>').join('') +
+          '<td class="num">' + fmt(o.rv20, 1) + '</td><td class="num">' + fmt(o.rv60, 1) + '</td><td class="num">' + fmt(o.e_rv, 1) + '</td><td class="num">' + sgn(o.vrp, 1) + '</td><td class="num">' + sgn(o.vrp_d, 1) + '</td><td class="num">' + sgn(o.rr_d, 2) + '</td><td class="num">' + sgn(o.corr, 2) + '</td></tr>'; });
+      $('tabSurf').innerHTML = h + '</tbody></table>';
+      $('tabSurf').querySelectorAll('input').forEach(inp => inp.addEventListener('change', e => { const c = e.target.dataset.ccy, f = e.target.dataset.f; S.surface[c] = S.surface[c] || {}; const v = parseFloat(e.target.value); if (isFinite(v)) S.surface[c][f] = v; else delete S.surface[c][f]; refreshDependents(); persist(); }));
+    };
+    renderPos(); renderAmp(); renderSurf();
+    renderPositioning.refresh = () => { renderAmp(); renderSurf(); };
+  }
+
+  // ================= 5. Seasonality =================
+  function renderSeasonality() {
+    const SS = D.seasonality;
+    fillSelect('selSeas', CCYS, CCYS.map(c => LABEL[c]), S.seasPair);
+    const cols = [{ k: 'window', label: 'window' }, { k: 'start', label: 'start' }, { k: 'end', label: 'end' }, { k: 'days_to_entry', label: 'days to entry', num: true }, { k: 'status', label: 'status' }, { k: 'n_years', label: 'years', num: true },
+      { k: 't_recent', label: 't (Apr-21→)', fmt: 'sgn' }, { k: 'gate1', label: 'gate 1', fmt: 'bool' }, { k: 'robustness', label: 'sub-periods' }, { k: 'gate2', label: 'gate 2', fmt: 'bool' }, { k: 'hit_rate', label: 'hit rate', fmt: 'num' },
+      { k: 'ev_net_bp', label: 'EV net (bp)', fmt: 'sgn', nd: 1 }, { k: 'sharpe_per_occ', label: 'Sharpe/occ', fmt: 'sgn' }, { k: 'score', label: 'S_S', fmt: 'sgn' }];
+    const upd = () => {
+      const p = SS.pairs[S.seasPair]; if (!p || !p.rows.length) { $('seasNote').textContent = 'No long history for this pair.'; table('tabSeasSurv', cols, []); table('tabSeasAll', cols, []); return; }
+      $('seasNote').textContent = 'History used: FRED H.10 daily ' + S.seasPair + ' from ' + p.start + ' to ' + p.end + ' (USD per ' + S.seasPair + '; positive = ' + S.seasPair + ' up). Windows are the 12 calendar months and 24 half-months, fixed before testing: there is no "select by max t on window W" path. Sub-period boundaries are never tuned.';
+      const surv = p.rows.filter(r => r.survivor);
+      kpi('seasHeads', [['Windows tested', p.rows.length], ['Survivors (both gates)', surv.length], ['Next survivor opens in', surv.length ? Math.min(...surv.map(r => r.days_to_entry)) + ' d' : '—']]);
+      table('tabSeasSurv', cols, surv, { empty: 'No window passes both gates for this pair — as expected for a strict screen. Nothing exists for the desk here.', minw: 1100 });
+      table('tabSeasAll', cols, p.rows, { minw: 1100 });
+      const wins = p.rows.map(r => r.window); if (!wins.includes(S.seasWin)) S.seasWin = wins[0];
+      fillSelect('selSeasWin', wins, wins, S.seasWin);
+      plot('chSeas', () => { const y = p.yearly[S.seasWin] || {}; const years = Object.keys(y).sort(); const vals = years.map(k => y[k]);
+        return { data: [{ type: 'bar', x: years, y: vals, marker: { color: vals.map(v => v >= 0 ? css('--bronze') : css('--slate')) }, hovertemplate: '%{x}: %{y:.0f} bp<extra></extra>' }],
+          layout: layout({ title: { text: LABEL[S.seasPair] + ' — ' + S.seasWin + ' return per year (bp)', font: { size: 13, color: css('--navy') } }, showlegend: false, hovermode: 'closest', bargap: 0.35 }) }; });
+    };
+    $('selSeas').addEventListener('change', e => { S.seasPair = e.target.value; upd(); persist(); });
+    $('selSeasWin').addEventListener('change', e => { S.seasWin = e.target.value; draw('chSeas'); persist(); });
+    upd();
+  }
+
+  // ================= 6. Regime =================
+  function renderRegime() {
+    const R = D.regime; const names = Object.keys(R.axes);
+    kpi('axesHeads', names.map(n => [n, sgn(R.axes[n].level, 0), sgn(R.axes[n].direction, 0) + ' (20D)', R.axes[n].direction >= 0 ? 'up' : 'dn']));
+    plot('chAxes', () => lines(names.map(n => ({ dates: R.history[n].dates, values: R.history[n].values, name: n })), 'Axes, 3y', 'score'));
+    $('rawZ').innerHTML = names.map(n => { const z = R.raw[n]; const ks = Object.keys(z || {}); if (!ks.length) return '<p class="small"><b>' + n + '</b>: unavailable</p>';
+      return '<p class="small"><b>' + n + '</b>: ' + ks.map(k => esc(k) + ' ' + heat(z[k], 3)).join(' · ') + '</p>'; }).join('');
+    table('tabDecides', [{ k: 'axis', label: 'axis' }, { k: 'decides', label: 'decides' }], names.map(n => ({ axis: n, decides: R.decides[n] })));
+    const Q = R.quadrant; const order = ['USD↑ · real↑ — rates shock', 'USD↓ · real↑ — confidence / de-dollarisation', 'USD↑ · real↓ — risk-off / liquidity', 'USD↓ · real↓ — dovish easing / reflation'];
+    $('quadCells').innerHTML = order.map(k => '<div class="cell' + (k === Q.confirmed ? ' lit' : '') + '"><b class="h">' + esc(k) + (k === Q.confirmed ? ' · <span class="flag">current</span>' : '') + '</b>' + esc(R.playbook[k]) + '</div>').join('');
+    $('quadStatus').innerHTML = '<p><b>Confirmed quadrant:</b> ' + esc(Q.confirmed || 'n/a') + ' · <b>days in current cell:</b> ' + Q.days_in + (Q.migrating ? ' · <span class="flag">Migration in progress → ' + esc(Q.current) + '</span>' : '') + '</p>';
+    plot('chQuad', () => { const n = Q.path.usd.length; const shade = Q.path.usd.map((_, i) => i / Math.max(n - 1, 1));
+      return { data: [{ x: Q.path.usd, y: Q.path.ry, mode: 'lines+markers', line: { color: css('--slate'), width: 1 }, marker: { size: 5, color: shade, colorscale: [[0, css('--hair')], [1, css('--bronze')]] }, name: '10D centroid, last 120 days', hovertemplate: '%{text}<br>USD %{x:.0f} · real %{y:.0f}<extra></extra>', text: Q.path.dates },
+        { x: [Q.path.usd[n - 1]], y: [Q.path.ry[n - 1]], mode: 'markers', marker: { size: 14, color: css('--navy') }, name: 'today', hoverinfo: 'skip' }],
+        layout: layout({ hovermode: 'closest', xaxis: Object.assign(layout().xaxis, { title: 'USD axis', range: [-100, 100], zerolinecolor: css('--muted') }), yaxis: Object.assign(layout().yaxis, { title: 'Real-yield axis', range: [-100, 100] }),
+          annotations: [[50, 50, 'rates shock'], [50, -50, 'risk-off / liquidity'], [-50, 50, 'confidence / de-dollarisation'], [-50, -50, 'dovish easing / reflation']].map(a => ({ x: a[0], y: a[1], text: a[2], showarrow: false, font: { color: css('--muted'), size: 11 } })) }) }; });
+    $('quadValidation').innerHTML = R.validation.map(v => '<p class="small"><b>' + esc(v.label) + '</b>: ' + esc(v.quadrant) + '</p>').join('');
+  }
+
+  // ================= 7. Strategies =================
+  function lifecycleRows() {
+    const unstable = D.regime.quadrant.migrating;
+    return D.strategies.lifecycle.map(r => {
+      const m5 = r.mom_5d, m20 = r.mom_20d, consistent = !!r.consistent, steep = consistent && Math.abs(m5) / 5 > Math.abs(m20) / 20;
+      const pz = posZ(r.ccy), crowded = isNum(pz) && Math.abs(pz) >= 1.5, o = optionsRow(r.ccy), rr_d = o.rr_d;
+      const against = isNum(r.eps_z) && isNum(r.val_z) && Math.abs(r.eps_z) >= 1 && Math.sign(r.eps_z) !== Math.sign(r.val_z);
+      let state;
+      if (unstable || (r.disagreement && !consistent)) state = 'Competing';
+      else if (crowded || (isNum(pz) && Math.abs(pz) >= 1.5 && !steep) || (isNum(rr_d) && Math.abs(rr_d) > 0.5 && Math.abs(m5) < Math.abs(m20) / 4)) state = 'Exhausting';
+      else if (steep && ((isNum(rr_d) && rr_d * Math.sign(m20) > 0) || (isNum(pz) && pz * Math.sign(m20) > 0.5))) state = 'Accelerating';
+      else if (consistent && r.breadth >= 0.6 && (!isNum(pz) || Math.abs(pz) < 1.5)) state = 'Dominant';
+      else if (against || r.disagreement) state = 'Emerging';
+      else state = 'Competing';
+      return Object.assign({}, r, { state, pos_z: pz, crowded, rr_5d: rr_d, playbook: D.strategies.playbook[state] });
+    });
+  }
+  function legChoice(row) {
+    const o = optionsRow(row.ccy); const vrp = o.vrp, vd = o.vrp_d;
+    if (row.crowded || row.state === 'Exhausting') return 'Switch delta-one to defined-risk options (risk reversal, strangle) — an amplified event gaps; linear can\'t be sized to survive it.';
+    if (row.state === 'Emerging' && (!isNum(vrp) || vrp <= 0)) return 'Long gamma / cheap optionality — own the move before the crowd and the vol market catch up.';
+    if (row.state === 'Dominant' && (!isNum(vrp) || vrp <= 1.0)) return 'Delta-one — bank the drift; no convexity premium paid unnecessarily.';
+    if (isNum(vrp) && vrp > 1.0 && (!isNum(vd) || vd <= 0)) return 'Delta-one — don\'t pay rich vol for a view already held with conviction (VRP rich and stable/falling).';
+    return 'Mixed read — size small; prefer the defined-loss leg until the lifecycle resolves.';
+  }
+  function carryRows() {
+    const gross = { 'Healthy': 1, 'Fragile': 0.5, 'Unwinding': 0, 'Low-vol rotation': 1 }[S.gate];
+    const rows = D.strategies.carry.map(c => { const o = optionsRow(c.ccy); const sig = isNum(o.atm) ? o.atm : c.rv60; const pz = posZ(c.ccy); const rr = o.rr;
+      const h_crowd = isNum(pz) ? Math.min(0.5, Math.max(0, Math.abs(pz) - 1.5) * 0.5) : 0;
+      let h_skew = 0; if (isNum(rr) && isNum(c.carry_pp)) { const pain = c.carry_pp > 0 ? -rr : rr; h_skew = Math.min(0.5, Math.max(0, pain) * 0.25); }
+      return { ccy: c.ccy, carry_pp: c.carry_pp, sigma: sig, cov: (isNum(sig) && sig > 0 && isNum(c.carry_pp)) ? c.carry_pp / sig : NaN, pos_z: pz, h_crowd, h_skew, src: isNum(o.atm) ? 'IV typed' : 'RV60 proxy' }; }).filter(r => isNum(r.cov));
+    const sorted = rows.slice().sort((a, b) => a.cov - b.cov); sorted.forEach((r, i) => r.rank = (i + 1) - (rows.length + 1) / 2);
+    let tot = 0; rows.forEach(r => { r.raw = r.rank * (1 - r.h_crowd) * (1 - r.h_skew); tot += Math.abs(r.raw); });
+    rows.forEach(r => r.weight = tot > 0 ? r.raw / tot * gross : 0);
+    return rows.sort((a, b) => b.weight - a.weight);
+  }
+  const CHECK_KEYS = Object.keys(CONV_W);
+  let scen = [{ scenario: 'base', prob: 0.45, pnl: 2 }, { scenario: 'bull', prob: 0.25, pnl: 5 }, { scenario: 'bear', prob: 0.2, pnl: -2 }, { scenario: 'tail', prob: 0.1, pnl: -6 }];
+  function renderStrategies() {
+    fillSelect('selGate', ['Healthy', 'Fragile', 'Unwinding', 'Low-vol rotation'], null, S.gate);
+    fillSelect('selLeg', CCYS, CCYS.map(c => LABEL[c]), S.legPair);
+    fillSelect('cPair', CCYS, CCYS.map(c => LABEL[c]), 'EUR');
+    $('cEntry').value = D.strategies.spot_last['EUR'];
+    $('cPair').addEventListener('change', e => { $('cEntry').value = D.strategies.spot_last[e.target.value]; });
+    $('checks').innerHTML = CHECK_KEYS.map(k => '<div><label for="chk_' + k.replace(/\s/g, '_') + '">' + k + ' (' + CONV_W[k] + ')</label><input type="range" min="0" max="1" step="0.1" value="0.5" id="chk_' + k.replace(/\s/g, '_') + '" data-k="' + k + '"><div class="val">0.5</div></div>').join('');
+    $('checks').querySelectorAll('input').forEach(i => i.addEventListener('input', e => { e.target.nextElementSibling.textContent = e.target.value; }));
+    $('cStomach').value = S.stomach; $('cBank').value = S.bankroll;
+    const renderScen = () => {
+      let h = '<table style="min-width:360px"><thead><tr><th>scenario</th><th class="num">prob</th><th class="num">P&amp;L %</th><th></th></tr></thead><tbody>';
+      scen.forEach((s, i) => h += '<tr><td class="inline-edit"><input type="text" data-i="' + i + '" data-f="scenario" value="' + esc(s.scenario) + '" style="width:110px"></td><td class="num inline-edit"><input type="number" step="0.05" data-i="' + i + '" data-f="prob" value="' + s.prob + '"></td><td class="num inline-edit"><input type="number" step="0.5" data-i="' + i + '" data-f="pnl" value="' + s.pnl + '"></td><td><button class="btn ghost" type="button" data-del="' + i + '" style="padding:2px 8px">×</button></td></tr>');
+      $('tabScen').innerHTML = h + '</tbody></table><button class="btn ghost" type="button" id="btnScenAdd">Add scenario</button>';
+      $('tabScen').querySelectorAll('input').forEach(inp => inp.addEventListener('change', e => { const i = +e.target.dataset.i, f = e.target.dataset.f; scen[i][f] = f === 'scenario' ? e.target.value : parseFloat(e.target.value) || 0; }));
+      $('tabScen').querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', e => { if (scen.length > 2) { scen.splice(+e.target.dataset.del, 1); renderScen(); } }));
+      $('btnScenAdd').addEventListener('click', () => { if (scen.length < 6) { scen.push({ scenario: 'scenario ' + (scen.length + 1), prob: 0.1, pnl: 0 }); renderScen(); } });
+    };
+    renderScen();
+    $('selGate').addEventListener('change', e => { S.gate = e.target.value; updCarry(); persist(); });
+    $('selLeg').addEventListener('change', e => { S.legPair = e.target.value; updLeg(); persist(); });
+    $('btnCard').addEventListener('click', () => {
+      const p = scen.map(s => s.prob), r = scen.map(s => s.pnl / 100); const k = kelly(p, r);
+      const checks = {}; $('checks').querySelectorAll('input').forEach(i => checks[i.dataset.k] = parseFloat(i.value));
+      const conviction = CHECK_KEYS.reduce((s, kk) => s + CONV_W[kk] * checks[kk], 0) / 100;
+      S.stomach = parseFloat($('cStomach').value) || 0; S.bankroll = parseFloat($('cBank').value) || 0;
+      const size = isFinite(k.f) ? 0.5 * k.f * conviction : 0; const worst = Math.min(...r); const cap = worst < 0 ? S.stomach / Math.abs(worst) : Infinity;
+      const failing = CHECK_KEYS.filter(kk => checks[kk] < 0.5).length;
+      const notional = isFinite(size) ? Math.min(size * S.bankroll, cap) : 0;
+      const card = { id: Date.now(), pair: LABEL[$('cPair').value], ccy: $('cPair').value, direction: $('cDir').value, instrument: $('cInst').value, thesis: $('cThesis').value, catalyst: $('cCat').value,
+        entry: parseFloat($('cEntry').value), target: parseFloat($('cTarget').value), stop: parseFloat($('cStop').value), invalidation: $('cInval').value, key_risk: $('cRisk').value,
+        conviction, kelly: isFinite(k.f) ? k.f : null, half_kelly: isFinite(k.half) ? k.half : null, ev_pct: 100 * k.ev, size_fraction: size, notional_usd: notional, stomach_cap_usd: isFinite(cap) ? cap : null,
+        flagged: failing >= 2, scenarios: JSON.parse(JSON.stringify(scen)), created: new Date().toISOString().slice(0, 16).replace('T', ' ') };
+      S.cards.push(card);
+      $('cardResult').innerHTML = '<div class="verdict">EV ' + sgn(100 * k.ev, 2, '%') + ' of notional · Kelly leverage f* ' + (isFinite(k.f) ? fmt(k.f, 2) + '×' : '∞') + ' bankroll · ½-Kelly × conviction (' + fmt(conviction, 2) + ') = ' + fmt(size, 2) + '× → notional ' + usd(notional) + ' (stomach cap ' + (isFinite(cap) ? usd(cap) : 'n/a') + ')' + (failing >= 2 ? ' · <span class="flag">FLAGGED: ≥ 2 checklist blocks failing → reduced Kelly fraction and mandatory post-mortem</span>' : '') + '</div>';
+      renderCards(); renderRisk(); persist();
+    });
+    const updCarry = () => {
+      const rows = carryRows(); $('gateHint').textContent = { 'Healthy': 'full budget', 'Fragile': 'half budget', 'Unwinding': 'zero to negative', 'Low-vol rotation': 'full budget, tighter drawdown trigger' }[S.gate] + ' — read the Carry Health axis in step 6.';
+      table('tabCarry', [{ k: 'ccy', label: 'ccy' }, { k: 'carry_pp', label: 'carry (pp)', fmt: 'sgn' }, { k: 'sigma', label: 'σ %', fmt: 'num', nd: 1 }, { k: 'cov', label: 'carry/vol', fmt: 'sgn', nd: 3 }, { k: 'pos_z', label: 'pos z', heat: 3 }, { k: 'h_crowd', label: 'h crowd', fmt: 'num' }, { k: 'h_skew', label: 'h skew', fmt: 'num' }, { k: 'src', label: 'σ source' }, { k: 'weight', label: 'weight', fmt: 'sgn', nd: 3 }], rows, { empty: 'Carry basket needs short-rate differentials.' });
+      plot('chCarry', () => ({ data: [{ type: 'bar', x: rows.map(r => r.ccy), y: rows.map(r => r.weight), marker: { color: rows.map(r => r.weight >= 0 ? css('--bronze') : css('--slate')) }, hovertemplate: '%{x}: %{y:.3f}<extra></extra>' }],
+        layout: layout({ title: { text: 'Basket weights (Σ|w| = gross budget, gate: ' + S.gate + ')', font: { size: 13, color: css('--navy') } }, showlegend: false, hovermode: 'closest', bargap: 0.35, height: 280 }) }));
+    };
+    const updLife = () => {
+      const rows = lifecycleRows();
+      table('tabLife', [{ k: 'pair', label: 'pair' }, { k: 'state', label: 'state', render: v => '<b>' + v + '</b>' }, { k: 'mom_5d', label: '5D %', fmt: 'sgn' }, { k: 'mom_20d', label: '20D %', fmt: 'sgn' }, { k: 'mom_60d', label: '60D %', fmt: 'sgn' }, { k: 'consistent', label: 'consistent', fmt: 'bool' },
+        { k: 'breadth', label: 'breadth', fmt: 'num' }, { k: 'eps_z', label: 'ε z', heat: 3 }, { k: 'val_z', label: 'val z', heat: 3 }, { k: 'disagreement', label: 'disagree', fmt: 'bool' }, { k: 'pos_z', label: 'pos z', heat: 3 }, { k: 'crowded', label: 'crowded', fmt: 'bool' }, { k: 'rr_5d', label: 'RR Δ5D', fmt: 'sgn' }, { k: 'playbook', label: 'playbook' }], rows, { minw: 1100 });
+      const sv = CCYS.map(c => { const o = optionsRow(c); let verdict;
+        if (isNum(o.vrp) && o.vrp > 1.5 && (!isNum(o.vrp_d) || o.vrp_d >= -0.3)) verdict = 'sell (wide, stable/widening)'; else if (isNum(o.vrp) && o.vrp > 1.5) verdict = 'no — wide but collapsing'; else if (isNum(o.vrp)) verdict = 'no premium'; else verdict = 'needs IV';
+        return Object.assign({ pair: LABEL[c], verdict }, o); });
+      table('tabShortVol', [{ k: 'pair', label: 'pair' }, { k: 'atm', label: '1M ATM', fmt: 'num', nd: 1 }, { k: 'rv20', label: 'RV20', fmt: 'num', nd: 1 }, { k: 'rv60', label: 'RV60', fmt: 'num', nd: 1 }, { k: 'e_rv', label: 'E[RV]', fmt: 'num', nd: 1 }, { k: 'vrp', label: 'VRP', fmt: 'sgn', nd: 1 }, { k: 'vrp_d', label: 'VRP Δ5D', fmt: 'sgn', nd: 1 }, { k: 'rr', label: '25Δ RR', fmt: 'sgn' }, { k: 'bf', label: '25Δ BF', fmt: 'num' }, { k: 'verdict', label: 'verdict' }], sv);
+      updLeg(rows);
+    };
+    const updLeg = rowsIn => { const rows = rowsIn || lifecycleRows(); const row = rows.find(r => r.ccy === S.legPair); if (!row) return;
+      $('legVerdict').innerHTML = '<b>' + LABEL[S.legPair] + '</b> — state <b>' + row.state + '</b> → ' + esc(legChoice(row)); };
+    renderStrategies.refresh = () => { updLife(); updCarry(); };
+    updLife(); updCarry(); renderCards();
+  }
+  function renderCards() {
+    table('tabCards', [{ k: 'created', label: 'created' }, { k: 'pair', label: 'pair' }, { k: 'direction', label: 'dir' }, { k: 'instrument', label: 'instrument' }, { k: 'entry', label: 'entry', fmt: 'num', nd: 4 }, { k: 'conviction', label: 'conviction', fmt: 'num' },
+      { k: 'ev_pct', label: 'EV %', fmt: 'sgn' }, { k: 'kelly', label: 'f*', fmt: 'num' }, { k: 'size_fraction', label: '½f*·conv', fmt: 'num' }, { k: 'notional_usd', label: 'notional', fmt: 'usd' }, { k: 'flagged', label: 'flag', render: v => v ? '<span class="flag">⚑</span>' : '' },
+      { k: 'catalyst', label: 'catalyst' }, { k: 'invalidation', label: 'invalidation' }, { k: 'id', label: '', render: v => '<button class="btn ghost" type="button" data-rm="' + v + '" style="padding:2px 8px">remove</button>' }], S.cards, { empty: 'No trade cards yet. The first card populates the book in step 8.', minw: 1100 });
+    $('tabCards').querySelectorAll('button[data-rm]').forEach(b => b.addEventListener('click', e => { S.cards = S.cards.filter(c => String(c.id) !== e.target.dataset.rm); renderCards(); renderRisk(); persist(); }));
+  }
+
+  // ================= 8. Risk =================
+  function book() { const m = {}; S.cards.forEach(c => { if (!isNum(c.notional_usd)) return; m[c.ccy] = (m[c.ccy] || 0) + (c.direction === 'long' ? 1 : -1) * c.notional_usd; }); return m; }
+  function renderRisk() {
+    const RK = D.risk, B = book(), ccys = Object.keys(B), hasBook = ccys.length > 0;
+    const targets = hasBook ? ccys.map(c => ({ name: LABEL[c], ccy: c, notional: B[c] })) : G10.map(c => ({ name: LABEL[c], ccy: c, notional: 1e6 }));
+    $('expoNote').textContent = (hasBook ? 'Rows: the book from the trade cards.' : 'No trade cards yet — rows show $1M long each G10 pair so the risk map is readable before the first trade.') + ' Macro factors each alone, 60D. Rates enter as level (2Y) + slope (2s10s); never 2y + 10y + 2s10s together.';
+    const gross = ccys.reduce((s, c) => s + Math.abs(B[c]), 0), net = ccys.reduce((s, c) => s + B[c], 0);
+    // book P&L series
+    let vol = NaN, ced = NaN, worstDD = NaN;
+    if (hasBook) { const dr = RK.daily_returns; const pnl = dr.dates.map((_, i) => ccys.reduce((s, c) => s + B[c] * (dr[c][i] || 0), 0));
+      vol = std(pnl.slice(-60)) * Math.sqrt(252); const cum = []; let acc = 0; pnl.forEach(v => { acc += v; cum.push(acc); });
+      const dds = []; for (let i = 21; i < cum.length; i++) { let peak = -Infinity, mdd = 0; for (let j = i - 21; j < i; j++) { peak = Math.max(peak, cum[j]); mdd = Math.max(mdd, peak - cum[j]); } dds.push(mdd); }
+      if (dds.length) { const s = dds.slice().sort((a, b) => a - b); const q = s[Math.floor(0.9 * (s.length - 1))]; const tail = dds.filter(d => d >= q); ced = mean(tail); worstDD = Math.max(...dds); } }
+    kpi('bookHeads', [['Gross, $', hasBook ? usd(gross) : '—'], ['Net USD-short (Σ foreign longs), $', hasBook ? usd(net) : '—'], ['Realised book vol (60D, ann.), $', hasBook ? usd(vol) : '—'], ['vs $5M budget', hasBook ? fmt(100 * vol / RK.vol_budget, 0, '%') : '—']]);
+    const mk = (facs) => { const rows = targets.map(t => { const r = { position: t.name }; facs.forEach(f => { const e = RK.exposures[t.ccy][f]; r[f] = e && isNum(e.per_sigma_1m) ? e.per_sigma_1m * t.notional / 1e6 : NaN; }); return r; });
+      const tot = { position: 'BOOK TOTAL' }; facs.forEach(f => tot[f] = rows.reduce((s, r) => s + (isNum(r[f]) ? r[f] : 0), 0)); rows.push(tot); return rows; };
+    table('tabExpo', [{ k: 'position', label: 'position' }].concat(RK.factors.map(f => ({ k: f, label: f, fmt: 'usd' }))), mk(RK.factors), { minw: 900 });
+    const sb = mk(RK.structure_factors); table('tabExpoStruct', [{ k: 'position', label: 'Dollar / Carry / Momentum ($/1σ)' }].concat(RK.structure_factors.map(f => ({ k: f, label: f, fmt: 'usd' }))), sb);
+    const dollar = sb[sb.length - 1]['F_USD'];
+    if (hasBook) $('expoNote').textContent += ' Headline: book Dollar-factor exposure ' + usd(dollar) + ' per 1σ.';
+    // limits
+    if (hasBook) { const shares = ccys.map(c => Math.abs(B[c]) / gross); const crowdedShare = ccys.reduce((s, c) => s + (Math.abs(posZ(c)) >= 1.5 ? Math.abs(B[c]) : 0), 0) / gross;
+      table('tabLimits', [{ k: 'limit', label: 'limit' }, { k: 'level', label: 'level' }, { k: 'ok', label: 'status', render: v => v ? '<span style="color:var(--pos)">within</span>' : '<span class="flag">BREACH</span>' }], [
+        { limit: 'Single pair net ≤ 30% of book vol budget (proxy: share of gross)', level: fmt(100 * Math.max(...shares), 0, '%'), ok: Math.max(...shares) <= 0.30 },
+        { limit: 'Net USD factor delta ≤ 50% (proxy: |net| / gross)', level: fmt(100 * Math.abs(net) / gross, 0, '%'), ok: Math.abs(net) / gross <= 0.5 },
+        { limit: 'Crowded-position share ≤ 25% of gross', level: fmt(100 * crowdedShare, 0, '%'), ok: crowdedShare <= 0.25 },
+        { limit: 'Net short vega: hard cap; zero into flagged meetings in funding currencies', level: 'manual (theta table)', ok: true },
+        { limit: 'Combined crash budget ≤ 1.5 × monthly vol budget', level: 'see stress replay', ok: true }, { limit: 'Liquidity ≤ 3 days\' prudent volume per leg', level: 'manual', ok: true }]); }
+    else table('tabLimits', [], [], { empty: 'Add trade cards to evaluate the limits.' });
+    // shock grid
+    $('chkAmp').checked = !!S.amp;
+    if (hasBook) { const rows = []; Object.keys(RK.shock_grid).forEach(f => RK.shock_grid[f].forEach(s => { let tot = 0; ccys.forEach(c => { const e = RK.exposures[c][f]; let beta = e && isNum(e.beta) ? e.beta : 0; if (S.amp && Math.abs(posZ(c)) >= 1.5) beta *= 1.5; tot += B[c] * beta * s; });
+      rows.push({ factor: f, shock: (s > 0 ? '+' : '') + (100 * s).toFixed(0) + (f === 'US 2Y' ? ' bp' : '%'), pnl: tot }); }));
+      table('tabShock', [{ k: 'factor', label: 'factor' }, { k: 'shock', label: 'shock' }, { k: 'pnl', label: 'book P&L', fmt: 'usd' }], rows); }
+    else table('tabShock', [], [], { empty: 'Add trade cards to populate the grid.' });
+    // stress
+    table('tabStress', [{ k: 'episode', label: 'episode' }, { k: 'window', label: 'window' }, { k: 'status', label: 'status' }, { k: 'pnl', label: 'book P&L', fmt: 'usd' }, { k: 'worst', label: 'worst pair' }, { k: 'worstMove', label: 'worst move %', fmt: 'sgn' }],
+      RK.episodes.map(e => { if (e.status !== 'ok') return e; const mv = e.moves; let worst = null, wm = Infinity; Object.keys(mv).forEach(c => { if (isNum(mv[c]) && mv[c] < wm) { wm = mv[c]; worst = c; } });
+        return Object.assign({}, e, { pnl: hasBook ? ccys.reduce((s, c) => s + B[c] * (mv[c] || 0) / 100, 0) : NaN, worst: worst ? LABEL[worst] : '', worstMove: wm }); }));
+    // drawdown
+    $('ddNow').value = S.drawdown;
+    kpi('ddHeads', [['CED (E[DD | DD ≥ q0.9], 1M paths), $', hasBook ? usd(ced) : '—'], ['Worst 1M drawdown in 2y history, $', hasBook ? usd(worstDD) : '—'], ['Ladder status', S.drawdown >= 10e6 ? 'FLATTEN ex-insurance' : S.drawdown >= 7.5e6 ? 'mandatory de-gross of premia sleeves' : S.drawdown >= 5e6 ? 'review and gross-cut option' : 'within bands']]);
+    table('tabLadder', [{ k: 'trigger', label: 'trigger' }, { k: 'action', label: 'action' }], [{ trigger: '−$5M', action: 'review and gross-cut option' }, { trigger: '−$7.5M', action: 'mandatory de-gross of risk-premia sleeves' }, { trigger: '−$10M', action: 'flatten ex-insurance' }, { trigger: 'daily ±$1M / ±$2.5M / ±$5M', action: 'same-day attribution / factor review / risk-committee note' }]);
+    renderTheta();
+  }
+  function renderTheta() {
+    let h = '<table style="min-width:700px"><thead><tr><th>line</th><th class="num">premium $</th><th class="num">θ $/day</th><th class="num">Γ $ per 1%</th><th>insurance wing</th><th></th></tr></thead><tbody>';
+    S.theta.forEach((t, i) => h += '<tr><td class="inline-edit"><input type="text" data-i="' + i + '" data-f="line" value="' + esc(t.line) + '" style="width:200px"></td><td class="num inline-edit"><input type="number" data-i="' + i + '" data-f="premium" value="' + (t.premium || 0) + '"></td><td class="num inline-edit"><input type="number" data-i="' + i + '" data-f="theta" value="' + (t.theta || 0) + '"></td><td class="num inline-edit"><input type="number" data-i="' + i + '" data-f="gamma" value="' + (t.gamma || 0) + '"></td><td><input type="checkbox" data-i="' + i + '" data-f="wing"' + (t.wing ? ' checked' : '') + '></td><td><button class="btn ghost" type="button" data-del="' + i + '" style="padding:2px 8px">×</button></td></tr>');
+    $('tabTheta').innerHTML = (S.theta.length ? h + '</tbody></table>' : '<p class="small">No long-option lines yet (e.g. "EUR 1M 25Δ call").</p>');
+    $('tabTheta').querySelectorAll('input').forEach(inp => inp.addEventListener('change', e => { const i = +e.target.dataset.i, f = e.target.dataset.f; S.theta[i][f] = f === 'line' ? e.target.value : f === 'wing' ? e.target.checked : parseFloat(e.target.value) || 0; thetaHeads(); persist(); }));
+    $('tabTheta').querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', e => { S.theta.splice(+e.target.dataset.del, 1); renderTheta(); persist(); }));
+    $('navUsd').value = S.nav; thetaHeads();
+  }
+  function thetaHeads() {
+    const theta = S.theta.reduce((s, t) => s + Math.abs(t.theta || 0), 0), gamma = S.theta.reduce((s, t) => s + (t.gamma || 0), 0);
+    const bp = S.nav ? 1e4 * theta / S.nav : NaN, eff = theta ? gamma / theta : NaN;
+    kpi('thetaHeads', [['|θ book|, bp NAV/day', fmt(bp, 1)], ['Γ/|θ| efficiency', fmt(eff, 2)], ['Status', !isNum(bp) ? '—' : bp <= 10 ? 'operating 5–10' : bp <= 12 ? 'SOFT BREACH (>10)' : 'HARD BREACH (>12)']]);
+  }
+
+  // ================= 9. Provenance =================
+  function renderProvenance() {
+    const P = D.provenance;
+    kpi('provHeads', [['Series loaded', P.n_loaded + ' / ' + P.n_total], ['Data as of', D.meta.as_of], ['Page generated', D.meta.generated]]);
+    table('tabBlocks', [{ k: 'input', label: 'input' }, { k: 'source', label: 'public source' }, { k: 'status', label: 'status', fmt: 'badge' }, { k: 'gap', label: 'gap' }], [
+      { input: 'Spot and crosses', source: 'Yahoo (12y daily), FRED H.10 (since 1999, for seasonality)', status: 'live', gap: 'no intraday' },
+      { input: 'Rates / OIS proxies', source: 'FRED: EFFR, €STR, SONIA daily; OECD short/long rates monthly for the rest', status: 'proxy', gap: '1Y1Y / 5Y5Y OIS and inflation swaps not public → short-rate and 10y differentials stand in' },
+      { input: 'Positioning', source: 'CFTC TFF / legacy (API or files in data/cftc)', status: 'unavailable', gap: 'futures only, 3-day lag; misses OTC forwards; manual z until files are dropped' },
+      { input: 'FX options surface', source: 'none — typed 1M ATM / 25Δ RR / BF; realised vol from spot', status: 'manual', gap: 'the hard gap; CME EOD settlements / CVOL could replace it; synthetic generator OFF' },
+      { input: 'REER', source: 'BIS via FRED (monthly)', status: 'live', gap: '2-month lag' }, { input: 'Macro surprises', source: 'modelled proxy from FRED/Yahoo growth series', status: 'proxy', gap: 'no consensus data' },
+      { input: 'Fiscal impulse', source: 'typed from IMF Fiscal Monitor / OECD', status: 'manual', gap: 'annual' }, { input: 'Institutional flow', source: 'not public', status: 'unavailable', gap: 'bank flow reports' },
+      { input: 'Calendar', source: 'data/g3_calendar.csv', status: 'estimated', gap: 'confirmed / provisional / estimated per row; verify estimated dates' }]);
+    table('tabStatus', [{ k: 'key', label: 'key' }, { k: 'name', label: 'name' }, { k: 'source', label: 'source' }, { k: 'ticker', label: 'ticker' }, { k: 'quality', label: 'quality', fmt: 'badge' }, { k: 'freq', label: 'freq' }, { k: 'status', label: 'status' }, { k: 'last', label: 'last' }, { k: 'value', label: 'value', fmt: 'num', nd: 3 }, { k: 'note', label: 'note' }], P.status, { minw: 900 });
+  }
+
+  function refreshDependents() { renderPositioning.refresh && renderPositioning.refresh(); renderStrategies.refresh && renderStrategies.refresh(); renderRisk(); }
+  function renderAll() { renderFactors(); renderMacro(); renderValuation(); renderPositioning(); renderSeasonality(); renderRegime(); renderStrategies(); renderRisk(); renderProvenance(); }
+  renderAll();
+  $('chkAmp').addEventListener('change', e => { S.amp = e.target.checked; renderRisk(); persist(); });
+  $('ddNow').addEventListener('change', e => { S.drawdown = parseFloat(e.target.value) || 0; renderRisk(); persist(); });
+  $('navUsd').addEventListener('change', e => { S.nav = parseFloat(e.target.value) || 0; thetaHeads(); persist(); });
+  $('btnThetaAdd').addEventListener('click', () => { S.theta.push({ line: 'new line', premium: 0, theta: 0, gamma: 0, wing: false }); renderTheta(); persist(); });
+
+  // ---------- artifact store ----------
+  (async () => {
+    try {
+      if (!(window.claude && window.claude.use)) { setSave('inputs kept in this browser'); return; }
+      const db = await window.claude.use('db'); dbReady = true;
+      if (!db) { setSave('inputs kept in this browser'); return; }
+      dbDoc = db.doc('inputs/fx');
+      const snap = await dbDoc.get();
+      if (snap.exists) { applyState(snap.data()); renderAll(); setSave('inputs loaded from artifact store'); }
+      else setSave('artifact store ready');
+    } catch (e) { setSave('store unavailable'); }
+  })();
+})();
+</script>
