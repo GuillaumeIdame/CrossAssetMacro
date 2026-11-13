@@ -1,0 +1,622 @@
+<title>G3 Central Bank Toolkit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: sticky topbar + parts nav, one reading column (max 980px), each process step a .block; companion of the Investment Process document. */
+  :root {
+    --navy: #1F3550; --navy2: #16273C; --slate: #55677C; --bronze: #A9814F;
+    --hair: #D9DEE5; --bg-soft: #F5F7FA; --bg-callout: #F8F6F2;
+    --bg: #FFFFFF; --fg: #23303F; --card-fg: #EDF1F6; --input-bg: #FFFFFF;
+    --good: #2E7D32; --bad: #B71C1C; --warn: #B26A00; --grid: #E6EAF0;
+    --font: "Segoe UI", Calibri, Carlito, Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12181F; --fg: #DCE3EA; --bg-soft: #1B232D; --bg-callout: #1E2019; --input-bg: #0E1620;
+      --hair: #303C48; --navy: #B9CBE0; --navy2: #0E1620; --slate: #8FA0B2; --bronze: #D9B98A; --card-fg: #DCE3EA;
+      --good: #7BC67E; --bad: #EF7A7A; --warn: #E0A64A; --grid: #243040; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12181F; --fg: #DCE3EA; --bg-soft: #1B232D; --bg-callout: #1E2019; --input-bg: #0E1620;
+    --hair: #303C48; --navy: #B9CBE0; --navy2: #0E1620; --slate: #8FA0B2; --bronze: #D9B98A; --card-fg: #DCE3EA;
+    --good: #7BC67E; --bad: #EF7A7A; --warn: #E0A64A; --grid: #243040; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: calc(104px + env(safe-area-inset-top, 0px)); }
+  body { font-family: var(--font); font-size: 15px; line-height: 1.5; color: var(--fg); background: var(--bg); margin: 0;
+         padding-block: 0 0; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--navy2); }
+  a { color: var(--bronze); }
+  .stick { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+  .topbar { background: var(--navy2); color: #EDF1F6; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+            display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+  .topbar .title { font-weight: 700; font-size: 14px; }
+  .topbar .sub { color: #B9C6D6; font-size: 11px; }
+  .topbar .right { display: flex; gap: 8px; align-items: center; }
+  .topbar button { background: transparent; border: 1px solid #4A5F78; color: #EDF1F6; border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .topbar button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--bronze); outline-offset: 1px; }
+  #savestate { font-size: 11px; color: #B9C6D6; white-space: nowrap; }
+  .parts { background: var(--bg); border-bottom: 1px solid var(--hair); }
+  .parts nav { max-width: 980px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); display: flex; gap: 2px; overflow-x: auto; }
+  .parts a { flex: 0 0 auto; padding: 9px 10px; font-size: 13px; font-weight: 600; color: var(--slate); text-decoration: none; border-bottom: 3px solid transparent; }
+  .parts a:hover, .parts a:focus-visible { color: var(--navy); border-bottom-color: var(--bronze); }
+  .wrap { max-width: 980px; margin: 0 auto; padding-block: 0 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .hero { padding: 34px 0 18px 0; border-bottom: 1px solid var(--hair); margin-bottom: 10px; }
+  .hero .rule { width: 54px; height: 5px; background: var(--bronze); border-radius: 2px; margin-bottom: 14px; }
+  .hero h1 { font-size: 27px; color: var(--navy); margin: 0 0 4px 0; text-wrap: balance; }
+  .hero h2 { font-size: 14px; color: var(--slate); font-weight: 400; margin: 0 0 12px 0; }
+  .hero p { max-width: 680px; margin: 0 0 8px 0; }
+  .chain { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 6px 0; }
+  .chain button { border: 1px solid var(--hair); background: var(--bg-soft); color: var(--navy); border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font); }
+  .chain button.on { background: var(--bronze); color: #fff; border-color: var(--bronze); }
+  .meta-line { color: var(--slate); font-size: 12.5px; margin-top: 10px; }
+  .meta-line b { color: var(--navy); }
+  .part { margin-top: 44px; padding: 16px 20px; background: var(--navy2); border-radius: 8px; color: #EDF1F6; scroll-margin-top: 110px; }
+  .part h1 { margin: 0; font-size: 21px; color: #FFFFFF; }
+  .part p { margin: 4px 0 0 0; color: #B9C6D6; font-size: 13px; }
+  .part .k { color: #D9B98A; font-weight: 700; font-size: 12px; }
+  .part .q { font-style: italic; }
+  section.block { padding-top: 26px; scroll-margin-top: 110px; }
+  h2.sec { font-size: 17px; color: var(--navy); border-bottom: 2px solid var(--bronze); padding-bottom: 6px; margin: 18px 0 12px 0; }
+  h2.sec .n { color: var(--bronze); margin-right: 8px; }
+  h3 { font-size: 14px; color: var(--navy); margin: 16px 0 6px 0; }
+  p { margin: 0 0 8px 0; }
+  .small, .cap { font-size: 12px; color: var(--slate); }
+  .cap { margin: 4px 0 10px 0; }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10.5px; font-weight: 700; color: #fff; margin-left: 4px; vertical-align: middle; letter-spacing: 0.03em; }
+  .b-live { background: #2E7D32; } .b-proxy { background: #B26A00; } .b-estimated { background: #B26A00; } .b-manual { background: #455A64; }
+  .b-synthetic { background: #B71C1C; } .b-unavailable { background: #9E9E9E; } .b-stale { background: #9E9E9E; } .b-confirmed { background: #2E7D32; } .b-provisional { background: #B26A00; }
+  .tblwrap { overflow-x: auto; margin: 6px 0 12px 0; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; min-width: 420px; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  th { background: var(--bg-soft); color: var(--navy); font-weight: 700; text-align: left; padding: 6px 8px; border-top: 2px solid var(--navy); border-bottom: 1px solid var(--navy); white-space: nowrap; }
+  td { padding: 5px 8px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  td.num, th.num { text-align: right; }
+  tr:last-child td { border-bottom: 2px solid var(--navy); }
+  tr.agg td { font-weight: 700; background: var(--bg-soft); }
+  .pos { color: var(--good); } .neg { color: var(--bad); }
+  .callout { background: var(--bg-callout); border-left: 4px solid var(--bronze); padding: 10px 14px; margin: 10px 0 12px 0; border-radius: 0 6px 6px 0; }
+  .callout .t { font-weight: 700; color: var(--navy); font-size: 13px; display: block; margin-bottom: 4px; }
+  .formula { background: var(--bg-soft); border: 1px solid var(--hair); border-radius: 6px; padding: 10px 14px; margin: 8px 0 12px 0; font-size: 13.5px; text-align: center; overflow-x: auto; }
+  .formula .lbl { display: block; color: var(--slate); font-size: 11.5px; margin-top: 6px; text-align: left; }
+  .grid { display: grid; gap: 12px; margin: 8px 0 12px 0; }
+  .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .g6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .g3, .g4, .g6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .g2, .g3, .g4, .g6 { grid-template-columns: 1fr; } }
+  .grid > * { min-width: 0; }
+  .cell { border: 1px solid var(--hair); border-radius: 6px; padding: 10px 12px; background: var(--bg-soft); font-size: 13px; }
+  .cell b.h { display: block; color: var(--navy); margin-bottom: 2px; }
+  .cell.lit { border-color: var(--bronze); box-shadow: inset 0 0 0 2px var(--bronze); }
+  .kpi { border: 1px solid var(--hair); border-radius: 6px; padding: 8px 10px; background: var(--bg); }
+  .kpi .l { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; }
+  .kpi .v { font-size: 20px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .kpi .d { font-size: 11.5px; color: var(--slate); }
+  .card { background: var(--navy2); color: var(--card-fg); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+  .card h3 { color: #fff; margin: 0 0 4px 0; } .card p { color: #CFDAE6; }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0 10px 0; }
+  .tabs button { border: 1px solid var(--hair); background: var(--bg); color: var(--slate); border-radius: 6px; padding: 5px 10px; font-size: 12.5px; cursor: pointer; font-family: var(--font); font-weight: 600; }
+  .tabs button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; margin: 6px 0 10px 0; }
+  .f { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--slate); min-width: 0; }
+  .f input[type=number], .f input[type=text], .f select, .f textarea { font-family: var(--font); font-size: 13px; padding: 5px 7px; border: 1px solid var(--hair); border-radius: 5px; background: var(--input-bg); color: var(--fg); min-width: 0; }
+  .f input[type=number] { width: 9.5em; font-variant-numeric: tabular-nums; } .f select { max-width: 100%; }
+  .f input[type=range] { width: 100%; accent-color: var(--bronze); }
+  .f textarea { width: 100%; min-height: 110px; resize: vertical; }
+  .chk { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 4px 0; } .chk input { margin-top: 3px; accent-color: var(--bronze); }
+  .chart { width: 100%; min-height: 300px; margin: 6px 0 10px 0; }
+  .heat { display: grid; grid-template-columns: 90px repeat(2, minmax(0, 1fr)); gap: 4px; font-size: 12.5px; margin: 6px 0; }
+  .heat .hd { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 4px; }
+  .heat .lb { font-weight: 700; color: var(--navy); padding: 10px 4px; }
+  .heat .c { border-radius: 5px; padding: 8px 6px; text-align: center; font-weight: 700; border: 1px solid var(--hair); }
+  .smap { display: grid; gap: 3px; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .smap .c { padding: 6px 4px; text-align: center; border-radius: 4px; border: 1px solid var(--hair); }
+  .smap .hd { font-size: 11px; color: var(--slate); text-align: center; }
+  .verdict { border: 1px solid var(--bronze); border-radius: 8px; padding: 10px 14px; background: rgba(169,129,79,0.08); margin: 8px 0; }
+  .verdict b { color: var(--navy); }
+  .ladder { border-left: 5px solid var(--good); padding: 6px 12px; margin: 8px 0; font-weight: 700; }
+  button.mini { border: 1px solid var(--hair); background: var(--bg-soft); color: var(--navy); border-radius: 5px; padding: 3px 8px; font-size: 12px; cursor: pointer; font-family: var(--font); }
+  td input[type=number] { width: 7em; font-size: 12px; padding: 2px 4px; border: 1px solid var(--hair); border-radius: 4px; background: var(--input-bg); color: var(--fg); font-variant-numeric: tabular-nums; }
+  td select, td input[type=text] { font-size: 12px; padding: 2px 4px; border: 1px solid var(--hair); border-radius: 4px; background: var(--input-bg); color: var(--fg); max-width: 11em; }
+  details { margin: 6px 0 10px 0; } summary { cursor: pointer; color: var(--navy); font-weight: 600; font-size: 13px; }
+  footer { text-align: center; color: var(--slate); font-size: 11.5px; padding: 30px 0 10px 0; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+<script type="application/json" id="data">__DATA__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+
+<div class="stick"><div class="topbar"><div><div class="title">G3 Central Bank Toolkit</div><div class="sub" id="subline">Fundamental → expected distribution → market distribution → pricing → trade → Kelly</div></div>
+<div class="right"><span id="savestate">loading…</span><button id="themebtn" type="button">☀/☾ Theme</button></div></div>
+<div class="parts"><nav aria-label="Process steps"><a href="#p1">I · Countdown</a><a href="#p2">II · Macro read</a><a href="#p3">III · Market-implied</a><a href="#p4">IV · Distributions</a><a href="#p5">V · Tree &amp; valuation</a><a href="#p6">VI · Risk</a><a href="#p7">VII · Data</a></nav></div></div>
+
+<div class="wrap">
+<div class="hero">
+  <div class="rule"></div>
+  <h1>G3 Central Bank Toolkit</h1>
+  <h2>Front-end rates: gauges → strips → distributions → tree → Kelly → risk, one page per process step</h2>
+  <p>Companion tool to the <a href="https://claude.ai/artifact/5rL9LRpV7dvBNTEHcCYjAz">Investment Process — G3 Central Bank</a> document. Market data is embedded at build time; the desk inputs (gauge overrides, surveys, internal probabilities, premiums, book) are yours and are kept with this page.</p>
+  <div class="chain" id="chain"></div>
+  <div class="meta-line" id="metaline"></div>
+  <div class="meta-line"><span class="badge b-live">LIVE</span> observed market / official print &nbsp; <span class="badge b-proxy">PROXY</span> public data with a documented approximation &nbsp; <span class="badge b-estimated">ESTIMATED</span> calendar date by rule &nbsp; <span class="badge b-manual">MANUAL</span> typed by the desk &nbsp; <span class="badge b-unavailable">UNAVAILABLE</span> no public source, not faked</div>
+</div>
+
+<!-- I -->
+<div class="part" id="p1"><span class="k">Part I · §1.2</span><h1>Countdown to an event</h1><p class="q">Is current front-end pricing consistent with the assessment of the growth and inflation path and the reaction function?</p></div>
+<section class="block">
+  <h2 class="sec"><span class="n">1.2</span>Next tier-1 events</h2>
+  <div class="grid g3" id="nextevents"></div>
+  <h3>Countdown work plan and checklist for the current stage</h3>
+  <div class="tblwrap"><table><tr><th>When</th><th>Work</th><th>Output</th></tr>
+  <tr><td><b>~2 weeks before</b></td><td>Broad growth and inflation assessment: spot vs forward, hard vs soft, historical regime, reaction function</td><td>Qualitative distribution; valuation of the next 3–4 meetings; futures and first options valuation. Distribution wide</td></tr>
+  <tr><td><b>~1 week before</b></td><td>Update with new data, surveys, Smart Forecasters, communication</td><td>Market pricing re-read across futures, options, implied distribution. Distribution narrows</td></tr>
+  <tr><td><b>2–3 days before</b></td><td>Refine expected print and distribution vs market-implied</td><td>Futures fair value, meeting pricing, options EV, best expression, Kelly size. Strikes, pin, gamma concentration</td></tr></table></div>
+  <div id="stagechecks"></div>
+  <details><summary>Full calendar, next 120 days</summary><div class="tblwrap" id="caltable"></div><p class="cap">Dates: <span class="badge b-confirmed">CONFIRMED</span> published by the central bank · <span class="badge b-provisional">PROVISIONAL</span> published, may change · <span class="badge b-estimated">ESTIMATED</span> rule of thumb (NFP first Friday, CPI mid-month), verify before trading.</p></details>
+</section>
+
+<!-- II -->
+<div class="part" id="p2"><span class="k">Part I · §1.3</span><h1>Macro read — gauges, regime cell, curve segment</h1><p class="q">Three variables, each read spot and forward, scored −2…+2 and signed so that hot always means hawkish.</p></div>
+<section class="block">
+  <div class="formula">z<sub>i</sub> = (value<sub>i</sub> − reference<sub>i</sub>) / scale<sub>i</sub> &nbsp;·&nbsp; gauge = clamp( round( mean z ), −2, +2 )<span class="lbl">Reference = target or neutral where one exists, else the 10-year mean; scale = 10-year std; inverted components (unemployment, claims, NFCI) are negated. Composite = 0.4 inflation + 0.3 growth + 0.3 labour.</span></div>
+  <div class="tabs" id="regiontabs"></div>
+  <div class="grid g2">
+    <div><h3 id="heattitle">Gauges — computed</h3><div class="heat" id="heat"></div><p class="cap"><span class="badge b-live">LIVE</span> computed from the components below; <span class="badge b-manual">MANUAL</span> where overridden.</p></div>
+    <div><h3>Desk override</h3><div id="overrides"></div></div>
+  </div>
+  <div class="grid g3" id="composites"></div>
+  <div class="grid g2" id="cells"></div>
+  <h3>Components</h3><div class="tblwrap" id="comptable"></div>
+  <div class="row"><label class="f">Component history<select id="compsel"></select></label></div>
+  <div class="chart" id="compchart"></div>
+  <h2 class="sec"><span class="n">1.3</span>Curve segment routing</h2>
+  <div class="tblwrap"><table><tr><th>Segment</th><th>What it chiefly reads</th><th>Lit by</th></tr>
+  <tr><td>Cash–2y</td><td>Pure expected policy path (~2y)</td><td>Overheating / Slowdown — the path trade</td></tr>
+  <tr><td>2s5s</td><td>Forward cycle continuation</td><td>Early reacceleration (bear-steepener)</td></tr>
+  <tr><td>2s10s</td><td>Whole path plus some term premium (canonical gauge)</td><td>All cells, confirmation</td></tr>
+  <tr><td>2s5s10s fly</td><td>Curvature and timing — where peak rates sit</td><td>Late cycle (hump)</td></tr>
+  <tr><td>5s30s · 10s30s</td><td>Terminal rate and r* blended with term premium · pure term premium and supply</td><td>Late cycle under a supply shock; fiscal dominance</td></tr></table></div>
+  <h2 class="sec"><span class="n">1.3</span>Credibility switch — sign before size</h2>
+  <div class="grid g4" id="credkpi"></div>
+  <div class="verdict" id="credverdict"></div>
+  <div class="chart" id="credchart"></div>
+  <h2 class="sec"><span class="n">1.3</span>Reaction functions on file <span class="badge b-manual">MANUAL</span></h2>
+  <div class="grid g3" id="reaction"></div>
+</section>
+
+<!-- III -->
+<div class="part" id="p3"><span class="k">Part IV · §4.1–4.2</span><h1>Market-implied state — futures grid and meeting path</h1><p class="q">What is the market implying, meeting by meeting, and is it ahead of or behind the bank?</p></div>
+<section class="block">
+  <div class="grid g4" id="statekpi"></div>
+  <div class="grid g4" id="terminalkpi"></div>
+  <p class="cap" id="statecap"></p>
+  <div class="row"><label class="f">3M Euribor − €STR basis (bp) <span class="badge b-manual">MANUAL</span><input type="number" id="basis" step="0.5" min="0" max="40"></label><span class="small">translates the Euribor strip into an overnight path; no public daily Euribor fixing on FRED.</span></div>
+  <div class="tabs" id="famtabs"></div>
+  <div id="famhead" class="small"></div>
+  <div class="grid g2"><div class="tblwrap" id="striptable"></div><div class="tblwrap" id="meettable"></div></div>
+  <p class="cap" id="fitcap"></p>
+  <div class="chart" id="pathchart"></div>
+  <details><summary>Edit the closes of this strip (manual override, re-solves the meeting path)</summary><div class="tblwrap" id="stripedit"></div><button class="mini" type="button" id="striprevert">Revert to loaded closes</button></details>
+  <div class="callout"><span class="t">Reaction-function check</span><p id="rfcheck"></p></div>
+</section>
+
+<!-- IV -->
+<div class="part" id="p4"><span class="k">Part I · §1.4</span><h1>Three distributions per print</h1><p class="q">Where is the skew between what the median economist expects, what the track-record-weighted lean says, and what the market will be surprised by?</p></div>
+<section class="block">
+  <div class="row"><label class="f">Release<select id="distsel"></select></label><span id="distmeta" class="small"></span></div>
+  <div class="grid g3">
+    <div class="cell"><b class="h">Consensus — survey <span class="badge b-manual">MANUAL</span></b>
+      <div class="row"><label class="f">Unit<input type="text" id="d_unit"></label><label class="f">Mean<input type="number" id="d_cons" step="0.01"></label><label class="f">Std of surprises<input type="number" id="d_std" step="0.01" min="0.000001"></label><label class="f">N forecasters<input type="number" id="d_n" step="1" min="1"></label><label class="f">Min<input type="number" id="d_lo" step="0.01"></label><label class="f">Max<input type="number" id="d_hi" step="0.01"></label><label class="f">Previous<input type="number" id="d_prev" step="0.01"></label></div></div>
+    <div class="cell"><b class="h">Smart Forecasters — internal lean <span class="badge b-manual">MANUAL</span></b>
+      <div class="row"><label class="f">Expected print (track-record weighted, incl. nowcasts)<input type="number" id="d_sf" step="0.01"></label><label class="f">Internal width vs consensus std <span id="d_wlbl"></span><input type="range" id="d_w" min="0.5" max="2" step="0.05"></label><label class="f">Internal skew (−1 downside tail … +1 upside) <span id="d_sklbl"></span><input type="range" id="d_sk" min="-1" max="1" step="0.1"></label></div></div>
+    <div class="cell"><b class="h">Priced — options / futures <span class="badge b-manual">MANUAL</span></b>
+      <div class="row"><label class="f">Contract beta (bp per 1σ surprise)<input type="number" id="d_beta" step="0.1"></label><label class="f">Implied move from<select id="d_mode"><option value="s">straddle breakeven (bp)</option><option value="iv">IV with / without event</option></select></label></div>
+      <div class="row" id="d_srow"><label class="f">Event straddle breakeven (bp)<input type="number" id="d_be" step="0.1"></label></div>
+      <div class="row" id="d_ivrow" hidden><label class="f">IV after event (bp/yr)<input type="number" id="d_ivw" step="1"></label><label class="f">days<input type="number" id="d_tw" step="1" min="1"></label><label class="f">IV before event (bp/yr)<input type="number" id="d_ivwo" step="1"></label><label class="f">days<input type="number" id="d_two" step="1" min="1"></label></div>
+      <div class="row"><label class="f">Print the market is positioned for<input type="number" id="d_pc" step="0.01"></label></div></div>
+  </div>
+  <div class="grid g6" id="distkpi"></div>
+  <h3>Scenario grid — written before the number</h3>
+  <div class="tblwrap" id="distgrid"></div>
+  <div class="chart" id="distchart"></div>
+  <div class="verdict" id="distverdict"></div>
+  <p class="cap">Market probabilities: normal centred on the priced print with the survey std; internal: normal on the Smart-Forecaster lean with the internal width, tilted by the skew. In-line data into an offside market moves the curve more than a surprise into a balanced one. Positioning caution: if CFTC/CTA already sit on the side of the mean view, prefer the defined-loss options leg.</p>
+</section>
+
+<!-- V -->
+<div class="part" id="p5"><span class="k">Part I · §1.5 · Part IV · §4.3</span><h1>Distribution tree → fair value → size</h1><p class="q">Macro scenarios → probability distribution → meeting outcomes → futures prices. E[F] = Σ pⱼ Fⱼ · EV = E[payoff] − market · f* = argmax Σ pⱼ ln(1 + f rⱼ).</p></div>
+<section class="block">
+  <div class="tabs" id="treefam"></div>
+  <div class="row"><label class="f">Meetings in the tree (later meetings keep the market step) <span id="t_nlbl"></span><input type="range" id="t_n" min="1" max="4" step="1"></label>
+    <label class="f">Market-implied width per meeting (bp std) <span class="badge b-manual">MANUAL</span> <span id="t_wlbl"></span><input type="range" id="t_w" min="5" max="40" step="1"></label></div>
+  <p class="cap"><span class="badge b-live">LIVE</span> market steps from the bootstrap; <span class="badge b-manual">MANUAL</span> internal probabilities and widths (no public STIR option surface).</p>
+  <div class="grid g4" id="treeprobs"></div>
+  <h3>Per contract — expected price, market, EV</h3>
+  <div class="tblwrap" id="treecontracts"></div>
+  <p class="cap">Positive EV = the internal distribution expects the contract to trade higher (lower rate) than the market. Market-tree E[F] should match the close (bootstrap consistency).</p>
+  <h3>Rate after each meeting — internal vs market</h3>
+  <div class="tblwrap" id="treemeet"></div>
+  <h3>Structures on one EV scale</h3>
+  <div class="row"><label class="f">Contract for the structures<select id="t_c"></select></label><label class="f">Wing distance (bp)<input type="number" id="t_wing" step="5" min="5"></label><label class="f">ATM straddle premium (bp) <span class="badge b-manual">MANUAL</span><input type="number" id="t_pstr" step="0.5" min="0"></label><label class="f">Strangle premium (bp) <span class="badge b-manual">MANUAL</span><input type="number" id="t_pstg" step="0.5" min="0"></label><button class="mini" type="button" id="t_fair">Reset premiums to market-tree fair value</button></div>
+  <p class="cap" id="t_faircap"></p>
+  <div class="tblwrap" id="structtable"></div>
+  <p class="cap">P&amp;L in bp of the contract rate per unit; Kelly = fraction of the loss budget to commit (loss-normalised returns); half-Kelly is the desk size before Part-III limits; "∞" = no losing scenario (premium too cheap to be real).</p>
+  <div class="chart" id="pnlchart"></div>
+  <h2 class="sec"><span class="n">2.4</span>Choosing the leg</h2>
+  <div class="row"><label class="f">Loss budget per trade ($k)<input type="number" id="t_budget" step="50" min="10"></label><label class="f">Currency per bp per lot<input type="number" id="t_usdbp" step="0.01"></label><label class="f">Desk tolerance for a delta-one loss at the event ($k)<input type="number" id="t_tol" step="50" min="10"></label></div>
+  <div class="tblwrap" id="legtests"></div>
+  <div class="verdict" id="legverdict"></div>
+  <div class="tblwrap"><table><tr><th>Read</th><th>What it means</th><th>Leg</th></tr>
+  <tr><td>Mean mispriced; width roughly agrees</td><td>Right shape, wrong centre</td><td>Delta-one — meeting swap, futures, FX</td></tr>
+  <tr><td>Width or skew mispriced; mean agrees</td><td>Right centre, wrong shape</td><td>STIR options — straddle, strangle, wings</td></tr>
+  <tr><td>Both mispriced, same direction</td><td>Compounding edge</td><td>Risk reversal or skewed strangle, sized off the full tree</td></tr>
+  <tr><td>Kelly delta-one loss at the event exceeds tolerance</td><td>Same view, can't hold the linear size</td><td>Switch to options — defined premium</td></tr></table></div>
+  <div class="callout"><span class="t">Consensus-trade caution</span><p>If positioning already sits heavily on the same side as the mean-mispricing view, that is not more confidence; prefer the defined-loss options leg over sizing up delta-one.</p></div>
+</section>
+
+<!-- VI -->
+<div class="part" id="p6"><span class="k">Part III</span><h1>Risk — shocks, strike map, expiry map, liquidity, aggregate</h1><p class="q">What can hurt the book today, and what creates a large P&amp;L if the thesis is right?</p></div>
+<section class="block">
+  <h3>Book <span class="badge b-manual">MANUAL</span></h3>
+  <p class="cap">qty in lots (+ long); options: strike in rate (%), premium in bp paid (+) per structure; strangle wings at ±25 bp around the strike.</p>
+  <div class="tblwrap" id="booktable"></div>
+  <button class="mini" type="button" id="bookadd">+ add position</button>
+  <h3>Shock grid — P&amp;L by shock family ($k, intrinsic re-evaluation)</h3>
+  <div class="tblwrap" id="shockgrid"></div>
+  <div class="grid g4" id="shockkpi"></div>
+  <p class="cap">Options are re-evaluated at intrinsic value under the shock (no vega / theta): understates long-option P&amp;L and overstates short-option losses under small shocks — conservative for a long-gamma book.</p>
+  <h3>Strike map — options book by contract × strike</h3>
+  <div id="strikemap"></div>
+  <p class="cap" id="strikeverdict"></p>
+  <h3>Expiry map — what each option carries into expiry</h3>
+  <div class="tblwrap" id="expirymap"></div>
+  <p class="cap">Key question: what events occur between today and expiry, and what happens to the position if they change the market distribution? Expiry = contract last trading date; the embedded calendar covers 120 days of releases plus all meetings.</p>
+  <h3>Liquidity and positioning — the exit test</h3>
+  <p class="small">CFTC TFF positioning in SOFR and Treasury futures: <span class="badge b-unavailable">UNAVAILABLE</span> in this build (cftc.gov not reachable from the build environment). Flow is used for risk and timing only, never as a signal.</p>
+  <div id="exitchecks"></div>
+  <h3>Aggregate and cross-book risk — one $5M vol budget</h3>
+  <div class="row"><label class="f">Combined book annualised vol budget ($M)<input type="number" id="r_budget" step="0.5" min="0.5"></label><label class="f">Current drawdown across the three books ($M)<input type="number" id="r_dd" step="0.1" min="0"></label></div>
+  <div class="ladder" id="ladder"></div>
+  <div class="tblwrap"><table><tr><th>Layer</th><th>Check</th><th>Frequency</th></tr>
+  <tr><td>Pre-event calendar</td><td>CB event-outcome grid for CB positions; FX event-amplification table for exposed pairs; Thematic event card for themes tied to the catalyst</td><td>every tier-1 release / meeting</td></tr>
+  <tr><td>Factor netting</td><td>Rates level/slope, USD, credit and vol summed across the three books before any shock</td><td>continuous</td></tr>
+  <tr><td>Combined drawdown ladder</td><td>review 1×, de-gross 1.5×, flatten 2×</td><td>daily</td></tr>
+  <tr><td>Stress replay</td><td>BoJ hike, UK mini-budget, April-2025 tariffs run once against the combined positions</td><td>weekly / event-driven</td></tr></table></div>
+  <div class="callout"><span class="t">Crowding reads asymmetrically</span><p>In this book, internal distribution + market distribution + positioning all pointing the same way is a caution, not a third confirmation.</p></div>
+</section>
+
+<!-- VII -->
+<div class="part" id="p7"><span class="k">Appendix</span><h1>Data &amp; provenance</h1><p class="q">What is observed, what is approximated, what is typed in.</p></div>
+<section class="block">
+  <div class="grid g3" id="provsummary"></div>
+  <div class="tblwrap"><table><tr><th>Block</th><th>Status</th><th>Source / note</th></tr>
+  <tr><td>US macro gauges</td><td><span class="badge b-live">LIVE</span></td><td>FRED: core CPI/PCE, 5y5y, breakevens, UMich, IP, retail, GDPNow, permits, 2s10s, NFCI, UNRATE, payrolls, AHE, claims, JOLTS</td></tr>
+  <tr><td>EA / UK gauges</td><td><span class="badge b-proxy">PROXY</span></td><td>Eurostat/OECD monthly mirrors on FRED, lagging; stale series excluded; UK inflation, EA forward inflation and PMI set by hand</td></tr>
+  <tr><td>Fed funds strip, meeting path</td><td><span class="badge b-live">LIVE</span></td><td>Yahoo individual ZQ contracts, daily</td></tr>
+  <tr><td>3M SOFR / Euribor / SONIA strips</td><td><span class="badge b-live">LIVE</span> dated snapshot</td><td id="snapnote"></td></tr>
+  <tr><td>2y, 1y1y, breakevens, ACM term premium</td><td><span class="badge b-live">LIVE</span> / <span class="badge b-proxy">PROXY</span></td><td>FRED; 1y1y from par 1y/2y</td></tr>
+  <tr><td>Consensus / Smart Forecasters</td><td><span class="badge b-manual">MANUAL</span></td><td>no public survey feed</td></tr>
+  <tr><td>STIR option surface, event vol, premiums</td><td><span class="badge b-manual">MANUAL</span></td><td>no public surface; IBKR futures-options chains possible through the connector</td></tr>
+  <tr><td>CFTC positioning</td><td><span class="badge b-unavailable">UNAVAILABLE</span></td><td>cftc.gov blocked from the build environment</td></tr>
+  <tr><td>Meeting calendar</td><td><span class="badge b-confirmed">CONFIRMED</span> Fed 2026–27 · <span class="badge b-provisional">PROVISIONAL</span> ECB/BoE 2027 · <span class="badge b-estimated">ESTIMATED</span> releases, 2028</td><td>data/g3_calendar.csv in the repository</td></tr></table></div>
+  <h3>Series</h3><div class="tblwrap" id="provtable"></div>
+  <p class="cap">Rebuild: <code>python -m apps.g3_central_bank.export_artifact</code> in the CrossAssetMacro repository, then republish this page. Strip refresh: IBKR connector or <code>python -m datahub.ibkr_refresh</code> with TWS.</p>
+</section>
+<footer>G3 Central Bank Toolkit · built <span id="builtat"></span> · internal research tooling, not investment advice · all calibrations illustrative until connected to live desk data</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (id) => document.getElementById(id);
+const OUT = [-50,-25,0,25,50];
+const FAMS = ["ZQ","SR3","ER","SON"];
+const GAUGES = ["inflation","growth","labour"], HORS = ["spot","forward"];
+const nf = (x, nd=2, suf="") => (x===null||x===undefined||!isFinite(x)) ? "n/a" : (Number(x).toLocaleString("en-US",{minimumFractionDigits:nd, maximumFractionDigits:nd}) + suf);
+const sg = (x, nd=0, suf=" bp") => (x===null||x===undefined||!isFinite(x)) ? "n/a" : ((x>=0?"+":"") + Number(x).toFixed(nd) + suf);
+const badge = (q) => `<span class="badge b-${q}">${String(q).toUpperCase()}</span>`;
+const esc = (s) => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clsNum = (v) => v>0 ? "num pos" : (v<0 ? "num neg" : "num");
+const todayMs = new Date(D.today + "T00:00:00").getTime();
+const daysTo = (iso) => Math.round((new Date(iso + "T00:00:00").getTime() - todayMs) / 86400000);
+
+// ---------- state (persisted) ----------
+const defaults = () => ({
+  chain_pos: 0, stage_checks: {}, gauge_overrides: {}, reaction: Object.assign({}, D.reaction), macro_region: "US",
+  basis_bp: D.families.ER.basis_bp, strip_overrides: {}, market_family: "ZQ",
+  dist: {}, dist_event: null,
+  tree_family: "ZQ", tree_n: 2, width_mkt: 15, tree_probs: {}, tree_contract: {}, wing: 25, prem: {}, loss_budget: 750, usd_bp: {}, tol: 500,
+  book: [{family:"ZQ", contract:(D.families.ZQ.contracts[1]||{}).contract||"", structure:"future", qty:0, strike:null, premium_bp:null, note:"example row — edit me"}],
+  exit_checks: {}, budget: 5, dd: 0
+});
+let S = defaults();
+let saveTimer = null, dbRef = null, dirty = false, saving = false;
+function setSave(msg){ $("savestate").textContent = msg; }
+function persistNow(){
+  if (!dirty || saving) return; dirty = false; saving = true;
+  const body = JSON.parse(JSON.stringify(S));
+  const done = (label) => { saving = false; setSave(label + " · " + new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})); if (dirty) persistNow(); };
+  if (dbRef) { dbRef.set(body).then(() => done("saved")).catch(() => { try { localStorage.setItem("cb_state", JSON.stringify(body)); } catch(e){} done("local only"); }); }
+  else { try { localStorage.setItem("cb_state", JSON.stringify(body)); done("local only"); } catch(e) { done("not saved"); } }
+}
+function save(){ dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(persistNow, 800); }
+function applySaved(obj){ if (!obj || typeof obj !== "object") return; const d = defaults(); for (const k of Object.keys(d)) if (obj[k] !== undefined) S[k] = obj[k]; }
+
+// ---------- maths ----------
+function erf(x){ const s = Math.sign(x); x = Math.abs(x); const t = 1/(1+0.3275911*x); const y = 1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x); return s*y; }
+const ncdf = (v, m, s) => 0.5*(1+erf((v-m)/(s*Math.SQRT2)));
+function discretiseNormal(mean, std, grid){ std = Math.max(std, 1e-6); const out = []; for (let i=0;i<grid.length;i++){ const lo = i===0 ? -Infinity : (grid[i]+grid[i-1])/2; const hi = i===grid.length-1 ? Infinity : (grid[i+1]+grid[i])/2; const a = lo===-Infinity ? 0 : ncdf(lo,mean,std); const b = hi===Infinity ? 1 : ncdf(hi,mean,std); out.push(b-a);} return out; }
+function normalise(p){ p = p.map(x => Math.max(0, Number(x)||0)); const s = p.reduce((a,b)=>a+b,0); return s>0 ? p.map(x=>x/s) : p.map(()=>1/p.length); }
+function moments(p, x){ p = normalise(p); const mu = p.reduce((a,pi,i)=>a+pi*x[i],0); const v = p.reduce((a,pi,i)=>a+pi*(x[i]-mu)**2,0); const sk = v>0 ? p.reduce((a,pi,i)=>a+pi*(x[i]-mu)**3,0)/v**1.5 : 0; return {mean:mu, var:v, std:Math.sqrt(v), skew:sk}; }
+function kellyFraction(p, r){ p = normalise(p); const ev = p.reduce((a,pi,i)=>a+pi*r[i],0); if (ev<=0) return {f:0, half:0, ev}; if (r.every(x=>x>=0)) return {f:Infinity, half:Infinity, ev}; const worst = Math.min(...r); const cap = 0.999/Math.abs(worst); let best=-Infinity, bf=0; for (let k=0;k<=2000;k++){ const f = cap*k/2000; let g=0, ok=true; for (let i=0;i<r.length;i++){ const a = 1+f*r[i]; if (a<=0){ok=false;break;} g += p[i]*Math.log(a);} if (ok && g>best){best=g; bf=f;} } return {f:bf, half:bf/2, ev}; }
+function legPayoff(leg, rate){ const k = leg.strike||0, q = leg.qty==null?1:leg.qty, prem = leg.premium_bp||0; if (leg.type==="linear") return q*((rate-k)*100); if (leg.type==="call") return q*(Math.max(rate-k,0)*100-prem); return q*(Math.max(k-rate,0)*100-prem); }
+const structPnl = (legs, rate) => legs.reduce((a,l)=>a+legPayoff(l,rate),0);
+function evaluate(name, legs, p, rates){ p = normalise(p); const pnl = rates.map(r=>structPnl(legs,r)); return kellyOnPnl(name, p, pnl); }
+function kellyOnPnl(name, p, pnl){ p = normalise(p); const ev = p.reduce((a,pi,i)=>a+pi*pnl[i],0); const ml = Math.min(...pnl), mg = Math.max(...pnl); const pp = p.reduce((a,pi,i)=>a+(pnl[i]>0?pi:0),0); let k = {f:Infinity, half:Infinity}; if (ml<0) k = kellyFraction(p, pnl.map(x=>x/Math.abs(ml))); return {structure:name, ev, max_loss:ml, max_gain:mg, p_profit:pp, kelly:k.f, half:k.half, pnl}; }
+function solveRidge(A, b, lam){ const m = A.length, n = m ? A[0].length : 0; if (!n) return []; const M = Array.from({length:n}, () => new Array(n+1).fill(0)); for (let i=0;i<n;i++){ for (let j=0;j<n;j++){ let s=0; for (let r=0;r<m;r++) s += A[r][i]*A[r][j]; M[i][j] = s + (i===j?lam:0);} let s=0; for (let r=0;r<m;r++) s += A[r][i]*b[r]; M[i][n]=s; } for (let c=0;c<n;c++){ let piv=c; for (let r=c+1;r<n;r++) if (Math.abs(M[r][c])>Math.abs(M[piv][c])) piv=r; [M[c],M[piv]]=[M[piv],M[c]]; const d = M[c][c]||1e-12; for (let r=0;r<n;r++){ if (r===c) continue; const f = M[r][c]/d; if (!f) continue; for (let j=c;j<=n;j++) M[r][j]-=f*M[c][j]; } } return M.map((row,i)=>row[n]/(row[i]||1e-12)); }
+
+// ---------- strips / bootstrap (JS re-solve so basis + manual closes work) ----------
+function famCloses(f){ const F = D.families[f], ov = S.strip_overrides[f]||{}; return F.contracts.map(c => (ov[c.contract]!=null ? Number(ov[c.contract]) : c.close)); }
+function famBasis(f){ return f==="ER" ? Number(S.basis_bp||0) : 0; }
+function bootstrap(f){ const F = D.families[f]; if (!F.contracts.length || F.spot==null || !F.meetings.length) return {steps:[], fit:null}; const closes = famCloses(f), basis = famBasis(f); const b = closes.map((c,i) => (100-c - basis/100 - F.spot)/Math.max(F.frac_future[i],1e-9)); const j = solveRidge(F.A, b, 1e-3); let se=0; for (let i=0;i<b.length;i++){ let fit=0; for (let k=0;k<j.length;k++) fit += F.A[i][k]*j[k]; se += (fit-b[i])**2; } return {steps:j.map(x=>x*100), fit:Math.sqrt(se/b.length)*100}; }
+function fairPrices(f, stepsBp){ const F = D.families[f]; const basis = famBasis(f); return F.contracts.map((c,i) => { let s=0; for (let k=0;k<F.A[i].length;k++) s += F.A[i][k]*((stepsBp[k]||0)/100); return 100 - (F.spot + basis/100 + F.frac_future[i]*s); }); }
+function pathSeries(f, steps){ const F = D.families[f]; const basis = 0; const last = F.meetings.length ? F.meetings[F.meetings.length-1].effective : D.today; const end = new Date(new Date(last+"T00:00:00").getTime() + 60*86400000); const t=[], v=[]; let d = new Date(D.today+"T00:00:00"); while (d <= end){ const iso = d.toISOString().slice(0,10); let r = F.spot + basis; F.meetings.forEach((m,k) => { if (iso >= m.effective) r += (steps[k]||0)/100; }); t.push(iso); v.push(r); d = new Date(d.getTime()+86400000*3);} return {t,v}; }
+
+// ---------- plotly theme ----------
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function layout(extra){ return Object.assign({ paper_bgcolor:"rgba(0,0,0,0)", plot_bgcolor:"rgba(0,0,0,0)", font:{family:css("--font"), size:12, color:css("--fg")}, margin:{l:48,r:12,t:30,b:40}, height:320,
+  xaxis:{gridcolor:css("--grid"), zeroline:false, linecolor:css("--hair")}, yaxis:{gridcolor:css("--grid"), zeroline:false, linecolor:css("--hair")}, legend:{orientation:"h", y:1.12, x:0, font:{color:css("--fg")}}, hovermode:"closest" }, extra||{}); }
+const PLOT = {displayModeBar:false, responsive:true};
+const charts = {};
+function plot(id, traces, lay){ if (!window.Plotly) { $(id).innerHTML = '<p class="small">Chart library not loaded.</p>'; return; } charts[id] = [traces, lay]; Plotly.react(id, traces, layout(lay), PLOT); }
+function redrawAll(){ for (const id in charts) Plotly.react(id, charts[id][0], layout(charts[id][1]), PLOT); }
+
+// ---------- I countdown ----------
+function renderChain(){ $("chain").innerHTML = D.chain.map((c,i)=>`<button type="button" class="${i===S.chain_pos?"on":""}" data-i="${i}">${i+1}. ${esc(c)}</button>`).join(""); $("chain").querySelectorAll("button").forEach(b => b.onclick = () => { S.chain_pos = +b.dataset.i; save(); renderChain(); }); }
+function stage(days){ if (days>10) return ["~2 weeks before", "broad assessment, wide distribution"]; if (days>4) return ["~1 week before", "update with data, surveys, communication"]; if (days>=0) return ["2-3 days before", "refine print, strikes, pin, Kelly size"]; return ["post-event", "restart the cycle"]; }
+function renderCountdown(){
+  const tier1 = D.calendar.filter(e => e.tier===1);
+  let html = ""; let firstDays = 99;
+  for (const r of ["US","EA","UK"]){ const m = tier1.find(e => e.region===r && e.type==="meeting"); const rel = tier1.filter(e => e.region===r && e.type==="release").slice(0,4);
+    html += `<div class="cell"><b class="h">${D.region_label[r]} — ${r}</b>`;
+    if (m){ const st = stage(m.days); if (m.days < firstDays) firstDays = m.days; const c = D.counts_before[r]||{}; html += `<div class="kpi"><div class="l">Next meeting · ${esc(m.event)}</div><div class="v">${m.days} d</div><div class="d">${m.date} ${badge(m.status)}</div></div><p class="small" style="margin-top:6px"><b>${st[0]}</b>: ${st[1]}</p><p class="small">Still to come before it: ${c.inflation??"–"} inflation · ${c.growth??"–"} growth · ${c.labour??"–"} labour releases (${c.tier1??"–"} tier-1, incl. US)</p>`; }
+    else html += `<p class="small">No meeting in the next 120 days of the calendar file.</p>`;
+    html += rel.map(e => `<div class="small">• ${e.date.slice(5)} — ${esc(e.event)} (${e.days}d) ${badge(e.status)}</div>`).join("") + "</div>"; }
+  $("nextevents").innerHTML = html;
+  const key = stage(firstDays)[0];
+  const items = D.stage_checks[key] || D.stage_checks["post-event"];
+  $("stagechecks").innerHTML = `<p><b>Checklist — ${esc(key)}</b> ${badge("manual")}</p>` + items.map((it,i)=>`<label class="chk"><input type="checkbox" id="chk_${i}" data-k="${esc(key)}:${i}" ${S.stage_checks[key+":"+i]?"checked":""}> <span>${esc(it)}</span></label>`).join("");
+  $("stagechecks").querySelectorAll("input").forEach(cb => cb.onchange = () => { S.stage_checks[cb.dataset.k] = cb.checked; save(); });
+  $("caltable").innerHTML = `<table><tr><th>Date</th><th class="num">Days</th><th>Region</th><th>Type</th><th>Event</th><th class="num">Tier</th><th>Gauge</th><th>Status</th></tr>` + D.calendar.map(e=>`<tr><td>${e.date}</td><td class="num">${e.days}</td><td>${e.region}</td><td>${e.type}</td><td>${esc(e.event)}</td><td class="num">${e.tier}</td><td>${e.gauge}</td><td>${badge(e.status)}</td></tr>`).join("") + "</table>";
+}
+
+// ---------- II macro ----------
+function gaugeFinal(region){ const auto = D.gauges[region]; const out = {}; for (const g of GAUGES) for (const h of HORS){ const k = `${region}:${g}:${h}`, o = S.gauge_overrides[k]; const base = auto[`${g}:${h}`]; out[`${g}:${h}`] = (o && o.use) ? o.val : base; } return out; }
+function composite(fin, h){ let num=0, den=0; for (const g of GAUGES){ const v = fin[`${g}:${h}`]; if (v==null) continue; num += v*D.gauge_weights[g]; den += D.gauge_weights[g]; } return den ? num/den : null; }
+function heatColor(v){ if (v==null) return "transparent"; const a = Math.min(Math.abs(v)/2, 1)*0.55; return v>0 ? `rgba(183,28,28,${a})` : (v<0 ? `rgba(47,109,181,${a})` : "transparent"); }
+function renderMacro(){
+  const region = S.macro_region;
+  $("regiontabs").innerHTML = ["US","EA","UK"].map(r=>`<button type="button" class="${r===region?"on":""}" data-r="${r}">${D.region_label[r]} (${r})</button>`).join("");
+  $("regiontabs").querySelectorAll("button").forEach(b => b.onclick = () => { S.macro_region = b.dataset.r; save(); renderMacro(); });
+  const auto = D.gauges[region], fin = gaugeFinal(region);
+  $("heattitle").textContent = `${D.region_label[region]} gauges`;
+  let heat = `<div></div><div class="hd">Spot — what is happening</div><div class="hd">Forward — what is coming</div>`;
+  for (const g of GAUGES){ heat += `<div class="lb">${g[0].toUpperCase()+g.slice(1)}</div>`; for (const h of HORS){ const v = fin[`${g}:${h}`], o = S.gauge_overrides[`${region}:${g}:${h}`]; heat += `<div class="c" style="background:${heatColor(v)}">${v==null?"n/a":(v>0?"+":"")+v}${(o&&o.use)?' <span class="badge b-manual">M</span>':""}</div>`; } }
+  $("heat").innerHTML = heat;
+  let ov = "";
+  for (const g of GAUGES) for (const h of HORS){ const k = `${region}:${g}:${h}`, o = S.gauge_overrides[k] || {use:auto[`${g}:${h}`]==null, val:auto[`${g}:${h}`]??0}; ov += `<div class="row" style="margin:2px 0"><label class="chk" style="min-width:150px"><input type="checkbox" data-k="${k}" class="ovuse" ${o.use?"checked":""}> <span>use ${g} ${h}</span></label><label class="f" style="flex:1">${o.val>0?"+":""}${o.val} (computed ${auto[`${g}:${h}`]==null?"n/a":auto[`${g}:${h}`]})<input type="range" class="ovval" data-k="${k}" min="-2" max="2" step="1" value="${o.val}"></label></div>`; }
+  $("overrides").innerHTML = ov;
+  $("overrides").querySelectorAll(".ovuse, .ovval").forEach(el => el.oninput = () => { const k = el.dataset.k; const cur = S.gauge_overrides[k] || {use:false, val:auto[k.split(":").slice(1).join(":")]??0}; if (el.classList.contains("ovuse")) cur.use = el.checked; else cur.val = +el.value; S.gauge_overrides[k] = cur; save(); renderMacro(); });
+  const sc = composite(fin,"spot"), fc = composite(fin,"forward");
+  const sign = v => (v!=null && v>0) ? 1 : -1;
+  const lit = sc!=null && fc!=null && Math.abs(sc)>=0.25 && Math.abs(fc)>=0.25;
+  const cellKey = `${sign(sc)},${sign(fc)}`;
+  $("composites").innerHTML = `<div class="kpi"><div class="l">Spot composite</div><div class="v">${nf(sc,2)}</div><div class="d">0.4 inflation + 0.3 growth + 0.3 labour</div></div><div class="kpi"><div class="l">Forward composite</div><div class="v">${nf(fc,2)}</div></div><div class="verdict"><b>Regime cell: ${lit ? esc(D.cells[cellKey][0]) : "no cell clearly lit"}</b><br><span class="small">${lit ? esc(D.cells[cellKey][1]) + ". " + esc(D.cells[cellKey][2]) : "a composite sits inside ±0.25 or is undefined — nearest cell " + esc(D.cells[cellKey][0]) + "; wait for data or set the gauges by hand; do not route a curve segment off a neutral read."}</span></div>`;
+  $("cells").innerHTML = Object.entries(D.cells).map(([k,v]) => `<div class="cell ${lit && k===cellKey ? "lit":""}"><b class="h">${esc(v[0])} — ${esc(v[1])}</b>${esc(v[2])}</div>`).join("");
+  const comps = D.components.filter(c => c.region===region);
+  $("comptable").innerHTML = comps.length ? `<table><tr><th>Gauge</th><th>Horizon</th><th>Component</th><th class="num">Value</th><th>Unit</th><th class="num">Ref</th><th class="num">Scale</th><th class="num">z</th><th>Last</th><th>Quality</th></tr>` + comps.map(c=>`<tr><td>${c.gauge}</td><td>${c.horizon}</td><td>${esc(c.component)}</td><td class="num">${nf(c.value,2)}</td><td>${c.unit}</td><td class="num">${nf(c.ref,2)}</td><td class="num">${nf(c.scale,2)}</td><td class="${clsNum(c.z)}">${c.z==null?"n/a":(c.z>=0?"+":"")+c.z.toFixed(2)}</td><td>${c.last||"—"}</td><td>${badge(c.quality)}</td></tr>`).join("") + "</table>" : `<p class="small">No public components configured for this region; gauges are manual.</p>`;
+  const sel = $("compsel"); const cur = sel.value; sel.innerHTML = comps.filter(c=>c.history.t.length).map(c=>`<option value="${esc(c.component)}">${esc(c.component)}</option>`).join(""); if ([...sel.options].some(o=>o.value===cur)) sel.value = cur; renderCompChart();
+  if (region==="UK") $("comptable").insertAdjacentHTML("beforeend", `<p class="cap">UK CPI and wage series are not on the public FRED mirror in a usable form — set the UK inflation gauges by hand (services CPI, AWE).</p>`);
+  if (region==="EA") $("comptable").insertAdjacentHTML("beforeend", `<p class="cap">EA forward inflation (inflation swaps, SPF) and spot growth (PMI) are not public daily series — set them by hand; HICP comes from Eurostat via FRED.</p>`);
+}
+function renderCompChart(){ const name = $("compsel").value; const c = D.components.find(x => x.component===name && x.region===S.macro_region); if (!c || !c.history.t.length){ $("compchart").innerHTML = '<p class="small">unavailable</p>'; return; } plot("compchart", [{x:c.history.t, y:c.history.v, name:c.component, line:{color:css("--navy"), width:2}, mode:"lines"}, {x:[c.history.t[0], c.history.t[c.history.t.length-1]], y:[c.ref,c.ref], name:"reference", line:{color:css("--bronze"), dash:"dash", width:1.5}, mode:"lines"}], {height:280, title:{text:c.component + " (" + c.unit + ")", font:{size:13}}}); }
+function renderCred(){ const c = D.credibility; if (!c){ $("credkpi").innerHTML = ""; $("credverdict").innerHTML = "ACM term premium or Treasury yields unavailable — credibility read is manual."; return; }
+  $("credkpi").innerHTML = [["Δ10y, 3m", sg(c.d10)], ["of which term premium (ACM)", sg(c.dtp)], ["of which expected rates", sg(c.dexp)], ["Δ2y, 3m", sg(c.d2)]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join("");
+  let verdict; if (c.dtp>10 && c.dtp>Math.abs(c.dexp) && c.d10>c.d2) verdict = "Term-premium-led bear steepening: long-end moves are not a reaction-function read. Treat hot prints as potential bear steepeners (fiscal-dominance tell) and pair front-end views with a curve leg."; else if (c.d2>c.d10) verdict = "Front-led flattening: the move is a policy-path repricing under credible targeting. Hot prints bear-flatten; the front-end view stands alone."; else verdict = "Mixed: expected-rate and term-premium components comparable. Decompose before reading the long end as macro.";
+  $("credverdict").innerHTML = `${badge("live")} ACM term premium (FRED THREEFYTP10), last ${c.last} — <b>${verdict}</b>`;
+  plot("credchart", [{x:c.series.exp.t, y:c.series.exp.v, name:"10y expected-rate component", line:{color:css("--navy"), width:2}}, {x:c.series.tp.t, y:c.series.tp.v, name:"10y term premium (ACM)", line:{color:css("--bronze"), width:2}}, {x:c.series.y2.t, y:c.series.y2.v, name:"2y", line:{color:css("--slate"), width:1.5, dash:"dot"}}], {height:300, yaxis:{title:{text:"%"}, gridcolor:css("--grid"), zeroline:false}}); }
+function renderReaction(){ $("reaction").innerHTML = ["Fed","ECB","BoE"].map(cb=>`<label class="f">${cb}<textarea id="rf_${cb}">${esc(S.reaction[cb]||D.reaction[cb])}</textarea></label>`).join(""); ["Fed","ECB","BoE"].forEach(cb => $("rf_"+cb).oninput = (e) => { S.reaction[cb] = e.target.value; save(); }); }
+
+// ---------- III market ----------
+function renderState(){ const st = D.state; const k = (key, nd=2, suf="%") => nf(st[key] && st[key].value, nd, suf);
+  const s2 = st.ust2.value, s10 = st.ust10.value, s5 = st.ust5.value, s30 = st.ust30.value;
+  $("statekpi").innerHTML = [["EFFR", k("effr")], ["SOFR", k("sofr")], ["€STR", k("estr",3)], ["SONIA", k("sonia",3)], ["US 2y", k("ust2")], ["1y1y (from 1y/2y) " + badge("proxy"), k("fwd1y1y")], ["2s10s", (s10!=null&&s2!=null)?sg((s10-s2)*100):"n/a"], ["5s30s", (s30!=null&&s5!=null)?sg((s30-s5)*100):"n/a"], ["10y breakeven", k("bei10")], ["5y5y fwd inflation", k("fwd5y5y")], ["ACM 10y term premium", k("tp10")], ["Fed target range", (st.fft_lower.value!=null? nf(st.fft_lower.value,2)+"–"+nf(st.fft_upper.value,2)+"%":"n/a")]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join("");
+  $("terminalkpi").innerHTML = FAMS.map(f => { const F = D.families[f]; const cl = famCloses(f); const term = cl.length ? Math.max(...cl.map(c=>100-c)) - famBasis(f)/100 : null; return `<div class="kpi"><div class="l">Strip peak / terminal proxy — ${f}</div><div class="v">${nf(term,2,"%")}</div><div class="d">max implied rate on the strip, net of basis</div></div>`; }).join("");
+  $("statecap").innerHTML = `${badge("live")} FRED as of ${st.ust2.date||"n/a"} (policy rates ${st.effr.date||""}); ${badge("proxy")} 1y1y from the par 1y/2y points; terminal = strip maximum.`; }
+function renderMarket(){
+  const f = S.market_family, F = D.families[f];
+  $("famtabs").innerHTML = FAMS.map(x=>`<button type="button" class="${x===f?"on":""}" data-f="${x}">${D.families[x].label}</button>`).join("");
+  $("famtabs").querySelectorAll("button").forEach(b => b.onclick = () => { S.market_family = b.dataset.f; save(); renderMarket(); });
+  if (!F.contracts.length){ $("famhead").innerHTML = `No strip available for ${F.label}.`; $("striptable").innerHTML = $("meettable").innerHTML = $("stripedit").innerHTML = ""; $("fitcap").textContent = ""; $("pathchart").innerHTML = ""; return; }
+  const manual = Object.keys(S.strip_overrides[f]||{}).length>0;
+  $("famhead").innerHTML = `<b>${F.label}</b> ${badge(manual?"manual":"live")} source: ${F.source}${F.source!=="Yahoo"?" (IBKR snapshot "+D.snapshot_file+")":""}, closes as of ${F.close_date} · spot ${F.spot_label} = ${nf(F.spot,3,"%")} ${badge(D.state[F.spot_key].quality)} (${D.state[F.spot_key].date})`;
+  const bs = bootstrap(f), closes = famCloses(f), basis = famBasis(f);
+  $("striptable").innerHTML = `<table><tr><th>Contract</th><th>Month</th><th class="num">Close</th><th class="num">Implied %</th>${f==="ZQ"?'<th class="num">1d bp</th><th class="num">1w bp</th>':""}<th>Window</th></tr>` + F.contracts.map((c,i)=>`<tr><td>${c.contract}</td><td>${c.month}</td><td class="num">${nf(closes[i],3)}</td><td class="num">${nf(100-closes[i],3)}</td>${f==="ZQ"?`<td class="${clsNum(c.chg_1d_bp)}">${c.chg_1d_bp==null?"":c.chg_1d_bp.toFixed(1)}</td><td class="${clsNum(c.chg_1w_bp)}">${c.chg_1w_bp==null?"":c.chg_1w_bp.toFixed(1)}</td>`:""}<td class="small">${c.win_start} → ${c.win_end}</td></tr>`).join("") + "</table>";
+  let cum=0; $("meettable").innerHTML = F.meetings.length ? `<table><tr><th>Meeting</th><th>Event</th><th>Status</th><th class="num">Step bp</th><th class="num">Cum bp</th><th class="num">Rate after</th><th class="num">p(25)</th></tr>` + F.meetings.map((m,k)=>{ const s = bs.steps[k]||0; cum += s; return `<tr><td>${m.date}</td><td>${esc(m.event)}</td><td>${badge(m.status)}</td><td class="${clsNum(s)}">${sg(s,1,"")}</td><td class="num">${sg(cum,1,"")}</td><td class="num">${nf(F.spot+cum/100,3)}</td><td class="num">${Math.max(-2,Math.min(2,s/25)).toFixed(2)}</td></tr>`; }).join("") + "</table>" : `<p class="small">No meetings inside the strip horizon.</p>`;
+  $("fitcap").innerHTML = `Fit error ${nf(bs.fit,2)} bp over ${F.contracts.length} contracts · p(25bp) = step/25 (sign = direction) · ridge 1e-3 spreads the move across meetings inside a contract window.`;
+  const path = pathSeries(f, bs.steps); let c2=0; const mr = F.meetings.map((m,k)=>{ c2 += bs.steps[k]||0; return F.spot + c2/100; });
+  const mid = F.contracts.map(c => { const a = new Date(c.win_start+"T00:00:00").getTime(), b = new Date(c.win_end+"T00:00:00").getTime(); return new Date((a+b)/2).toISOString().slice(0,10); });
+  plot("pathchart", [{x:path.t, y:path.v, name:`market-implied ${F.spot_label} path`, line:{color:css("--navy"), width:2, shape:"hv"}, mode:"lines"}, {x:F.meetings.map(m=>m.date), y:mr, mode:"markers+text", text:bs.steps.map(s=>sg(s,0,"")), textposition:"top center", textfont:{color:css("--fg"), size:10}, name:"meeting (step bp)", marker:{color:css("--bronze"), size:8}}, {x:mid, y:closes.map(c=>100-c-basis/100), mode:"markers", name:"contract implied (net of basis)", marker:{symbol:"diamond", color:css("--slate"), size:8}}, {x:[path.t[0], path.t[path.t.length-1]], y:[F.spot,F.spot], name:"spot", line:{color:css("--slate"), dash:"dot", width:1}, mode:"lines"}], {height:340, yaxis:{title:{text:"%"}, gridcolor:css("--grid"), zeroline:false}});
+  $("stripedit").innerHTML = `<table><tr><th>Contract</th><th class="num">Loaded close</th><th class="num">Override</th></tr>` + F.contracts.map((c,i)=>`<tr><td>${c.contract}</td><td class="num">${nf(c.close,3)}</td><td class="num"><input type="number" step="0.005" id="se_${f}_${i}" data-c="${c.contract}" value="${(S.strip_overrides[f]||{})[c.contract]??""}" placeholder="${nf(c.close,3)}"></td></tr>`).join("") + "</table>";
+  $("stripedit").querySelectorAll("input").forEach(inp => inp.onchange = () => { S.strip_overrides[f] = S.strip_overrides[f]||{}; if (inp.value==="") delete S.strip_overrides[f][inp.dataset.c]; else S.strip_overrides[f][inp.dataset.c] = +inp.value; save(); renderMarket(); renderState(); renderTree(); renderRisk(); });
+  const zq = bootstrap("ZQ"); if (zq.steps.length){ const cum4 = zq.steps.slice(0,4).reduce((a,b)=>a+b,0); $("rfcheck").innerHTML = `Fed: next meeting prices <b>${sg(zq.steps[0],0)}</b>, next four meetings <b>${sg(cum4,0)}</b> cumulative. Compare with the regime cell above: Overheating / Early-reacceleration call for a path above the priced one (bank behind the market → pay the front end only if positioning is not already there); Slowdown calls for a path below it. ECB next: <b>${sg((bootstrap("ER").steps[0]||0),0)}</b>; BoE next: <b>${sg((bootstrap("SON").steps[0]||0),0)}</b>.`; }
+}
+
+// ---------- IV distributions ----------
+function distDefaults(ev){ for (const k in D.dist_defaults) if (ev.toLowerCase().includes(k.toLowerCase())) return Object.assign({mode:"s", sf_std_mult:1, skew_int:0}, D.dist_defaults[k]); return {unit:"", cons:0, std:1, n:30, lo:-2, hi:2, sf:0, prev:0, beta:3, mode:"s", sf_std_mult:1, skew_int:0}; }
+function distEvents(){ return D.calendar.filter(e => e.type==="release" && e.tier===1).slice(0,25); }
+function distKey(e){ return `${e.date} · ${e.region} · ${e.event}`; }
+let distBinding = false;
+function renderDist(){
+  const evs = distEvents(); if (!evs.length){ $("distmeta").textContent = "No upcoming tier-1 releases in the calendar."; return; }
+  const sel = $("distsel"); sel.innerHTML = evs.map(e=>`<option value="${esc(distKey(e))}">${esc(distKey(e))}</option>`).join("");
+  if (!S.dist_event || !evs.some(e=>distKey(e)===S.dist_event)) S.dist_event = distKey(evs[0]); sel.value = S.dist_event;
+  const ev = evs.find(e=>distKey(e)===S.dist_event); const d = S.dist[S.dist_event] = Object.assign(distDefaults(ev.event), S.dist[S.dist_event]||{});
+  if (d.be==null) d.be = +(d.beta*Math.sqrt(2/Math.PI)).toFixed(1); if (d.priced_center==null) d.priced_center = d.cons; if (d.iv_w==null){ d.iv_w=90; d.t_w=10; d.iv_wo=60; d.t_wo=5; }
+  $("distmeta").innerHTML = `${badge(ev.status)} ${esc(ev.event)} — ${ev.region} — ${ev.days} days · ${badge("manual")} survey and lean inputs are typed by the desk.`;
+  distBinding = true;
+  const bind = (id, key, isText) => { const el = $(id); el.value = d[key]; el.oninput = () => { d[key] = isText ? el.value : +el.value; save(); if (!distBinding) computeDist(d); }; };
+  bind("d_unit","unit",true); bind("d_cons","cons"); bind("d_std","std"); bind("d_n","n"); bind("d_lo","lo"); bind("d_hi","hi"); bind("d_prev","prev"); bind("d_sf","sf"); bind("d_w","sf_std_mult"); bind("d_sk","skew_int"); bind("d_beta","beta"); bind("d_be","be"); bind("d_ivw","iv_w"); bind("d_tw","t_w"); bind("d_ivwo","iv_wo"); bind("d_two","t_wo"); bind("d_pc","priced_center");
+  $("d_mode").value = d.mode; $("d_mode").onchange = () => { d.mode = $("d_mode").value; save(); computeDist(d); };
+  distBinding = false; computeDist(d);
+}
+function computeDist(d){
+  $("d_srow").hidden = d.mode!=="s"; $("d_ivrow").hidden = d.mode==="iv" ? false : true; $("d_wlbl").textContent = "× " + Number(d.sf_std_mult).toFixed(2); $("d_sklbl").textContent = (d.skew_int>=0?"+":"") + Number(d.skew_int).toFixed(1);
+  const implied = d.mode==="s" ? Number(d.be) : Math.sqrt(Math.max(d.iv_w**2*d.t_w/365 - d.iv_wo**2*d.t_wo/365, 0));
+  const std = Math.max(Number(d.std), 1e-9), expS = d.sf - d.cons, z = expS/std, intMove = Math.abs(z)*d.beta, widthInt = d.sf_std_mult*d.beta*Math.sqrt(2/Math.PI);
+  $("distkpi").innerHTML = [["Expected surprise", `${expS>=0?"+":""}${expS.toFixed(3)} ${esc(d.unit)}`], ["Expected surprise ÷ std", `${z>=0?"+":""}${z.toFixed(2)} σ`], ["Internal expected move (mean)", `${intMove.toFixed(1)} bp`], ["Priced event move", `${implied.toFixed(1)} bp`], ["Internal E|move| (width)", `${widthInt.toFixed(1)} bp`], ["Dispersion (max−min)/std", `${((d.hi-d.lo)/std).toFixed(1)} σ`]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v" style="font-size:17px">${v}</div></div>`).join("");
+  const grid = [["Large downside",-2],["Moderate downside",-1],["In line",0],["Moderate upside",1],["Large upside",2]];
+  const outcomes = grid.map(g => d.cons + g[1]*std); let pInt = discretiseNormal(d.sf, std*d.sf_std_mult, outcomes); const tilt = [1-0.5*d.skew_int, 1-0.25*d.skew_int, 1, 1+0.25*d.skew_int, 1+0.5*d.skew_int]; pInt = normalise(pInt.map((p,i)=>p*tilt[i])); const pMkt = discretiseNormal(d.priced_center, std, outcomes); const moves = outcomes.map(o => (o-d.priced_center)/std*d.beta);
+  $("distgrid").innerHTML = `<table><tr><th>Scenario</th><th class="num">Print</th><th class="num">Surprise σ</th><th class="num">p internal</th><th class="num">p market</th><th class="num">Front-contract move bp</th><th class="num">Edge (p_int − p_mkt)</th></tr>` + grid.map((g,i)=>`<tr><td>${g[0]}</td><td class="num">${outcomes[i].toFixed(3)}</td><td class="num">${g[1]}</td><td class="num">${pInt[i].toFixed(3)}</td><td class="num">${pMkt[i].toFixed(3)}</td><td class="${clsNum(moves[i])}">${sg(moves[i],1,"")}</td><td class="${clsNum(pInt[i]-pMkt[i])}">${sg(pInt[i]-pMkt[i],3,"")}</td></tr>`).join("") + "</table>";
+  plot("distchart", [{type:"bar", x:grid.map(g=>g[0]), y:pMkt, name:"priced (market)", marker:{color:css("--slate")}}, {type:"bar", x:grid.map(g=>g[0]), y:pInt, name:"internal (Smart Forecasters)", marker:{color:css("--bronze")}}], {height:280, barmode:"group", yaxis:{title:{text:"probability"}, gridcolor:css("--grid"), zeroline:false}});
+  const meanMis = Math.abs(z)>=0.5, ratio = implied>0 ? widthInt/implied : NaN, shapeMis = (isFinite(ratio) && Math.abs(ratio-1)>0.2) || Math.abs(d.skew_int)>=0.4;
+  let v; if (meanMis && !shapeMis) v = "Mean mispriced, shape roughly agrees → <b>delta-one</b> (futures / meeting swap). Bank the gap linearly; don't pay for convexity the view doesn't need."; else if (shapeMis && !meanMis) v = `Shape mispriced, mean agrees → <b>STIR options</b>: ${isFinite(ratio)&&ratio>1?"buy":"sell"} the straddle/strangle; skew via wings if the tail tilt is the edge.`; else if (meanMis && shapeMis) v = "Mean and shape both mispriced → <b>risk reversal / skewed strangle</b>, sized off the full tree (Part V)."; else v = "No material edge on mean or shape → stand aside, or carry only the risk-premia sleeve if wings are rich (§2.3).";
+  $("distverdict").innerHTML = v + `<br><span class="small">|expected surprise/std| = ${Math.abs(z).toFixed(2)}σ (threshold 0.5) · internal width / priced move = ${nf(ratio,2)} (threshold ±20%) · internal skew ${(d.skew_int>=0?"+":"")+Number(d.skew_int).toFixed(1)}</span>`;
+}
+
+// ---------- V tree ----------
+function treeKey(f, m){ return `${f}:${m.date}`; }
+function renderTree(){
+  const f = S.tree_family, F = D.families[f];
+  $("treefam").innerHTML = FAMS.map(x=>`<button type="button" class="${x===f?"on":""}" data-f="${x}">${D.families[x].label}</button>`).join("");
+  $("treefam").querySelectorAll("button").forEach(b => b.onclick = () => { S.tree_family = b.dataset.f; save(); renderTree(); });
+  if (!F.contracts.length || !F.meetings.length){ $("treeprobs").innerHTML = `<p class="small">Strip or meeting calendar missing for this family.</p>`; return; }
+  const bs = bootstrap(f), steps = bs.steps; const nMax = Math.min(4, F.meetings.length); S.tree_n = Math.max(1, Math.min(S.tree_n, nMax));
+  $("t_n").max = nMax; $("t_n").value = S.tree_n; $("t_nlbl").textContent = S.tree_n; $("t_w").value = S.width_mkt; $("t_wlbl").textContent = S.width_mkt + " bp";
+  const n = S.tree_n, w = S.width_mkt;
+  const perInt = [], perMkt = []; let ph = "";
+  for (let m=0;m<n;m++){ const mk = F.meetings[m], key = treeKey(f, mk); const pm = discretiseNormal(steps[m], w, OUT); const pi = S.tree_probs[key] || pm.map(x=>+x.toFixed(3)); perInt.push(normalise(pi)); perMkt.push(pm); const mo = moments(pi, OUT);
+    ph += `<div class="cell"><b class="h">${m+1}. ${mk.date} — ${esc(mk.event)} ${badge(mk.status)}</b><div class="small">market step ${sg(steps[m],1)}</div><table style="min-width:0"><tr><th class="num">bp</th><th class="num">p internal</th></tr>${OUT.map((o,i)=>`<tr><td class="num">${o}</td><td class="num"><input type="number" min="0" max="1" step="0.01" id="tp_${m}_${i}" data-m="${m}" data-i="${i}" value="${(+pi[i]).toFixed(3)}"></td></tr>`).join("")}</table><button class="mini" type="button" data-reset="${esc(key)}">reset to market</button><div class="small">internal mean ${sg(mo.mean,1)} · std ${mo.std.toFixed(1)} · skew ${(mo.skew>=0?"+":"")+mo.skew.toFixed(2)}</div></div>`; }
+  $("treeprobs").innerHTML = ph;
+  $("treeprobs").querySelectorAll("input").forEach(inp => inp.onchange = () => { const m = +inp.dataset.m, key = treeKey(f, F.meetings[m]); const arr = S.tree_probs[key] || perInt[m].slice(); arr[+inp.dataset.i] = +inp.value; S.tree_probs[key] = arr; save(); renderTree(); });
+  $("treeprobs").querySelectorAll("button[data-reset]").forEach(b => b.onclick = () => { delete S.tree_probs[b.dataset.reset]; save(); renderTree(); });
+  // joint trees
+  const paths = (per) => { let rows = [{p:1, st:[]}]; per.forEach(pr => { const next=[]; rows.forEach(r => pr.forEach((pp,i) => { if (pp>0) next.push({p:r.p*pp, st:r.st.concat([OUT[i]])}); })); rows = next; }); return rows; };
+  const tInt = paths(perInt), tMkt = paths(perMkt), tail = steps.slice(n);
+  const fp = (tree) => tree.map(r => fairPrices(f, r.st.concat(tail)));
+  const fpI = fp(tInt), fpM = fp(tMkt), pI = tInt.map(r=>r.p), pM = tMkt.map(r=>r.p);
+  const nC = F.contracts.length; const efI = new Array(nC).fill(0), efM = new Array(nC).fill(0), sdI = new Array(nC).fill(0), sdM = new Array(nC).fill(0);
+  fpI.forEach((row,r) => row.forEach((v,c) => efI[c] += pI[r]*v)); fpM.forEach((row,r) => row.forEach((v,c) => efM[c] += pM[r]*v));
+  fpI.forEach((row,r) => row.forEach((v,c) => sdI[c] += pI[r]*(v-efI[c])**2)); fpM.forEach((row,r) => row.forEach((v,c) => sdM[c] += pM[r]*(v-efM[c])**2));
+  const closes = famCloses(f);
+  $("treecontracts").innerHTML = `<table><tr><th>Contract</th><th>Month</th><th class="num">Close</th><th class="num">E[F] internal</th><th class="num">E[F] market tree</th><th class="num">EV vs market bp</th><th class="num">std internal bp</th><th class="num">std market bp</th></tr>` + F.contracts.map((c,i)=>`<tr><td>${c.contract}</td><td>${c.month}</td><td class="num">${nf(closes[i],3)}</td><td class="num">${nf(efI[i],4)}</td><td class="num">${nf(efM[i],4)}</td><td class="${clsNum(efI[i]-closes[i])}">${sg((efI[i]-closes[i])*100,1,"")}</td><td class="num">${(Math.sqrt(sdI[i])*100).toFixed(1)}</td><td class="num">${(Math.sqrt(sdM[i])*100).toFixed(1)}</td></tr>`).join("") + "</table>";
+  let mrows = ""; for (let m=0;m<n;m++){ const rI = F.spot + tInt.reduce((a,r)=>a+r.p*r.st.slice(0,m+1).reduce((x,y)=>x+y,0),0)/100; const rM = F.spot + steps.slice(0,m+1).reduce((a,b)=>a+b,0)/100; mrows += `<tr><td>${F.meetings[m].date}</td><td class="num">${rI.toFixed(3)}</td><td class="num">${rM.toFixed(3)}</td><td class="${clsNum(rI-rM)}">${sg((rI-rM)*100,1,"")}</td></tr>`; }
+  $("treemeet").innerHTML = `<table><tr><th>Meeting</th><th class="num">Internal</th><th class="num">Market</th><th class="num">Gap bp</th></tr>${mrows}</table>`;
+  // structures
+  const csel = $("t_c"); csel.innerHTML = F.contracts.map((c,i)=>`<option value="${i}">${c.contract}</option>`).join(""); let idx = S.tree_contract[f]; if (idx==null || idx>=nC) idx = Math.min(1, nC-1); csel.value = idx; csel.onchange = () => { S.tree_contract[f] = +csel.value; save(); renderTree(); };
+  const rateI = fpI.map(r => 100-r[idx]), rateM = fpM.map(r => 100-r[idx]), rNow = 100-closes[idx];
+  const meanI = pI.reduce((a,p,i)=>a+p*rateI[i],0), meanM = pM.reduce((a,p,i)=>a+p*rateM[i],0);
+  const sdMkt = Math.sqrt(pM.reduce((a,p,i)=>a+p*(rateM[i]-meanM)**2,0))*100, sdInt = Math.sqrt(pI.reduce((a,p,i)=>a+p*(rateI[i]-meanI)**2,0))*100, gap = (meanI-rNow)*100;
+  const kAtm = Math.round(rNow*4)/4; const wing = Number(S.wing)||25; const kUp = kAtm + wing/100, kDn = kAtm - wing/100;
+  const strFair = pM.reduce((a,p,i)=>a+p*Math.abs(rateM[i]-kAtm),0)*100, stgFair = pM.reduce((a,p,i)=>a+p*(Math.max(rateM[i]-kUp,0)+Math.max(kDn-rateM[i],0)),0)*100;
+  const pk = `${f}:${idx}:${wing}`; const prem = S.prem[pk] || {str:+strFair.toFixed(1), stg:+stgFair.toFixed(1)}; S.prem[pk] = prem;
+  $("t_wing").value = wing; $("t_pstr").value = prem.str; $("t_pstg").value = prem.stg;
+  $("t_wing").onchange = () => { S.wing = +$("t_wing").value; save(); renderTree(); }; $("t_pstr").onchange = () => { prem.str = +$("t_pstr").value; save(); renderTree(); }; $("t_pstg").onchange = () => { prem.stg = +$("t_pstg").value; save(); renderTree(); };
+  $("t_fair").onclick = () => { delete S.prem[pk]; save(); renderTree(); };
+  $("t_faircap").innerHTML = `Market-tree fair values: straddle ${strFair.toFixed(1)} bp, strangle ${stgFair.toFixed(1)} bp (no vol premium); market std of the contract rate ${sdMkt.toFixed(1)} bp, internal ${sdInt.toFixed(1)} bp, mean gap ${sg(gap,1)}. ATM strike ${kAtm.toFixed(2)}%, wings ${kDn.toFixed(2)} / ${kUp.toFixed(2)}. Type the dealer quote to replace the fair value — the difference is the premium you pay for the shape.`;
+  const results = [];
+  results.push(evaluate("Long future (receive)", [{type:"linear", strike:rNow, qty:-1}], pI, rateI));
+  results.push(evaluate("Short future (pay)", [{type:"linear", strike:rNow, qty:1}], pI, rateI));
+  results.push(evaluate("Long ATM straddle", [{type:"call", strike:kAtm, qty:1, premium_bp:prem.str/2},{type:"put", strike:kAtm, qty:1, premium_bp:prem.str/2}], pI, rateI));
+  results.push(evaluate("Short ATM straddle", [{type:"call", strike:kAtm, qty:-1, premium_bp:prem.str/2},{type:"put", strike:kAtm, qty:-1, premium_bp:prem.str/2}], pI, rateI));
+  results.push(evaluate(`Long strangle ±${wing}`, [{type:"call", strike:kUp, qty:1, premium_bp:prem.stg/2},{type:"put", strike:kDn, qty:1, premium_bp:prem.stg/2}], pI, rateI));
+  results.push(evaluate(`Short strangle ±${wing}`, [{type:"call", strike:kUp, qty:-1, premium_bp:prem.stg/2},{type:"put", strike:kDn, qty:-1, premium_bp:prem.stg/2}], pI, rateI));
+  results.push(evaluate("Risk reversal: long rate-up wing / short rate-down wing", [{type:"call", strike:kUp, qty:1, premium_bp:prem.stg/2},{type:"put", strike:kDn, qty:-1, premium_bp:prem.stg/2}], pI, rateI));
+  results.push(evaluate("Risk reversal: long rate-down wing / short rate-up wing", [{type:"put", strike:kDn, qty:1, premium_bp:prem.stg/2},{type:"call", strike:kUp, qty:-1, premium_bp:prem.stg/2}], pI, rateI));
+  results.push(kellyOnPnl("Meeting swap: pay (long step)", pI, tInt.map(r => r.st[0]-steps[0])));
+  results.push(kellyOnPnl("Meeting swap: receive (short step)", pI, tInt.map(r => -(r.st[0]-steps[0]))));
+  if (idx+2 < nC){ const now = [0,1,2].map(k => 100-closes[idx+k]); const flyNow = now[0]-2*now[1]+now[2]; const flyS = fpI.map(r => (100-r[idx])-2*(100-r[idx+1])+(100-r[idx+2])); const nm = `${F.contracts[idx].contract}/${F.contracts[idx+1].contract}/${F.contracts[idx+2].contract}`; results.push(kellyOnPnl(`Long fly ${nm} (long price fly)`, pI, flyS.map(v => -(v-flyNow)*100))); results.push(kellyOnPnl(`Short fly ${nm}`, pI, flyS.map(v => (v-flyNow)*100))); }
+  results.sort((a,b)=>b.ev-a.ev);
+  const kf = (x) => !isFinite(x) ? "∞" : x.toFixed(2);
+  $("structtable").innerHTML = `<table><tr><th>Structure</th><th class="num">EV bp</th><th class="num">Max loss</th><th class="num">Max gain</th><th class="num">p(profit)</th><th class="num">Kelly</th><th class="num">Half-Kelly</th></tr>` + results.map(r=>`<tr><td>${esc(r.structure)}</td><td class="${clsNum(r.ev)}">${sg(r.ev,1,"")}</td><td class="num neg">${r.max_loss.toFixed(1)}</td><td class="num pos">${r.max_gain.toFixed(1)}</td><td class="num">${r.p_profit.toFixed(2)}</td><td class="num">${kf(r.kelly)}</td><td class="num">${kf(r.half)}</td></tr>`).join("") + "</table>";
+  const best = results[0]; const order = rateI.map((r,i)=>i).sort((a,b)=>rateI[a]-rateI[b]);
+  plot("pnlchart", [{type:"bar", x:order.map(i => sg((rateI[i]-rNow)*100,0,"")), y:order.map(i=>best.pnl[i]), marker:{color:order.map(i => best.pnl[i]>=0 ? css("--good") : css("--bad"))}, name:"P&L bp", customdata:order.map(i=>(pI[i]*100).toFixed(1)), hovertemplate:"%{x} bp: P&L %{y:.1f} bp · internal prob %{customdata}%<extra></extra>"}], {height:300, showlegend:false, title:{text:`P&L by scenario — ${best.structure} (hover for the internal probability)`, font:{size:13}}, xaxis:{title:{text:"contract rate change vs today (bp)"}, type:"category", gridcolor:css("--grid")}, yaxis:{title:{text:"bp"}, gridcolor:css("--grid"), zeroline:true, zerolinecolor:css("--hair")}});
+  // leg choice
+  if (S.usd_bp[f]==null) S.usd_bp[f] = F.usd_per_bp; $("t_budget").value = S.loss_budget; $("t_usdbp").value = S.usd_bp[f]; $("t_tol").value = S.tol;
+  $("t_budget").onchange = () => { S.loss_budget = +$("t_budget").value; save(); renderTree(); }; $("t_usdbp").onchange = () => { S.usd_bp[f] = +$("t_usdbp").value; save(); renderTree(); }; $("t_tol").onchange = () => { S.tol = +$("t_tol").value; save(); renderTree(); };
+  const meanFlag = Math.abs(gap) >= Math.max(5, 0.33*sdMkt), wr = sdMkt>0 ? sdInt/sdMkt : NaN, shapeFlag = isFinite(wr) && Math.abs(wr-1)>=0.2;
+  const d1 = results.find(r => r.structure.startsWith(gap<0 ? "Long future" : "Short future"));
+  const lots = (d1.max_loss<0 && isFinite(d1.half)) ? d1.half*S.loss_budget*1000/(Math.abs(d1.max_loss)*S.usd_bp[f]) : 0; const worst = lots*Math.abs(d1.max_loss)*S.usd_bp[f]/1000;
+  const tests = [["Mean mispriced (|E_int − market| ≥ max(5bp, ⅓ market std))", meanFlag, `gap ${sg(gap,1)}, market std ${sdMkt.toFixed(1)} bp`], ["Width/skew mispriced (internal std / market std off by ≥ 20%)", shapeFlag, `ratio ${nf(wr,2)}`], ["Half-Kelly delta-one loss at the event exceeds tolerance", worst>S.tol, `${lots.toFixed(0)} lots → worst ${nf(worst,0)} $k vs tolerance ${nf(S.tol,0)} $k`]];
+  $("legtests").innerHTML = `<table><tr><th>Test</th><th>Result</th><th>Detail</th></tr>${tests.map(t=>`<tr><td>${t[0]}</td><td><b class="${t[1]?"neg":"pos"}">${t[1]?"yes":"no"}</b></td><td>${t[2]}</td></tr>`).join("")}</table>`;
+  let v; if (meanFlag && !shapeFlag && worst<=S.tol) v = "Delta-one — meeting swap or futures. The market has the right shape, the wrong centre."; else if (shapeFlag && !meanFlag) v = "STIR options — straddle / strangle / wings. The market has the right centre, the wrong shape."; else if (meanFlag && shapeFlag) v = "Risk reversal or skewed strangle, sized off the full tree — compounding edge."; else if (worst>S.tol) v = "Same view, can't hold the linear size → switch to options: the defined premium collapses the loss to a known number."; else v = "No material mispricing in mean or shape → no trade from this tree; revisit after the next release.";
+  $("legverdict").innerHTML = `<b>Verdict:</b> ${v}`;
+}
+
+// ---------- VI risk ----------
+const STRUCTS = ["future","call (rate up)","put (rate down)","straddle","strangle"];
+function legsFor(row, rNow){ const q = Number(row.qty)||0, k = (row.strike!=null && isFinite(row.strike) && row.strike!=="") ? Number(row.strike) : rNow, prem = Number(row.premium_bp)||0; switch(row.structure){ case "future": return [{type:"linear", strike:rNow, qty:-q}]; case "call (rate up)": return [{type:"call", strike:k, qty:q, premium_bp:prem}]; case "put (rate down)": return [{type:"put", strike:k, qty:q, premium_bp:prem}]; case "straddle": return [{type:"call", strike:k, qty:q, premium_bp:prem/2},{type:"put", strike:k, qty:q, premium_bp:prem/2}]; case "strangle": return [{type:"call", strike:k+0.25, qty:q, premium_bp:prem/2},{type:"put", strike:k-0.25, qty:q, premium_bp:prem/2}]; } return []; }
+function renderRisk(){
+  const allC = FAMS.flatMap(f => D.families[f].contracts.map(c => f+"|"+c.contract));
+  $("booktable").innerHTML = `<table><tr><th>Family</th><th>Contract</th><th>Structure</th><th class="num">Qty</th><th class="num">Strike %</th><th class="num">Premium bp</th><th>Note</th><th></th></tr>` + S.book.map((r,i)=>`<tr><td><select data-i="${i}" data-k="family" id="bk_f_${i}">${FAMS.map(f=>`<option ${f===r.family?"selected":""}>${f}</option>`).join("")}</select></td><td><select data-i="${i}" data-k="contract" id="bk_c_${i}">${D.families[r.family].contracts.map(c=>`<option ${c.contract===r.contract?"selected":""}>${c.contract}</option>`).join("")}</select></td><td><select data-i="${i}" data-k="structure" id="bk_s_${i}">${STRUCTS.map(s=>`<option ${s===r.structure?"selected":""}>${s}</option>`).join("")}</select></td><td class="num"><input type="number" step="1" data-i="${i}" data-k="qty" id="bk_q_${i}" value="${r.qty??0}"></td><td class="num"><input type="number" step="0.125" data-i="${i}" data-k="strike" id="bk_k_${i}" value="${r.strike??""}" placeholder="ATM"></td><td class="num"><input type="number" step="0.5" data-i="${i}" data-k="premium_bp" id="bk_p_${i}" value="${r.premium_bp??""}"></td><td><input type="text" data-i="${i}" data-k="note" id="bk_n_${i}" value="${esc(r.note||"")}"></td><td><button class="mini" type="button" data-del="${i}">×</button></td></tr>`).join("") + "</table>";
+  $("booktable").querySelectorAll("select, input").forEach(el => el.onchange = () => { const r = S.book[+el.dataset.i]; const k = el.dataset.k; r[k] = (k==="qty"||k==="strike"||k==="premium_bp") ? (el.value===""?null:+el.value) : el.value; if (k==="family") r.contract = (D.families[r.family].contracts[0]||{}).contract||""; save(); renderRisk(); });
+  $("booktable").querySelectorAll("button[data-del]").forEach(b => b.onclick = () => { S.book.splice(+b.dataset.del,1); save(); renderRisk(); });
+  const book = S.book.filter(r => r.contract && Number(r.qty));
+  const shocks = [["−50 bp","par",-50],["−25 bp","par",-25],["−10 bp","par",-10],["−5 bp","par",-5],["+5 bp","par",5],["+10 bp","par",10],["+25 bp","par",25],["+50 bp","par",50],["bull steepener","steep",-25],["bear steepener","steep",25],["bull flattener","flat",-25],["bear flattener","flat",25]];
+  const rows = []; const agg = new Array(shocks.length).fill(0);
+  for (const pos of book){ const F = D.families[pos.family]; const i = F.contracts.findIndex(c=>c.contract===pos.contract); if (i<0) continue; const n = F.contracts.length; const rNow = 100-famCloses(pos.family)[i]; const legs = legsFor(pos, rNow); const base = structPnl(legs, rNow); const usd = S.usd_bp[pos.family] ?? F.usd_per_bp;
+    const vals = shocks.map(([_,kind,bp]) => { let dr; if (kind==="par") dr = bp; else if (kind==="steep") dr = bp<0 ? bp*(1-i/Math.max(n-1,1)) : bp*(i/Math.max(n-1,1)); else dr = bp<0 ? bp*(i/Math.max(n-1,1)) : bp*(1-i/Math.max(n-1,1)); return (structPnl(legs, rNow+dr/100)-base)*usd/1000; }); vals.forEach((v,k)=>agg[k]+=v); rows.push({name:`${pos.family} ${pos.contract} ${pos.structure} ×${Number(pos.qty)>0?"+":""}${pos.qty}`, vals}); }
+  if (rows.length){ $("shockgrid").innerHTML = `<table><tr><th>Position</th>${shocks.map(s=>`<th class="num">${s[0]}</th>`).join("")}</tr>${rows.map(r=>`<tr><td>${esc(r.name)}</td>${r.vals.map(v=>`<td class="${clsNum(v)}">${v.toFixed(1)}</td>`).join("")}</tr>`).join("")}<tr class="agg"><td>AGGREGATE</td>${agg.map(v=>`<td class="${clsNum(v)}">${v.toFixed(1)}</td>`).join("")}</tr></table>`; const mi = agg.indexOf(Math.min(...agg)), ma = agg.indexOf(Math.max(...agg)); $("shockkpi").innerHTML = [["Worst shock", shocks[mi][0]], ["Loss under worst shock", nf(agg[mi],0," $k")], ["Best shock", shocks[ma][0]], ["Gain under best shock", nf(agg[ma],0," $k")]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v" style="font-size:17px">${v}</div></div>`).join(""); }
+  else { $("shockgrid").innerHTML = `<p class="small">Add positions (non-zero qty) to run shocks, the strike map and the expiry map.</p>`; $("shockkpi").innerHTML = ""; }
+  // strike map
+  const opts = book.filter(r => r.structure!=="future"); const cells = [];
+  for (const pos of opts){ const F = D.families[pos.family]; const i = F.contracts.findIndex(c=>c.contract===pos.contract); if (i<0) continue; const k = (pos.strike!=null && pos.strike!=="") ? Number(pos.strike) : Math.round((100-famCloses(pos.family)[i])*4)/4; const q = Number(pos.qty); if (pos.structure==="strangle") cells.push([pos.contract, +(k+0.25).toFixed(3), q], [pos.contract, +(k-0.25).toFixed(3), q]); else if (pos.structure==="straddle") cells.push([pos.contract, +k.toFixed(3), 2*q]); else cells.push([pos.contract, +k.toFixed(3), q]); }
+  if (cells.length){ const cons = [...new Set(cells.map(c=>c[0]))], ks = [...new Set(cells.map(c=>c[1]))].sort((a,b)=>b-a); const net = {}; cells.forEach(([c,k,q]) => { net[c+"|"+k] = (net[c+"|"+k]||0)+q; }); const mx = Math.max(...Object.values(net).map(Math.abs), 1); let h = `<div class="smap" style="grid-template-columns: 80px repeat(${cons.length}, minmax(60px, 1fr))"><div></div>${cons.map(c=>`<div class="hd">${c}</div>`).join("")}`; for (const k of ks){ h += `<div class="hd" style="text-align:right">${k.toFixed(3)}</div>`; for (const c of cons){ const v = net[c+"|"+k]||0; const a = Math.abs(v)/mx*0.6; h += `<div class="c" style="background:${v>0?`rgba(46,125,50,${a})`:(v<0?`rgba(183,28,28,${a})`:"transparent")}">${v?((v>0?"+":"")+v):""}</div>`; } } $("strikemap").innerHTML = h + "</div>"; const gamma = cells.reduce((a,c)=>a+c[2],0), gross = cells.reduce((a,c)=>a+Math.abs(c[2]),0); const conc = Math.max(...Object.values(net).map(Math.abs))/Math.max(Object.values(net).reduce((a,v)=>a+Math.abs(v),0),1e-9); const verdict = Math.abs(gamma)<=0.3*gross ? "well positioned" : (gamma>0 ? "too long gamma / volatility" : "too short gamma / volatility"); $("strikeverdict").innerHTML = `Net option lots ${gamma>0?"+":""}${gamma}; largest single strike = ${(conc*100).toFixed(0)}% of the option book → <b>${verdict}${conc>0.5?"; too concentrated":""}</b>. Re-read against the expected outcome, relevant strikes, potential pin and gamma concentration as the countdown advances.`; }
+  else { $("strikemap").innerHTML = `<p class="small">No option positions in the book.</p>`; $("strikeverdict").textContent = ""; }
+  // expiry map
+  if (opts.length){ const allEv = D.calendar.concat(D.meetings_all.filter(m => !D.calendar.some(c => c.date===m.date && c.event===m.event)).map(m => Object.assign({type:"meeting", tier:1}, m))); const rows2 = opts.map(pos => { const F = D.families[pos.family]; const c = F.contracts.find(x=>x.contract===pos.contract); if (!c) return ""; const ev = allEv.filter(e => e.date>=D.today && e.date<=c.ltd && (e.region===F.region || e.region==="US")).sort((a,b)=>a.date<b.date?-1:1); const mt = ev.filter(e=>e.type==="meeting").length, t1 = ev.filter(e=>e.type==="release" && e.tier===1).length; const carries = [mt?"central-bank risk":null, t1?"data risk":null].filter(Boolean).join(", ") || "market-perception / vol risk only"; return `<tr><td>${pos.family} ${pos.contract} ${pos.structure}</td><td>${c.ltd}</td><td class="num">${daysTo(c.ltd)}</td><td class="num">${ev.length}</td><td class="num">${mt}</td><td class="num">${t1}</td><td>${carries}</td><td>${ev.length?`${ev[0].date} ${esc(ev[0].event)}`:"—"}</td></tr>`; }).join(""); $("expirymap").innerHTML = `<table><tr><th>Position</th><th>Expiry (LTD)</th><th class="num">Days</th><th class="num">Events before</th><th class="num">Meetings</th><th class="num">Tier-1 releases</th><th>Carries</th><th>Next event</th></tr>${rows2}</table>`; }
+  else $("expirymap").innerHTML = `<p class="small">No option positions in the book.</p>`;
+  // exit checks
+  const checks = ["Just before data: can every structure be cut at a reasonable price?", "Just after data: is there a two-way market in the wings held?", "Before the meeting: concentration in similar structures across the desk checked", "During a large rates move / VaR shock: dealer capacity and bid-offer re-quoted"];
+  $("exitchecks").innerHTML = checks.map((c,i)=>`<label class="chk"><input type="checkbox" id="ex_${i}" data-i="${i}" ${S.exit_checks[i]?"checked":""}> <span>${c}</span></label>`).join("");
+  $("exitchecks").querySelectorAll("input").forEach(cb => cb.onchange = () => { S.exit_checks[cb.dataset.i] = cb.checked; save(); });
+  // ladder
+  $("r_budget").value = S.budget; $("r_dd").value = S.dd; $("r_budget").onchange = () => { S.budget = +$("r_budget").value; save(); renderRisk(); }; $("r_dd").onchange = () => { S.dd = +$("r_dd").value; save(); renderRisk(); };
+  const ratio = S.budget>0 ? S.dd/S.budget : 0; let st, col; if (ratio>=2){ st = "≥ 2× book vol — flatten to defined-loss and insurance only"; col = css("--bad"); } else if (ratio>=1.5){ st = "≥ 1.5× — de-gross the most crowded / least convex legs across all three books"; col = css("--warn"); } else if (ratio>=1){ st = "≥ 1× — review"; col = css("--bronze"); } else { st = "inside the ladder"; col = css("--good"); }
+  $("ladder").style.borderLeftColor = col; $("ladder").textContent = `Drawdown ${S.dd.toFixed(2)} $M = ${ratio.toFixed(2)}× budget → ${st}`;
+}
+
+// ---------- VII data ----------
+function renderData(){ const p = D.provenance; const ok = p.filter(r=>r.status==="loaded").length; const byQ = (q) => p.filter(r=>r.status==="loaded" && r.quality===q).length;
+  $("provsummary").innerHTML = [["Series loaded", `${ok} / ${p.length}`], ["Live", byQ("live")], ["Proxy (lagging mirrors)", byQ("proxy")]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join("");
+  $("snapnote").textContent = `IBKR connector, delayed data, snapshot ${D.snapshot_file} — refresh through the connector or datahub/ibkr_refresh.py with TWS`;
+  $("provtable").innerHTML = `<table><tr><th>Key</th><th>Name</th><th>Source</th><th>Ticker</th><th>Quality</th><th>Freq</th><th>Status</th><th>Last</th><th class="num">Value</th><th>Note</th></tr>` + p.map(r=>`<tr><td>${r.key}</td><td>${esc(r.name)}</td><td>${r.source}</td><td>${esc(r.ticker)}</td><td>${badge(r.quality)}</td><td>${r.freq}</td><td>${r.status==="loaded"?r.status:badge("unavailable")}</td><td>${r.last==="None"?"—":r.last}</td><td class="num">${nf(r.value,3)}</td><td class="small">${esc(r.note)}</td></tr>`).join("") + "</table>"; }
+
+// ---------- boot ----------
+function renderAll(){ renderChain(); renderCountdown(); renderMacro(); renderCred(); renderReaction(); renderState(); renderMarket(); renderDist(); renderTree(); renderRisk(); renderData(); }
+function bindGlobals(){
+  $("basis").value = S.basis_bp; $("basis").onchange = () => { S.basis_bp = +$("basis").value; save(); renderMarket(); renderState(); renderTree(); renderRisk(); };
+  $("striprevert").onclick = () => { delete S.strip_overrides[S.market_family]; save(); renderMarket(); renderState(); renderTree(); renderRisk(); };
+  $("compsel").onchange = renderCompChart;
+  $("distsel").onchange = () => { S.dist_event = $("distsel").value; save(); renderDist(); };
+  $("t_n").oninput = () => { S.tree_n = +$("t_n").value; save(); renderTree(); }; $("t_w").oninput = () => { S.width_mkt = +$("t_w").value; save(); renderTree(); };
+  $("bookadd").onclick = () => { S.book.push({family:"ZQ", contract:(D.families.ZQ.contracts[1]||D.families.ZQ.contracts[0]||{}).contract||"", structure:"future", qty:1, strike:null, premium_bp:null, note:""}); save(); renderRisk(); };
+  $("themebtn").onclick = () => { const r = document.documentElement; const dark = r.getAttribute("data-theme")==="dark" || (!r.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches); r.setAttribute("data-theme", dark ? "light" : "dark"); setTimeout(redrawAll, 30); };
+  if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => setTimeout(redrawAll, 30));
+}
+$("metaline").innerHTML = `<b>Built</b> ${D.generated} · <b>Market data</b> FRED to ${D.state.ust2.date||"n/a"}, Yahoo ZQ strip ${D.families.ZQ.close_date||"n/a"}, IBKR snapshot ${D.snapshot_file} · <b>Scope</b> SOFR, Euribor, SONIA, fed funds futures and their meeting-dated paths; FX and options as cross-expressions.`;
+$("builtat").textContent = D.generated;
+try { const loc = localStorage.getItem("cb_state"); if (loc) applySaved(JSON.parse(loc)); } catch(e) {}
+bindGlobals(); renderAll(); setSave("local only");
+(async () => {
+  try {
+    if (!window.claude || !window.claude.use) { return; }
+    const db = await window.claude.use("db");
+    if (!db) { return; }
+    dbRef = db.doc("inputs/cb");
+    const snap = await dbRef.get();
+    if (snap.exists) { applySaved(snap.data()); renderAll(); setSave("saved inputs loaded"); } else setSave("ready (nothing saved yet)");
+  } catch (e) { dbRef = null; setSave("local only"); }
+})();
+})();
+</script>
