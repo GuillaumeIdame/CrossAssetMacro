@@ -654,7 +654,7 @@
   },
   "constituents_stats": {
     "russell_csv": "inputs/IWM_holdings.csv",
-    "note": "Composition du Russell 2000 : deposer le CSV des positions d'IWM (iShares, bouton Download holdings) dans Sources du dashboard/inputs/. Pas de source API gratuite ; le site iShares impose une page de consentement, donc pas de telechargement automatique."
+    "note": "Russell 2000 : composition lue dans le dernier N-PORT-P public de l'iShares Russell 2000 ETF (EDGAR), CUSIP convertis par OpenFIGI (cache) ; secteur non fourni ; decalage de 1 a 3 mois entre la periode du depot et le jour. Un export iShares inputs/IWM_holdings.csv depose a la main reste prioritaire."
   },
   "earnings_calendar_days": 90,
   "thematic_etfs": {
