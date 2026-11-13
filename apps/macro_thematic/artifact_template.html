@@ -560,3 +560,169 @@
     sel("legLevel", "level"); sel("legDir", "direction"); sel("legConv", "conviction"); sel("legHead", "headroom");
     $("ev_be").onchange = (e) => { S.eventInputs.be = +e.target.value; save(); renderLegs(); }; $("ev_rr").onchange = (e) => { S.eventInputs.rr = +e.target.value; save(); renderLegs(); };
   }
+
+  // ---------------------------------------------------------------- §3 sizing, exposure, stress, theta
+  const R_ = P.risk;
+  function perUnit(pos, ins) {
+    const sign = pos.direction === "long" ? 1 : -1; const size = +pos.size || 0;
+    if (ins.unit === "bp") return ins.legs ? sign * size : -sign * size;   // DV01 $/bp: receiver gains when yields fall; steepener gains when slope widens
+    return sign * size / 100;                                               // notional $ per 1 %
+  }
+  function bookLines() {
+    return (S.book || []).map((p) => { const ins = R_.instruments[p.instrument]; if (!ins) return null;
+      const pu = perUnit(p, ins); const adv = ins.adv_2w; const isVol = p.kind === "long-vol" || p.kind === "short-premium";
+      const loss = isVol ? (+p.premium || 0) : (isNum(adv) ? Math.abs(pu) * adv : NaN);
+      const maxSize = !isVol && isNum(adv) && adv > 0 ? (+p.L_stomach || 0) / adv : NaN;
+      return Object.assign({}, p, {ins, pu: isVol ? 0 : pu, loss, maxSize, ok: isNum(loss) && loss <= (+p.L_stomach || 0)}); }).filter(Boolean);
+  }
+  function portSeries(lines) { const n = R_.daily.dates.length; const out = new Array(n).fill(0); for (const l of lines) { const d = R_.daily[l.instrument]; if (!d || !l.pu) continue; for (let i = 0; i < n; i++) out[i] += (d[i] || 0) * l.pu; } return out; }
+  function renderRisk() {
+    const el = $("risk"); const lines = bookLines(); const keys = Object.keys(R_.instruments);
+    let html = `<h2>Book ${badge("manual")} <span class="small">(example lines pre-filled ${badge("example")})</span></h2>`;
+    html += tbl([{label: "Label"}, {label: "Instrument"}, {label: "Dir."}, {label: "Size", num: true}, {label: "Unit"}, {label: "L_stomach $", num: true}, {label: "Theme"}, {label: "Kind"}, {label: "Premium $", num: true}, {label: "θ/day $", num: true}, {label: "Γ", num: true}, {label: ""}],
+      (S.book || []).map((p, i) => `<tr><td><input type="text" data-bk="${i}" data-f="label" value="${h(p.label)}" style="width:11em"></td><td><select data-bk="${i}" data-f="instrument">${keys.map((k) => `<option value="${k}" ${k === p.instrument ? "selected" : ""}>${h(R_.instruments[k].label)}</option>`).join("")}</select></td>
+        <td><select data-bk="${i}" data-f="direction"><option ${p.direction === "long" ? "selected" : ""}>long</option><option ${p.direction === "short" ? "selected" : ""}>short</option></select></td><td class="num"><input type="number" data-bk="${i}" data-f="size" value="${p.size}" step="1000"></td>
+        <td><select data-bk="${i}" data-f="size_unit">${["DV01 $/bp", "notional $", "premium $"].map((u) => `<option ${u === p.size_unit ? "selected" : ""}>${u}</option>`).join("")}</select></td><td class="num"><input type="number" data-bk="${i}" data-f="L_stomach" value="${p.L_stomach}" step="50000"></td>
+        <td><select data-bk="${i}" data-f="theme">${S.themes.map((t) => `<option ${t.name === p.theme ? "selected" : ""}>${h(t.name)}</option>`).join("")}<option ${!S.themes.some((t) => t.name === p.theme) ? "selected" : ""}>${h(p.theme || "—")}</option></select></td>
+        <td><select data-bk="${i}" data-f="kind">${["delta-one", "long-vol", "short-premium"].map((u) => `<option ${u === p.kind ? "selected" : ""}>${u}</option>`).join("")}</select></td><td class="num"><input type="number" data-bk="${i}" data-f="premium" value="${p.premium || 0}" step="10000"></td>
+        <td class="num"><input type="number" data-bk="${i}" data-f="theta_day" value="${p.theta_day || 0}" step="500"></td><td class="num"><input type="number" data-bk="${i}" data-f="gamma" value="${p.gamma || 0}" step="0.1"></td><td><button class="btn sec" data-delbk="${i}" type="button" aria-label="remove line">×</button></td></tr>`).join(""));
+    html += `<div class="row"><button class="btn sec" id="addBk" type="button">+ line</button><span class="small">Common frame: long = receive / long the bond / long base currency / steepener. Size in DV01 $/bp for rates lines, notional $ for prices; option lines carry premium, θ/day and Γ.</span></div>`;
+    // sizing
+    html += `<h2>Sizing</h2><div class="formula">size_$ = L_stomach / |Δ_2w,adv| · book: √( Σ Lᵢ² + 2 Σ ρ^tail_ij Lᵢ Lⱼ ) ≤ $5M · N_eff = (Σw)²/Σw² ≥ 3</div>`;
+    html += tbl([{label: "Line"}, {label: "Instrument"}, {label: "Kind"}, {label: "Adverse 2w (95th)", num: true}, {label: "Unit"}, {label: "Loss 2w $", num: true}, {label: "L_stomach $", num: true}, {label: "Holdable"}, {label: "Max size for L", num: true}, {label: "Theme"}],
+      lines.map((l) => `<tr class="${l.ok ? "" : "fail"}"><td><b>${h(l.label)}</b></td><td>${h(l.ins.label)}${l.ins.quality !== "live" ? badge(l.ins.quality) : ""}</td><td>${h(l.kind)}</td><td class="num">${fmt(l.ins.adv_2w, 2)}</td><td>${l.ins.unit}</td><td class="num">${money(l.loss)}</td><td class="num">${money(+l.L_stomach)}</td><td>${l.ok ? '<span class="pos">yes</span>' : '<span class="neg">no: cut size, not the trade</span>'}</td><td class="num">${fmt(l.maxSize, 0)}</td><td class="small">${h(l.theme)}</td></tr>`).join("") || `<tr><td colspan="10">empty book</td></tr>`);
+    const Lv = lines.map((l) => isNum(l.loss) ? l.loss : 0); const idx = lines.map((l) => R_.corr_keys.indexOf(l.instrument));
+    const quad = (M) => { let s = 0; for (let i = 0; i < Lv.length; i++) for (let j = 0; j < Lv.length; j++) { const r = i === j ? 1 : (idx[i] >= 0 && idx[j] >= 0 ? (M[idx[i]][idx[j]] ?? 0) : 0); s += Lv[i] * Lv[j] * (lines[i].pu && lines[j].pu ? r * Math.sign(lines[i].pu) * Math.sign(lines[j].pu) : (i === j ? 1 : 0)); } return Math.sqrt(Math.max(s, 0)); };
+    const bookTail = quad(R_.corr_tail), bookCalm = quad(R_.corr60);
+    const neff = Lv.reduce((a, b) => a + b, 0) ** 2 / (Lv.reduce((a, b) => a + b * b, 0) || 1);
+    const byTheme = {}; lines.forEach((l) => { byTheme[l.theme] = (byTheme[l.theme] || 0) + (isNum(l.loss) ? l.loss : 0); }); const maxShare = Math.max(0, ...Object.values(byTheme)) / Math.max(bookTail, 1);
+    html += kpis([["Book L (tail ρ)", money(bookTail), "binding: the worse of tail and placid"], ["Book L (placid ρ)", money(bookCalm), ""], ["Budget", "$5.0M", "annualised vol book; 2w/1y rule"], ["N_eff", fmt(neff, 1), "≥ 3 required"], ["Max theme share", fmt(maxShare * 100, 0, "%"), "≤ 30% of book vol"]]);
+    if (bookTail > R_.book_vol) html += `<div class="alert">Book loss under tail correlation exceeds the $5M envelope: cut size, not the trade.</div>`;
+    if (maxShare > 0.30) html += `<div class="notice">Theme concentration above 30%: review from 30%, cut the most crowded / least convex leg at 35–40%.</div>`;
+    if (lines.length && neff < 3) html += `<div class="notice">N_eff &lt; 3: diversification is credited only at tail correlation.</div>`;
+    html += `<p class="small">Tail ρ = 60D-style correlation measured on the worst-decile SPX days of the last 3y; placid ρ = last 60 days. Order of constraints: stomach → concentration → crowding haircut → liquidity → drawdown state. Long-vol lines are sized by premium-at-risk (30–50% of the theme's vol slot) and exempt from vol targeting.</p>`;
+    html += tbl([{label: "Setup"}, {label: "Screener × Monitor"}, {label: "L_stomach"}], [["High conviction, theme-aligned", "|composite| &gt; 1.5, pillars agree, clear leg", "$1.0–1.5M"], ["Medium", "|composite| 0.8–1.5, some conflict", "$0.5–1.0M"], ["Tactical / event", "Short horizon, single-pillar lead, defined loss preferred", "&lt; $0.5M"]].map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join(""));
+    // exposure
+    const F = R_.factors; const beta = {}, conv = {};
+    for (const f of F) { beta[f] = 0; conv[f] = 0; for (const l of lines) { const b = R_.betas[l.instrument]?.[f]; if (!b || !l.pu) continue; beta[f] += l.pu * (b.beta || 0); conv[f] += l.pu * ((b.beta_dn || 0) - (b.beta_up || 0)); } }
+    const dps = Object.fromEntries(F.map((f) => [f, beta[f] * R_.factor_sigma[f]]));
+    html += `<h2>Exposure layer: $ per 1σ day, univariate 60D, β⁻ − β⁺ convexity</h2><div class="formula">x̂_k = β_k · σ(f_k)_1d · NAV ($ per 1σ day) · convexity = β⁻ − β⁺ (down-day minus up-day beta)</div>`;
+    html += tbl([{label: "Factor"}, {label: "σ (1d)", num: true}, {label: "Book β ($ per unit)", num: true}, {label: "$ per 1σ day", num: true}, {label: "Convexity $/1σ", num: true}],
+      F.map((f) => `<tr><td><b>${f}</b></td><td class="num">${fmt(R_.factor_sigma[f], 2)}</td><td class="num">${fmt(beta[f], 0, "", true)}</td><td class="num ${cls(dps[f])}">${money(dps[f])}</td><td class="num ${cls(conv[f] * R_.factor_sigma[f])}">${money(conv[f] * R_.factor_sigma[f])}</td></tr>`).join(""));
+    const tot = F.reduce((s, f) => s + Math.abs(dps[f]), 0); const maxShareF = tot > 0 ? Math.max(...F.map((f) => Math.abs(dps[f]))) / tot : 0;
+    const healthy = [["SPX β ≤ 0", dps.SPX <= 0], ["VIX β ≥ 0", dps.VIX >= 0], ["MOVE β ≥ 0", dps.MOVE >= 0], ["No single factor &gt; 30% of risk", maxShareF <= 0.30]];
+    html += `<p>Healthy signature: ${healthy.map(([n, ok]) => `<span class="${ok ? "pos" : "neg"}">${ok ? "✓" : "✗"} ${n}</span>`).join(" · ")}</p><p class="small">Never 2y + 10y + 2s10s together; 2y is a derived read; orthogonalise anything with VIF &gt; 5. A single factor above 30% of risk, or style-replicable R² above ~0.5, means a beta or style book wearing a thematic label.</p>`;
+    // stress
+    const port = portSeries(lines); const portStd = std(port.slice(-60));
+    const betaC1 = Object.fromEntries(F.map((f) => [f, Math.sign(beta[f] || 0) * portStd / (R_.factor_sigma[f] || 1)]));
+    const useB = S.corrOneStress ? betaC1 : beta;
+    const srows = [];
+    for (const [name, ep] of Object.entries(R_.episodes)) {
+      if (ep.status !== "ok") { srows.push({scenario: name, kind: "historical", pnl: NaN, direct: NaN, note: ep.status}); continue; }
+      const mv = ep.factor_moves; const fs = F.filter((f) => isNum(mv[f])); const pnl = fs.reduce((s, f) => s + useB[f] * mv[f], 0) / Math.max(fs.length, 1);
+      const direct = lines.reduce((s, l) => s + (l.pu || 0) * (ep.instrument_moves[l.instrument] || 0), 0);
+      srows.push({scenario: name, kind: "historical", pnl, direct, note: ["SPX", "10Y", "VIX"].map((f) => `${f} ${fmt(mv[f], 0, "", true)}`).join(", ")});
+    }
+    for (const [name, sh] of Object.entries(R_.parametric)) { const fs = Object.keys(sh).filter((f) => F.includes(f)); srows.push({scenario: name, kind: "parametric", pnl: fs.reduce((s, f) => s + useB[f] * sh[f], 0) / Math.max(fs.length, 1), direct: NaN, note: Object.entries(sh).map(([f, v]) => `${f} ${fmt(v, 0, "", true)}`).join(", ")}); }
+    html += `<h2>Stress layer: historical factor moves applied to <em>today's</em> exposures</h2><div class="row"><label><input type="checkbox" id="c1s" ${S.corrOneStress ? "checked" : ""}> correlation-to-one version (|β| = σ_book/σ_factor)</label></div>`;
+    html += tbl([{label: "Scenario"}, {label: "Kind"}, {label: "P&L via factor betas $", num: true}, {label: "Direct replay $", num: true}, {label: "Moves"}],
+      srows.map((r) => `<tr class="${isNum(r.pnl) && r.pnl < -1e6 ? "fail" : ""}"><td><b>${h(r.scenario)}</b></td><td>${r.kind}</td><td class="num ${cls(r.pnl)}">${money(r.pnl)}</td><td class="num ${cls(r.direct)}">${isNum(r.direct) ? money(r.direct) : "—"}</td><td class="small">${h(r.note)}</td></tr>`).join(""));
+    const worst = srows.filter((r) => isNum(r.pnl)).sort((a, b) => a.pnl - b.pnl).slice(0, 3);
+    html += `<p><b>Top-3 fragilities:</b> ${worst.map((r) => `${h(r.scenario)} (${money(r.pnl)})`).join("; ") || "n/a"}. <span class="small">Factor P&L averages the univariate lenses (they are not additive); the direct replay applies each instrument's own realised move to the line. Episodes before the loaded history are listed as outside history.</span></p>`;
+    // reverse stress
+    const bv = F.map((f) => beta[f] || 0); let bSb = 0; for (let i = 0; i < F.length; i++) for (let j = 0; j < F.length; j++) bSb += bv[i] * (R_.factor_cov[F[i]][F[j]] || 0) * bv[j];
+    const Llim = +S.lossLimit || 0; const lam = bSb > 0 ? -Llim / bSb : 0; const xstar = F.map((_, i) => lam * F.reduce((s, __, j) => s + (R_.factor_cov[F[i]][F[j]] || 0) * bv[j], 0)); const dist = bSb > 0 ? Llim / Math.sqrt(bSb) : NaN;
+    html += `<div class="row"><div class="field"><label for="lossLimit">Reverse stress: loss limit ($)</label><input type="number" id="lossLimit" step="250000" value="${Llim}"></div></div><p class="small">Nearest factor vector hitting −${money(Llim)} (Mahalanobis distance ${fmt(dist, 1)}σ, 1y factor covariance): ${bSb > 0 ? F.map((f, i) => `${f} ${fmt(xstar[i], 1, "", true)}`).join(", ") : "needs delta-one lines"}.</p>`;
+    // CED
+    let cedHtml = "";
+    if (lines.some((l) => l.pu)) { let cum = 0, peak = 0; const dd = []; const cums = port.map((v) => (cum += v)); for (let i = 0; i < cums.length; i++) { peak = Math.max(peak, cums[i]); dd.push(cums[i] - peak); }
+      const roll = []; for (let i = 20; i < dd.length; i++) roll.push(Math.min(...dd.slice(i - 20, i + 1))); const q = quantile(roll, 0.1); const tail = roll.filter((v) => v <= q);
+      cedHtml = kpis([["CED (E[DD | DD ≥ q0.9], 1M paths)", money(-mean(tail))], ["Worst 1M drawdown (3y)", money(-Math.min(...roll))], ["Daily vol of book", money(std(port))], ["Annualised", `${money(std(port) * Math.sqrt(252) / 1e6, 2).replace("$", "$")}M vs $5M`]]); }
+    html += cedHtml;
+    html += `<h2>Seven ways the book loses</h2>` + tbl([{label: "#"}, {label: "Failure mode"}, {label: "Primary metric"}, {label: "Limit (illustrative)"}, {label: "Action"}],
+      [[1, "Quiet-tape bleed", "Daily theta % NAV; 20D decay", "Operating 5–10 bp/day; soft 10, hard 12", "Trim long gamma, lengthen tenor, pause adds"], [2, "Hidden directional beta", "$/1σ to each macro factor", "Equity, USD, duration caps", "Add offsetting hedge leg"], [3, "Style-factor proxy", "Style-replicable R²", "R² ≤ ~0.5; single-style β capped", "Re-examine edge; diversify expression"],
+       [4, "Theme concentration", "Tail-corr risk share per theme", "≤ 30% of book vol ($1.5M)", "Cut most crowded / least convex leg"], [5, "Crowding &amp; forced flow", "CTA stretch; forced flow vs ADV", "Stretch 70 no adds, 80 reduce; flow ≤ ~1 day ADV", "Reduce; switch to defined-loss options"], [6, "Path / un-holdability", "Worst 2w move × size vs L_stomach", "Per-line and book L not exceeded", "Cut size, not the trade"],
+       [7, "Convexity / surface", "Vega by tenor, gamma, vanna/volga", "Sub-limits; max grid loss", "Rebalance Greeks; buy back wings"]].map((r) => `<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join(""));
+    html += `<p class="small"><b>Drawdown ladder (combined $5M book):</b> review at ~1× book vol · de-gross the most crowded / least convex legs across all three books at ~1.5× · flatten to defined-loss and insurance only at ~2×. Daily bands ±$1M / ±$2.5M / ±$5M → same-day attribution, factor review, risk-committee note.</p>`;
+    // theta
+    const lv = lines.filter((l) => l.kind === "long-vol"); const theta = lv.reduce((s, l) => s + (+l.theta_day || 0), 0); const gamma = lv.reduce((s, l) => s + (+l.gamma || 0), 0); const prem = lv.reduce((s, l) => s + (+l.premium || 0), 0);
+    const nav = +S.nav || 1; const bpDay = theta / nav * 1e4; const status = bpDay >= 12 ? "HARD BREACH (≥12 bp)" : bpDay >= 10 ? "SOFT BREACH (≥10 bp)" : bpDay >= 5 ? "operating band" : "below band: the book has stopped owning the repricing";
+    html += `<h2>Theta budget: a price to spend, not a number to minimise</h2><div class="formula">|θ_book| ≤ θ_max·NAV per day · decay_20D = Σ θ ≤ 20D budget · efficiency = Γ / |θ| · break-even move = daily realised range at which long-gamma P&L offsets θ</div><div class="row"><div class="field"><label for="nav">NAV ($)</label><input type="number" id="nav" step="10000000" value="${S.nav}"></div></div>`;
+    html += kpis([["|θ_book| per day", money(theta)], ["bp of NAV / day", fmt(bpDay, 1), h(status)], ["20D decay", money(theta * 20)], ["Efficiency Γ/|θ|", theta > 0 ? fmt(gamma / theta * 1000, 2) : "n/a"], ["Premium in long-vol lines", money(prem)]]);
+    html += `<p class="small"><b>Status: ${h(status)}.</b> Soft breach → no adds, lengthen tenor or move from ATM to wings. Hard breach → trim least efficient long gamma first; never by selling the crash wings bought as insurance. Short-premium legs never offset the budget.</p>`;
+    el.innerHTML = html;
+    el.querySelectorAll("[data-bk]").forEach((n) => { n.onchange = () => { const p = S.book[+n.dataset.bk]; const f = n.dataset.f; p[f] = ["size", "L_stomach", "premium", "theta_day", "gamma"].includes(f) ? +n.value : n.value; save(); renderRisk(); renderOnePager(); }; });
+    el.querySelectorAll("button[data-delbk]").forEach((b) => { b.onclick = () => { S.book.splice(+b.dataset.delbk, 1); save(); renderRisk(); renderOnePager(); }; });
+    $("addBk").onclick = () => { S.book.push({instrument: "ust10", label: "New line", direction: "long", size: 10000, size_unit: "DV01 $/bp", L_stomach: 500000, theme: S.themes[0]?.name || "", kind: "delta-one", premium: 0, theta_day: 0, gamma: 0}); save(); renderRisk(); };
+    $("c1s").onchange = (e) => { S.corrOneStress = e.target.checked; save(); renderRisk(); }; $("lossLimit").onchange = (e) => { S.lossLimit = +e.target.value; save(); renderRisk(); }; $("nav").onchange = (e) => { S.nav = +e.target.value; save(); renderRisk(); };
+  }
+
+  // ---------------------------------------------------------------- T14 one-pager
+  function composeOnePager() {
+    const R = P.regime || {}; const hz = String(S.horizon || 20); const conf = P.confirmation[hz] || []; const dv = P.divergences[hz] || [];
+    const unresolved = dv.filter((d) => d.active && !(S.divNotes[d.divergence] || "").trim()).map((d) => d.divergence);
+    const resolved = dv.filter((d) => d.active && (S.divNotes[d.divergence] || "").trim()).map((d) => `${d.divergence} → ${S.divNotes[d.divergence]}`);
+    const crowd = P.crowding.rows; const scr = scoreScreener();
+    const best = scr.filter((r) => r.conviction >= 0.5 && !/CROWDED/.test(r.flags)).sort((a, b) => Math.abs(b.composite) - Math.abs(a.composite))[0];
+    const avoid = scr.filter((r) => /CROWDED/.test(r.flags)).slice(0, 3); const wait = scr.filter((r) => /CONFLICT/.test(r.flags)).slice(0, 3);
+    const L = [`# Macro Thematic, daily one-pager · ${new Date().toISOString().slice(0, 10)} (data as of ${P.as_of.frame_last})`, "", "## State",
+      `* Regime: ${R.quadrant} · RC ${fmt(R.rc, 2)} · ${R.state} (${R.days_in} days in quadrant)`, `* Playbook: ${R.playbook}`,
+      "* State variables: " + (R.variables || []).filter((v) => isNum(v.z)).map((v) => `${v.variable} z ${fmt(v.z, 1, "", true)} (m ${fmt(v.m, 1, "", true)})`).join(", "),
+      `* Credibility: ${R.credibility?.switch}; ACM TP 60D ${fmt(R.credibility?.tp_trend_bp, 0, " bp", true)}`, "", "## Evidence"];
+    conf.forEach((r) => L.push(`* ${r.narrative}: ${r.confirmed} confirmed, breadth ${r.breadth_classes}`));
+    L.push("* Divergences resolved: " + (resolved.join("; ") || "none active/resolved")); L.push("* Divergences UNRESOLVED: " + (unresolved.join(", ") || "none"));
+    L.push("", "## Positioning");
+    L.push("* Top-3 crowding: " + crowd.slice(0, 3).map((r) => `${r.label} C ${fmt(r.C, 0)} (${r.band}, crowd ${r.crowd_direction})`).join("; "));
+    L.push("* Threshold crossings (C ≥ 65): " + (crowd.filter((r) => r.C >= 65).map((r) => r.label).join(", ") || "none"));
+    L.push("", "## Action");
+    if (best) L.push(`* Best trade: ${best.composite > 0 ? "LONG" : "SHORT"} ${best.label}, composite ${fmt(best.composite, 2, "", true)}, conviction ${fmt(best.conviction, 2)} (${best.long_means}); worst 2w move ${fmt(best.adv_2w, 2)}`);
+    L.push("* Avoid: " + (avoid.map((r) => `${r.label} (${r.flags})`).join(", ") || "none flagged")); L.push("* Wait for dislocation: " + (wait.map((r) => r.label).join(", ") || "none"));
+    for (const t of S.themes) { const st = themeStats(t); L.push(`* Theme ${t.name}: ${st ? st.stage : "stage n/a"} · edge ${st ? fmt(st.edge, 1, " " + (t.unit || ""), true) : "n/a"} · expression: ${t.expression || ""}`); }
+    const lines = bookLines(); if (lines.length) L.push(`* Book: ${lines.length} lines, ${lines.filter((l) => !l.ok).length} not holdable at L_stomach`);
+    return L.join("\n");
+  }
+  function renderOnePager() {
+    const el = $("onepager"); if (!el) return; const md = composeOnePager();
+    el.innerHTML = `<div class="row"><button class="btn" id="copyOP" type="button">Copy one-pager (Markdown)</button><span class="small" id="copyMsg"></span></div><pre class="onepager" id="opText">${h(md)}</pre>
+      <h2>Operating cycle</h2>${tbl([{label: "When"}, {label: "Process"}], [["Pre-market", "Regime refresh, overnight moves vs confirmation map, event risk, one-pager out"], ["Morning", "Positioning updates, CTA proxy, options/skew; divergences resolved in writing"], ["Intraday", "Transition monitoring, vol shocks, liquidity in held expressions"],
+        ["Post-close", "Recompute momentum/z-scores, factor exposures, theme states, quality re-rank"], ["Friday", "CFTC deep dive, replication validation, carry/valuation re-fit, stress refresh"], ["Event-driven", "Unwind tree and portfolio stress within the hour of a major shock"]].map((r) => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join(""))}
+      <h2>Event risk, next 14 days ${badge("estimated")}</h2>${tbl([{label: "Date"}, {label: "Region"}, {label: "Event"}, {label: "Tier"}, {label: "Gauge"}, {label: "Status"}], (P.calendar || []).map((r) => `<tr><td>${h(r.date)}</td><td>${h(r.region)}</td><td>${h(r.event)}</td><td>${r.tier}</td><td>${h(r.gauge)}</td><td>${badge(r.status)}</td></tr>`).join("") || "<tr><td colspan='6'>none</td></tr>")}`;
+    $("copyOP").onclick = () => { const txt = $("opText").textContent; const done = () => { $("copyMsg").textContent = "copied"; };
+      const fallback = () => { const r = document.createRange(); r.selectNodeContents($("opText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (_) { $("copyMsg").textContent = "select and copy manually"; } };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(fallback); else fallback(); };
+  }
+
+  // ---------------------------------------------------------------- data & provenance
+  function renderData() {
+    const el = $("data"); const prov = P.provenance || []; const bad = prov.filter((r) => r.status !== "loaded").length;
+    let html = `<p>Generated ${h(P.generated)} · prices through ${h(P.as_of.spx)} (equities) and ${h(P.as_of.ust10)} (FRED curve). Refresh: <code>python -m apps.macro_thematic.export_artifact</code> then republish this page.</p>`;
+    html += `<h2>Blocks</h2>` + tbl([{label: "Block"}, {label: "Quality"}, {label: "Note"}], [["Regime engine", "live / proxy", "ISM replaced by INDPRO + GDPNow + UMich; policy history 1Y − EFFR, live 12m path from the fed-funds strip"], ["Confirmation map", "live", "20/60D moves from Yahoo and FRED"], ["Theme records and scenarios", "manual", "saved in this page's store; examples pre-filled"],
+      ["Screener: valuation", "live", "univariate OLS 20/60/90D + PCA curve residual"], ["Screener: carry", "live / proxy / n/a", "cash-curve carry+roll live; futures and FX proxy; commodities n/a without the second contract"], ["Screener: seasonality", "live (score 0)", "two gates computed; 12y history covers 2 of 4 sub-periods so gate 2 cannot pass yet"],
+      ["Screener: positioning", "estimated / live", `CTA ensemble model; CFTC: ${h(P.cftc_status || "")}`], ["Crowding", "mixed", "CFTC or CTA percentile; ETF volume z for flow and liquidity; concentration unavailable"], ["Vol premium", "live / manual", "VIX, MOVE, OVX, GVZ; manual IV elsewhere; index/basket skew ratio manual"],
+      ["Risk", "live on the manual book", "60D betas, episode replay over loaded history, CED, reverse stress"], ["Fed-funds strip", P.regime?.policy_path ? "live" : "unavailable", P.regime?.policy_path ? `${h(P.regime.policy_path.source)}; 12m cumulative priced ${fmt(P.regime.policy_path.cum_12m_bp, 0, " bp", true)}` : "n/a"]]
+      .map((r) => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td class="small">${r[2]}</td></tr>`).join(""));
+    html += `<details><summary>Universe (Yahoo + FRED): ${prov.length - bad} series loaded, ${bad} unavailable</summary>${tbl([{label: "Key"}, {label: "Name"}, {label: "Source"}, {label: "Ticker"}, {label: "Quality"}, {label: "Freq"}, {label: "Status"}, {label: "Last"}, {label: "Value", num: true}, {label: "Note"}], prov.map((r) => `<tr><td>${h(r.key)}</td><td>${h(r.name)}</td><td>${h(r.source)}</td><td>${h(r.ticker)}</td><td>${badge(r.quality)}</td><td>${h(r.freq)}</td><td>${h(r.status)}</td><td>${h(r.last)}</td><td class="num">${fmt(r.value, 3)}</td><td class="small">${h(r.note)}</td></tr>`).join(""))}</details>`;
+    html += `<h2>Public-data build plan (§4.5)</h2>` + tbl([{label: "Phase"}, {label: "Deliverable"}, {label: "Acceptance test"}, {label: "Status"}], [["1 Data spine", "Loaders + parquet cache (FRED, yfinance, CFTC, IBKR snapshot)", "Idempotent refresh; CFTC history matches published reports on 10 dates", "done (CFTC needs files/API)"], ["2 Regime engine", "Six state variables, RC, transition machine, credibility overlay", "Reproduces 2013 taper, 2020, 2022 inflation, 2022 UK", "built; validation pending"],
+      ["3 Pillars", "Carry, Valuation (univariate + PCA), Seasonality registry", "Carry reconciles by hand on 5 tenors; PCA flags 2015 and 2022", "built; seasonality needs 2000+ history"], ["4 Positioning and crowding", "CFTC metrics, replication, options layer, composite", "R² ≥ 0.6 vs SG Trend; crowding peaks precede known unwinds", "partial (no SG Trend / CFTC here)"], ["5 Risk and integration", "Factor model, CED, stress engine, theme tracker, one-pager", "Full daily cycle in under 5 minutes", "built"]]
+      .map((r) => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td class="small">${r[2]}</td><td>${r[3]}</td></tr>`).join(""));
+    const errs = Object.entries(P.errors || {}); if (errs.length) html += `<div class="alert">Export errors: ${errs.map(([k, v]) => `${h(k)}: ${h(v)}`).join("; ")}</div>`;
+    html += `<p class="small">Perimeter: public data and open-source tooling only. On joining a desk only the data spine changes: loaders swap to Bloomberg behind the same interfaces.</p>`;
+    el.innerHTML = html;
+  }
+
+  // ---------------------------------------------------------------- boot
+  function renderDependents() { renderCrowding(); renderLegs(); renderRisk(); renderOnePager(); }
+  function renderAll() { try { renderRegime(); } catch (e) { console.error(e); } try { renderThemes(); } catch (e) { console.error(e); } try { renderConfirmation(); } catch (e) { console.error(e); }
+    try { renderScreener(); } catch (e) { console.error(e); } try { renderCrowding(); } catch (e) { console.error(e); } try { renderLegs(); } catch (e) { console.error(e); }
+    try { renderRisk(); } catch (e) { console.error(e); } try { renderOnePager(); } catch (e) { console.error(e); } try { renderData(); } catch (e) { console.error(e); } }
+  function boot() {
+    savedEl = $("saved");
+    $("metaline").innerHTML = `<b>Data as of</b> ${h(P.as_of.frame_last)} · generated ${h(P.generated)} · regime <b>${h(P.regime?.quadrant)}</b>, RC ${fmt(P.regime?.rc, 2)}, ${h(P.regime?.state)}.`;
+    $("subline").textContent = `Data as of ${P.as_of.frame_last} · ${P.regime?.quadrant || ""} · RC ${fmt(P.regime?.rc, 2)}`;
+    $("themeBtn").onclick = () => { const r = document.documentElement; const d = r.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); r.setAttribute("data-theme", d === "dark" ? "light" : "dark"); setTimeout(redrawCharts, 30); };
+    try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => setTimeout(redrawCharts, 30)); } catch (_) {}
+    connectStore();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+})();
+</script>

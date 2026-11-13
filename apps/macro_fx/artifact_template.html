@@ -623,7 +623,7 @@ Week 8     dashboard + scorecard contract; docs; tag v1                         
       $('tabSurf').querySelectorAll('input').forEach(inp => inp.addEventListener('change', e => { const c = e.target.dataset.ccy, f = e.target.dataset.f; S.surface[c] = S.surface[c] || {}; const v = parseFloat(e.target.value); if (isFinite(v)) S.surface[c][f] = v; else delete S.surface[c][f]; refreshDependents(); persist(); }));
     };
     renderPos(); renderAmp(); renderSurf();
-    renderPositioning.refresh = () => { renderAmp(); renderSurf(); };
+    renderPositioning.refresh = () => { renderPos(); renderAmp(); renderSurf(); };
   }
 
   // ================= 5. Seasonality =================
