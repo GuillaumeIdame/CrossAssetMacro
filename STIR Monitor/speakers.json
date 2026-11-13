@@ -1,0 +1,35 @@
+[
+  {
+    "bank": "Fed", "name": "Christopher Waller", "role": "Governor", "date": "2026-11-12",
+    "hawkish": 9, "last4": [7, 8, 7, 6],
+    "voting": "Always votes in FOMC", "votes_next": true,
+    "title": "Economic Outlook — remarks at the Council on Foreign Relations",
+    "headline": "Waller leans toward a 25bp hike in December and would back 50bp if October CPI comes in hot.",
+    "bullets": [
+      "Growth: real GDP tracking ~2.6% in Q4; consumer spending has not slowed as he expected in the summer.",
+      "Labour: payroll gains of ~180k/month and unemployment back at 4.0% — 'no sign of the cracks I was worried about'.",
+      "Inflation: core PCE stuck near 3.1% y/y; services ex-housing re-accelerating, tariff pass-through broader than assumed.",
+      "Expectations: 5y5y breakevens up ~20bp since September — 'not a level I'm comfortable ignoring'.",
+      "Policy stance: current setting 'only mildly restrictive, if at all'; sees a 25bp hike on 9 Dec as the base case.",
+      "Reaction function: a hot October core CPI (≥0.4% m/m) would make him argue for 50bp.",
+      "Risks: skewed to more persistent inflation; downside growth risk from tighter financial conditions seen as manageable."
+    ],
+    "rates_read": "Supports the hawkish front end — {dec} priced for 9 Dec and {jan} cumulative by Jan; a hot CPI print opens the door to a full 25bp+ in Dec."
+  },
+  {
+    "bank": "Fed", "name": "Tom Barkin", "role": "Richmond Fed President", "date": "2026-11-12",
+    "hawkish": 7, "last4": [7, 6, 7, 7],
+    "voting": "Doesn't vote in next FOMC but votes in 2027", "votes_next": false,
+    "title": "Navigating Uncertainty — Richmond Fed Economic Outlook Forum",
+    "headline": "Barkin says the Fed should move with care: inflation risk argues for firmer policy, but he wants more data before committing to a hike.",
+    "bullets": [
+      "Growth: business contacts report steady demand; capex plans firming outside of interest-sensitive sectors.",
+      "Labour: hiring 'measured but resilient'; firms reluctant to lay off after recent shortages.",
+      "Inflation: price-setters again comfortable passing through cost increases; sees core stuck above 3%.",
+      "Policy stance: 'open to tightening' but prefers to see Oct CPI and Nov payrolls before December.",
+      "Pace: favours 25bp steps if action is needed; sees little case for 50bp.",
+      "Risks: two-sided — sticky inflation vs. a sharper consumer slowdown if real incomes compress."
+    ],
+    "rates_read": "Validates current pricing rather than adding to it — {dec} for 9 Dec / {jan} by Jan looks fair to him; curve likely range-bound into CPI."
+  }
+]
