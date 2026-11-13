@@ -180,12 +180,12 @@
   <footer>Macro Thematic Toolkit · internal research tooling, not investment advice · all calibrations illustrative until connected to live desk data · <a href="#top">↑ top</a></footer>
 </div>
 
-<script type="application/json" id="data">__PAYLOAD__</script>
+<script type="application/json" id="payload">__PAYLOAD__</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
 <script>
 (function () {
   "use strict";
-  const P = JSON.parse(document.getElementById("data").textContent);
+  const P = JSON.parse(document.getElementById("payload").textContent);
   const $ = (id) => document.getElementById(id);
   const h = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
   const isNum = (x) => typeof x === "number" && isFinite(x);

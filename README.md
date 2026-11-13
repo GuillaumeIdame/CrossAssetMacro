@@ -19,6 +19,22 @@ streamlit run streamlit_app.py                  # regime engine only (legacy ent
 First load pulls ~12 years of Yahoo and FRED history (30–60 s), cached 6 h in `.cache/`; the
 sidebar button clears the cache.
 
+## The three artifacts (self-contained HTML, the primary deliverable)
+
+| Book | Artifact | Rebuild |
+|---|---|---|
+| G3 Central Bank Toolkit | https://claude.ai/artifact/Ff74FpdA9oFN38edXNfN5i | `python -m apps.g3_central_bank.export_artifact` → `export/g3_central_bank.html` |
+| Macro FX Toolkit | https://claude.ai/artifact/UUJHp6hn7wzQs7gugxLPJV | `python -m apps.macro_fx.export_artifact` → `export/macro_fx.html` |
+| Macro Thematic Toolkit | https://claude.ai/artifact/38ABBtCHwkjG38duWkKX7n | `python -m apps.macro_thematic.export_artifact` → `export/macro_thematic.html` |
+
+Each exporter recomputes every number from the data spine and embeds it in the page; the
+browser-side JavaScript does the interactive work (meeting-path bootstrap, scenario trees, Kelly,
+screener re-weighting, book sizing, shocks). Desk inputs (probabilities, trade cards, themes, books)
+persist through the artifact's `db` capability under `inputs/cb`, `inputs/fx`, `inputs/th`, so a
+republish never loses them and Claude can read them back. To refresh data: run the exporter, then
+republish the same file to the same artifact URL. The Streamlit apps below remain as the
+development / debugging view of the same engines.
+
 ## The three apps
 
 | App | Process chain | Pages |
