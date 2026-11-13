@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STIR Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12161f; --card:#1b212d; --border:#2a3242; --border-soft:#232a38;
+  --text:#d7dce5; --muted:#8a93a4; --faint:#5d6576; --accent:#22d3ee;
+  --pos:34,197,94; --neg:239,68,68; --zero:#363d4b;
+  --sofr:#ff6fae; --euribor:#4ade80; --sonia:#fbbf24; --corra:#2dd4bf; --saron:#fb923c; --aussie:#d9c7a3;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font-family:var(--sans);font-size:13px;line-height:1.45;padding:20px;-webkit-font-smoothing:antialiased}
+.mono,table,.pill,.chip,.card-title,.stepper,.badge,.tag{font-family:var(--mono)}
+
+/* top bar */
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin:0 0 16px}
+.topbar h1{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin:0}
+.topbar h1 span{color:var(--accent)}
+.topbar .meta{font-family:var(--mono);color:var(--muted);font-size:11px;letter-spacing:.06em}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.span-12{grid-column:span 12}.span-7{grid-column:span 7}.span-6{grid-column:span 6}.span-5{grid-column:span 5}
+@media (max-width:1100px){.span-7,.span-5{grid-column:span 12}}
+@media (max-width:900px){.span-6{grid-column:span 12}}
+@media (max-width:600px){body{padding:12px}.grid{gap:12px}}
+
+/* card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;min-width:0}
+.card-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--text);margin:0}
+.card-title::before{content:"";width:3px;height:14px;border-radius:2px;background:var(--accent);flex:none}
+.card-title .sub{color:var(--muted);font-weight:500;letter-spacing:.08em}
+.note{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:10px;letter-spacing:.03em}
+
+/* pills & toggles */
+.pills{display:flex;flex-wrap:wrap;gap:4px}
+.pill{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:3px 9px;border-radius:999px;cursor:pointer;letter-spacing:.03em;transition:all .12s}
+.pill:hover{color:var(--text);border-color:#3b4558}
+.pill.active{background:rgba(34,211,238,.14);border-color:var(--accent);color:var(--accent)}
+.toggle{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.toggle .pill{border:0;border-radius:0;padding:4px 11px}
+.toggle .pill+.pill{border-left:1px solid var(--border)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* tables */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:separate;border-spacing:3px;width:100%;font-size:12px}
+th{color:var(--muted);font-weight:500;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;text-align:center;white-space:nowrap}
+th.grp{color:var(--text);border-bottom:1px solid var(--border);padding-bottom:6px}
+td{padding:6px 6px;text-align:center;white-space:nowrap;border-radius:4px;border:1px solid transparent;font-variant-numeric:tabular-nums}
+td.rowlab{text-align:left;font-weight:600;padding-left:2px;letter-spacing:.04em}
+td.rowlab i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;vertical-align:0}
+td.heat{min-width:54px;color:#eef2f7}
+td.heat.zero{background:var(--zero);color:#aab2c0}
+td.heat.na{color:var(--faint);background:transparent}
+td.maxcell{border-color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+td.num{text-align:right}
+th.r{text-align:right}
+
+/* bar chart */
+.bars{display:flex;flex-direction:column;gap:9px;padding:4px 0}
+.bar-row{display:grid;grid-template-columns:96px 1fr 62px;align-items:center;gap:10px;font-family:var(--mono);font-size:12px}
+.bar-lab{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.bar-lab i{width:8px;height:8px;border-radius:2px;flex:none}
+.bar-track{position:relative;height:20px}
+.bar-track::before{content:"";position:absolute;left:50%;top:-5px;bottom:-5px;width:1px;background:#4a5366}
+.bar{position:absolute;top:3px;height:14px;border-radius:2px;transition:all .25s ease}
+.bar-val{text-align:right;font-variant-numeric:tabular-nums}
+.axis{display:grid;grid-template-columns:96px 1fr 62px;gap:10px;font-family:var(--mono);font-size:10px;color:var(--faint)}
+.axis div:nth-child(2){display:flex;justify-content:space-between}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{font-size:11px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;background:#161b25;white-space:nowrap}
+.chip b{font-weight:500;color:var(--muted);margin-right:6px}
+.chip.pos span{color:rgb(var(--pos))}.chip.neg span{color:rgb(var(--neg))}
+.chip.max{border-color:rgb(var(--pos))}.chip.min{border-color:var(--accent)}
+.chart-wrap{overflow-x:auto}
+.chart-wrap svg{display:block;width:100%;min-width:620px;height:auto}
+
+/* speaker card */
+.spk-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.badge{background:#2b3446;color:#cfe3ff;border:1px solid #3c4860;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.08em}
+.spk-name{font-weight:600;font-size:14px}
+.spk-role{color:var(--muted);font-size:11.5px}
+.score{font-family:var(--mono);font-size:12px;color:var(--text)}
+.score small{color:var(--muted)}
+.tag{font-size:10.5px;padding:2px 7px;border-radius:4px;letter-spacing:.04em}
+.spk-date{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.voting{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.voting .dot{width:7px;height:7px;border-radius:50%}
+.warn{font-family:var(--mono);font-size:11px;color:#fbbf24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:6px;padding:5px 8px;margin:6px 0 8px}
+.spk-title{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px}
+.spk-headline{font-weight:600;font-size:13.5px;margin:0 0 8px;color:#f1f4f8}
+.spk-bullets{margin:0 0 12px;padding-left:16px}
+.spk-bullets li{margin:3px 0;color:#c4cad5}
+.spk-bullets li b{font-family:var(--mono);font-weight:500;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.rates-read{border:1px solid rgba(34,211,238,.35);background:rgba(34,211,238,.06);border-radius:8px;padding:10px 12px}
+.rates-read h4{margin:0 0 4px;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--accent)}
+.rates-read p{margin:0}
+
+/* stepper */
+.stepper{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.stepper button{background:#161b25;border:1px solid var(--border);color:var(--text);width:24px;height:22px;border-radius:5px;cursor:pointer;font-size:10px;line-height:1}
+.stepper button:disabled{opacity:.35;cursor:default}
+.stepper .n{min-width:16px;text-align:center;color:var(--text);font-weight:600}
+.stepper .date{color:var(--text);margin-left:4px}
+.d-pos{color:rgb(var(--pos))}.d-neg{color:rgb(var(--neg))}.d-zero{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<script>
+/* =====================================================================
+   MOCK DATA — one block per widget. Replace with live feeds later.
+   outrights.last / outrights.reference are raw futures PRICES (100 - rate).
+   Everything displayed in bp is derived by computeAll() below.
+   ===================================================================== */
+const MOCK_DATA = {
+  "meta": {
+    "asOf": "2026-11-13",
+    "asOfTime": "14:32 GMT"
+  },
+  "outrights": {
+    "contracts": ["U26", "Z26", "H27", "M27", "U27", "Z27", "H28", "M28", "U28", "Z28", "H29", "M29", "Z29"],
+    "unit": "price (100 - rate)",
+    "last": {
+      "SOFR": [96.28, 96.1933, 96.1067, 96.02, 96.0067, 95.9933, 95.98, 96.0033, 96.0267, 96.05, 96.0733, 96.0967, 96.12],
+      "Euribor": [97.98, 97.9533, 97.9267, 97.9, 97.86, 97.82, 97.78, 97.7367, 97.6933, 97.65, 97.6267, 97.6033, 97.58],
+      "SONIA": [96.38, 96.4033, 96.4267, 96.45, 96.4733, 96.4967, 96.52, 96.53, 96.54, 96.55, 96.5433, 96.5367, 96.53],
+      "CORRA": [97.78, 97.8, 97.82, 97.84, 97.8533, 97.8667, 97.88, 97.87, 97.86, 97.85, 97.8267, 97.8033, null],
+      "SARON": [100.05, 100.06, 100.07, 100.08, 100.0467, 100.0133, 99.98, 99.9367, 99.8933, 99.85, 99.8067, 99.7633, null]
+    },
+    "reference": {
+      "15m": {
+        "SOFR": [96.2875, 96.2033, 96.1217, 96.035, 96.0267, 96.0158, 96.0, 96.0233, 96.0442, 96.0675, 96.0883, 96.1092, 96.1325],
+        "Euribor": [97.9825, 97.9558, 97.9292, 97.905, 97.865, 97.825, 97.785, 97.7417, 97.6983, 97.655, 97.6317, 97.6083, 97.5825],
+        "SONIA": [96.3825, 96.4083, 96.4317, 96.4575, 96.4808, 96.5067, 96.53, 96.5375, 96.5475, 96.5575, 96.5508, 96.5417, 96.535],
+        "CORRA": [97.775, 97.7925, 97.8125, 97.83, 97.8433, 97.8542, 97.8675, 97.86, 97.85, 97.84, 97.8167, 97.7958, null],
+        "SARON": [100.05, 100.06, 100.07, 100.08, 100.0492, 100.0158, 99.9825, 99.9392, 99.8958, 99.8525, 99.8092, 99.7658, null]
+      },
+      "30m": {
+        "SOFR": [96.295, 96.2108, 96.1292, 96.0525, 96.0467, 96.0358, 96.0175, 96.0458, 96.0567, 96.085, 96.1008, 96.1217, 96.1425],
+        "Euribor": [97.9825, 97.9583, 97.9317, 97.9075, 97.87, 97.8325, 97.7925, 97.7467, 97.7033, 97.66, 97.6342, 97.6108, 97.5875],
+        "SONIA": [96.385, 96.4108, 96.4367, 96.4625, 96.4883, 96.5117, 96.5375, 96.5475, 96.555, 96.565, 96.5558, 96.5467, 96.5425],
+        "CORRA": [97.77, 97.7875, 97.8075, 97.8225, 97.8308, 97.8417, 97.86, 97.8525, 97.8425, 97.835, 97.8117, 97.7908, null],
+        "SARON": [100.05, 100.06, 100.07, 100.08, 100.0492, 100.0183, 99.985, 99.9417, 99.8983, 99.855, 99.8117, 99.7683, null]
+      },
+      "1h": {
+        "SOFR": [96.3, 96.2258, 96.1417, 96.0675, 96.0642, 96.0533, 96.04, 96.0533, 96.0742, 96.095, 96.1208, 96.1367, 96.155],
+        "Euribor": [97.985, 97.9608, 97.9367, 97.9125, 97.875, 97.835, 97.7975, 97.7492, 97.7058, 97.6625, 97.6392, 97.6133, 97.59],
+        "SONIA": [96.3875, 96.4158, 96.4442, 96.4675, 96.4958, 96.5242, 96.545, 96.55, 96.56, 96.5675, 96.5633, 96.5567, 96.545],
+        "CORRA": [97.7675, 97.7825, 97.7975, 97.8175, 97.8233, 97.8317, 97.85, 97.8375, 97.8275, 97.825, 97.7992, 97.7808, null],
+        "SARON": [100.045, 100.0575, 100.07, 100.0825, 100.0517, 100.0208, 99.9875, 99.9442, 99.9008, 99.8575, 99.8142, 99.7708, null]
+      },
+      "Day": {
+        "SOFR": [96.33, 96.2633, 96.1917, 96.1375, 96.1417, 96.1333, 96.125, 96.1358, 96.1617, 96.1725, 96.1758, 96.2067, 96.2025],
+        "Euribor": [97.99, 97.9683, 97.9467, 97.9275, 97.89, 97.8625, 97.82, 97.7692, 97.7258, 97.68, 97.6542, 97.6283, 97.6075],
+        "SONIA": [96.4025, 96.4333, 96.4642, 96.4925, 96.5258, 96.5517, 96.57, 96.59, 96.5925, 96.6, 96.5933, 96.5792, 96.5725],
+        "CORRA": [97.75, 97.755, 97.765, 97.785, 97.7833, 97.7867, 97.8075, 97.805, 97.795, 97.785, 97.7742, 97.7483, null],
+        "SARON": [100.04, 100.055, 100.07, 100.085, 100.0567, 100.0258, 99.995, 99.9517, 99.9108, 99.8675, 99.8242, 99.7808, null]
+      },
+      "Week": {
+        "SOFR": [96.355, 96.3083, 96.2342, 96.19, 96.1867, 96.2358, 96.2125, 96.2133, 96.2367, 96.2225, 96.2483, 96.2517, 96.2625],
+        "Euribor": [97.9975, 97.9783, 97.9617, 97.94, 97.9075, 97.88, 97.835, 97.7967, 97.7408, 97.6925, 97.6767, 97.6458, 97.615],
+        "SONIA": [96.4125, 96.4433, 96.4792, 96.515, 96.5483, 96.5917, 96.6025, 96.6125, 96.6125, 96.6325, 96.6108, 96.6017, 96.5925],
+        "CORRA": [97.735, 97.745, 97.745, 97.745, 97.7433, 97.7567, 97.75, 97.7525, 97.745, 97.7625, 97.7417, 97.7283, null],
+        "SARON": [100.0325, 100.0525, 100.07, 100.0875, 100.0617, 100.0358, 100.005, 99.9592, 99.9183, 99.875, 99.8392, 99.7958, null]
+      },
+      "Since": {
+        "SOFR": [96.385, 96.3533, 96.3167, 96.25, 96.2917, 96.2758, 96.2925, 96.2933, 96.3192, 96.3125, 96.2858, 96.2992, 96.3175],
+        "Euribor": [98.0, 97.9833, 97.9742, 97.965, 97.9375, 97.9075, 97.855, 97.8092, 97.7583, 97.72, 97.6892, 97.6633, 97.63],
+        "SONIA": [96.425, 96.4608, 96.5092, 96.5425, 96.5833, 96.6242, 96.625, 96.6425, 96.64, 96.64, 96.6458, 96.6192, 96.6125],
+        "CORRA": [97.7125, 97.72, 97.725, 97.7175, 97.6908, 97.6867, 97.73, 97.7325, 97.705, 97.715, 97.6967, 97.7008, null],
+        "SARON": [100.03, 100.05, 100.07, 100.09, 100.0667, 100.0408, 100.0125, 99.9717, 99.9283, 99.885, 99.8467, 99.7983, null]
+      },
+      "Since EU Open": {
+        "SOFR": [96.3125, 96.2433, 96.1667, 96.0925, 96.0892, 96.1083, 96.0725, 96.0933, 96.1142, 96.14, 96.1433, 96.1667, 96.185],
+        "Euribor": [97.9875, 97.9658, 97.9442, 97.9225, 97.8875, 97.85, 97.81, 97.7617, 97.7183, 97.6725, 97.6442, 97.6208, 97.5975],
+        "SONIA": [96.395, 96.4233, 96.4517, 96.4825, 96.5108, 96.5417, 96.5575, 96.57, 96.575, 96.5825, 96.5783, 96.5667, 96.56],
+        "CORRA": [97.76, 97.77, 97.785, 97.8, 97.7983, 97.8067, 97.8225, 97.8225, 97.8075, 97.81, 97.7817, 97.7658, null],
+        "SARON": [100.0425, 100.0575, 100.07, 100.0825, 100.0542, 100.0233, 99.99, 99.9492, 99.9058, 99.8625, 99.8217, 99.7783, null]
+      }
+    }
+  },
+  "decSpreads": {
+    "curves": ["SOFR", "Euribor", "SONIA", "CORRA"],
+    "pairs": [
+      ["Z26", "Z27", "Z6Z7"],
+      ["Z27", "Z28", "Z7Z8"],
+      ["Z28", "Z29", "Z8Z9"]
+    ],
+    "groups": [
+      {
+        "label": "DAY",
+        "timeframe": "Day"
+      },
+      {
+        "label": "THIS WEEK",
+        "timeframe": "Week"
+      }
+    ]
+  },
+  "heatmap": {
+    "curves": ["SOFR", "Euribor", "SONIA", "CORRA", "SARON"],
+    "columns": ["U26", "Z26", "H27", "M27", "U27", "Z27", "H28", "M28", "U28", "Z28", "H29", "M29"],
+    "timeframes": ["15m", "30m", "1h", "Day", "Week", "Since", "Since EU Open"],
+    "default": "Day"
+  },
+  "sentiment": {
+    "contract": "Z27",
+    "reference": "Fri settle",
+    "timeframes": ["Day", "Week", "1W", "1M", "3M", "6M"],
+    "default": "Day",
+    "changes": {
+      "Day": {
+        "Aussie Bills": -5.25,
+        "SARON": -1.0,
+        "Euribor": 2.75,
+        "SONIA": 6.5,
+        "CORRA": -5.25,
+        "SOFR": 15.0
+      },
+      "Week": {
+        "Aussie Bills": -7.75,
+        "SARON": -1.25,
+        "Euribor": 5.5,
+        "SONIA": 10.0,
+        "CORRA": -11.0,
+        "SOFR": 24.25
+      },
+      "1W": {
+        "Aussie Bills": -10.0,
+        "SARON": -1.5,
+        "Euribor": 5.75,
+        "SONIA": 10.0,
+        "CORRA": -14.5,
+        "SOFR": 29.5
+      },
+      "1M": {
+        "Aussie Bills": -16.25,
+        "SARON": -3.25,
+        "Euribor": 11.25,
+        "SONIA": 17.75,
+        "CORRA": -22.0,
+        "SOFR": 36.25
+      },
+      "3M": {
+        "Aussie Bills": -15.25,
+        "SARON": -3.5,
+        "Euribor": 12.25,
+        "SONIA": 18.5,
+        "CORRA": -33.5,
+        "SOFR": 61.25
+      },
+      "6M": {
+        "Aussie Bills": -25.0,
+        "SARON": -5.5,
+        "Euribor": 17.0,
+        "SONIA": 27.25,
+        "CORRA": -25.5,
+        "SOFR": 80.75
+      }
+    }
+  },
+  "curve": {
+    "modes": ["Bonds", "Brazil DI"],
+    "defaultMode": "Brazil DI",
+    "timeframes": ["15m", "30m", "1h", "Day", "Since"],
+    "default": "Day",
+    "reference": "previous close",
+    "data": {
+      "Brazil DI": {
+        "contracts": ["F27", "N27", "F28", "N28", "F29", "F30", "F31", "F32", "F33", "F34", "F35", "F36", "F37"],
+        "changes": {
+          "15m": [2.6, 13.2, 18.6, 22.2, 23.1, 27.8, 27.6, 26.5, 26.4, 27.1, 25.1, 26.2, 26.5],
+          "30m": [4.9, 24.8, 35.3, 42.4, 48.0, 52.4, 55.3, 50.7, 49.7, 49.0, 51.1, 47.5, 48.3],
+          "1h": [8.1, 42.0, 60.6, 74.6, 83.8, 92.9, 93.3, 94.2, 91.1, 88.5, 83.5, 89.7, 81.4],
+          "Day": [23.3, 119.9, 168.4, 197.6, 221.5, 246.0, 258.7, 254.1, 247.3, 240.2, 236.6, 231.4, 228.2],
+          "Since": [21.2, 108.5, 136.4, 169.1, 197.8, 223.4, 221.1, 212.5, 205.3, 217.6, 196.4, 200.9, 187.8]
+        }
+      },
+      "Bonds": {
+        "contracts": ["UST 2Y", "UST 3Y", "UST 5Y", "UST 7Y", "UST 10Y", "UST 20Y", "UST 30Y"],
+        "changes": {
+          "15m": [1.0, 1.1, 0.9, 0.8, 0.7, 0.5, 0.4],
+          "30m": [1.9, 2.0, 1.7, 1.4, 1.2, 1.0, 0.8],
+          "1h": [3.4, 3.2, 3.0, 2.5, 2.3, 1.6, 1.4],
+          "Day": [9.4, 9.1, 8.2, 7.0, 6.1, 4.6, 3.8],
+          "Since": [8.4, 7.5, 7.4, 6.2, 5.5, 3.9, 3.2]
+        }
+      }
+    }
+  },
+  "speakers": [
+    {
+      "bank": "Fed",
+      "name": "Christopher Waller",
+      "role": "Governor",
+      "date": "2026-11-12",
+      "hawkish": 9,
+      "last4": [7, 8, 7, 6],
+      "voting": "Always votes in FOMC",
+      "title": "Economic Outlook — remarks at the Council on Foreign Relations",
+      "headline": "Waller leans toward a 25bp hike in December and would back 50bp if October CPI comes in hot.",
+      "bullets": [
+        "Growth: real GDP tracking ~2.6% in Q4; consumer spending has not slowed as he expected in the summer.",
+        "Labour: payroll gains of ~180k/month and unemployment back at 4.0% — 'no sign of the cracks I was worried about'.",
+        "Inflation: core PCE stuck near 3.1% y/y; services ex-housing re-accelerating, tariff pass-through broader than assumed.",
+        "Expectations: 5y5y breakevens up ~20bp since September — 'not a level I'm comfortable ignoring'.",
+        "Policy stance: current setting 'only mildly restrictive, if at all'; sees a 25bp hike on 9 Dec as the base case.",
+        "Reaction function: a hot October core CPI (≥0.4% m/m) would make him argue for 50bp.",
+        "Risks: skewed to more persistent inflation; downside growth risk from tighter financial conditions seen as manageable.",
+        "Balance sheet: comfortable keeping QT runoff unchanged; no link between rates and BS decisions."
+      ],
+      "ratesRead": "Supports the hawkish front end — ~20bp priced for 9 Dec and ~27bp cumulative by Jan; a hot CPI print opens the door to a full 25bp+ in Dec and pressure on SOFR Z6Z7 flatteners."
+    },
+    {
+      "bank": "Fed",
+      "name": "Tom Barkin",
+      "role": "Richmond Fed President",
+      "date": "2026-11-12",
+      "hawkish": 7,
+      "last4": [7, 6, 7, 7],
+      "voting": "Doesn't vote in next FOMC but votes in 2027",
+      "title": "Navigating Uncertainty — Richmond Fed Economic Outlook Forum",
+      "headline": "Barkin says the Fed should move with care: inflation risk argues for firmer policy, but he wants more data before committing to a hike.",
+      "bullets": [
+        "Growth: business contacts report steady demand; capex plans firming outside of interest-sensitive sectors.",
+        "Labour: hiring 'measured but resilient'; firms reluctant to lay off after recent shortages.",
+        "Inflation: price-setters again comfortable passing through cost increases; sees core stuck above 3%.",
+        "Policy stance: 'open to tightening' but prefers to see Oct CPI and Nov payrolls before December.",
+        "Pace: favours 25bp steps if action is needed; sees little case for 50bp.",
+        "Risks: two-sided — sticky inflation vs. a sharper consumer slowdown if real incomes compress."
+      ],
+      "ratesRead": "Validates current pricing rather than adding to it — ~20bp for 9 Dec / ~27bp by Jan looks fair to him; limited read-through for SOFR beyond Z26, curve likely range-bound into CPI."
+    }
+  ],
+  "pricedMoves": {
+    "SOFR": {
+      "label": "SOFR / Fed",
+      "bank": "Fed",
+      "startRate": 3.63,
+      "meetings": ["2026-12-09", "2027-01-27", "2027-03-17", "2027-04-28", "2027-06-16", "2027-07-28", "2027-09-22", "2027-11-03"],
+      "history": [
+        [20.3, 7.4, 3.2, 1.2, -0.1, -1.5, -3.0, -3.5],
+        [19.2, 6.0, 3.4, 1.0, -0.2, -1.1, -2.7, -2.9],
+        [17.7, 6.2, 3.0, 1.3, 0.3, -0.5, -2.0, -2.3],
+        [15.0, 5.4, 2.3, 1.4, 0.1, -1.2, -2.4, -1.8],
+        [13.4, 4.6, 1.9, 0.7, 0.2, -0.2, -2.0, -1.9],
+        [12.0, 4.1, 1.7, 0.4, -0.3, -1.1, -1.0, -1.8],
+        [10.3, 4.0, 2.2, 0.7, -0.3, -1.0, -1.8, -1.7]
+      ]
+    },
+    "CORRA": {
+      "label": "CORRA / BoC",
+      "bank": "BoC",
+      "startRate": 2.25,
+      "meetings": ["2026-12-09", "2027-01-27", "2027-03-10", "2027-04-14", "2027-06-02", "2027-07-14", "2027-09-08", "2027-10-27"],
+      "history": [
+        [-3.9, -4.9, -2.4, -1.4, -0.3, 0.2, 0.5, 1.0],
+        [-3.0, -4.3, -2.1, -1.9, -1.0, 0.4, 0.1, 1.0],
+        [-2.6, -3.2, -2.0, -1.5, -0.9, -0.1, 0.4, 1.4],
+        [-2.0, -2.8, -2.0, -1.6, -0.3, 0.3, 0.4, 0.9],
+        [-2.6, -2.9, -0.7, -0.5, -0.1, 0.4, 0.1, 0.2],
+        [-2.1, -2.3, -0.8, -0.2, -0.1, 0.1, 0.6, 0.5],
+        [-1.3, -2.4, -0.5, -0.9, 0.2, 0.1, 0.0, -0.0]
+      ]
+    }
+  }
+}
+;
+</script>
+
+<header class="topbar">
+  <h1><span>■</span> STIR / Short-Rates Monitor</h1>
+  <div class="meta" id="asof"></div>
+</header>
+
+<main class="grid">
+  <section class="card span-12" id="w-heatmap">
+    <div class="card-head">
+      <h2 class="card-title">Net Change <span class="sub">· Outrights · bp</span></h2>
+      <div class="pills" data-group="heatmap"></div>
+    </div>
+    <div class="scroll"><table id="heatmap-table"></table></div>
+    <div class="note">Rate change in bp vs reference (−Δprice×100). White border = largest |move| in row.</div>
+  </section>
+
+  <section class="card span-5" id="w-dec">
+    <div class="card-head"><h2 class="card-title">Dec Spreads <span class="sub">· Δ bp</span></h2></div>
+    <div class="scroll"><table id="dec-table"></table></div>
+    <div class="note">Spread = price(front Z) − price(back Z). + = steepening of rates curve.</div>
+  </section>
+
+  <section class="card span-7" id="w-sent">
+    <div class="card-head">
+      <h2 class="card-title" id="sent-title">Z27 · vs Fri settle</h2>
+      <div class="pills" data-group="sentiment"></div>
+    </div>
+    <div class="bars" id="sent-bars"></div>
+    <div class="axis" id="sent-axis"></div>
+  </section>
+
+  <section class="card span-12" id="w-curve">
+    <div class="card-head">
+      <h2 class="card-title">Net Change Curve <span class="sub" id="curve-sub"></span></h2>
+      <div class="controls">
+        <div class="toggle" data-group="curveMode"></div>
+        <div class="pills" data-group="curve"></div>
+      </div>
+    </div>
+    <div class="chips" id="curve-chips"></div>
+    <div class="chart-wrap" id="curve-chart"></div>
+  </section>
+
+  <section class="card span-6 priced" data-key="SOFR"></section>
+  <section class="card span-6 priced" data-key="CORRA"></section>
+
+  <div class="span-12 card-head" style="margin:4px 0 -4px"><h2 class="card-title">Central Bank Speakers</h2></div>
+  <div class="span-12 grid" id="speakers" style="gap:inherit"></div>
+</main>
+
+<script>
+/* =====================================================================
+   COMPUTE LAYER — raw prices / meeting pricing  ->  display numbers
+   ===================================================================== */
+const r2 = x => Math.round(x * 100) / 100;
+
+/** Rate change (bp) from price change: rates up = price down. */
+function outrightChange(last, ref) {
+  if (last == null || ref == null) return null;
+  return r2(-(last - ref) * 100);
+}
+
+/** Spread change (bp) for front/back contract: Δ(Pfront − Pback)×100. */
+function spreadChange(lf, lb, rf, rb) {
+  if ([lf, lb, rf, rb].some(v => v == null)) return null;
+  return r2(((lf - lb) - (rf - rb)) * 100);
+}
+
+/** Cumulative moves and implied rates from per-meeting priced moves. */
+function meetingPath(startRate, moves) {
+  let cum = 0;
+  return moves.map(m => { cum += m; return { move: m, cum: r2(cum), implied: startRate + cum / 100 }; });
+}
+
+function computeAll(D) {
+  const o = D.outrights, idx = Object.fromEntries(o.contracts.map((c, i) => [c, i]));
+
+  // outright net changes per timeframe / curve / contract
+  const outr = {};
+  for (const tf of Object.keys(o.reference)) {
+    outr[tf] = {};
+    for (const cv of Object.keys(o.last)) {
+      outr[tf][cv] = Object.fromEntries(o.contracts.map((c, i) => [c, outrightChange(o.last[cv][i], o.reference[tf][cv]?.[i])]));
+    }
+  }
+
+  // Dec-to-Dec spread changes
+  const dec = {};
+  for (const g of D.decSpreads.groups) {
+    const ref = o.reference[g.timeframe];
+    dec[g.timeframe] = {};
+    for (const cv of D.decSpreads.curves) {
+      dec[g.timeframe][cv] = D.decSpreads.pairs.map(([f, b]) =>
+        spreadChange(o.last[cv][idx[f]], o.last[cv][idx[b]], ref[cv][idx[f]], ref[cv][idx[b]]));
+    }
+  }
+
+  // priced-move tables: path per day-ago, plus 1D delta of cumulative
+  const priced = {};
+  for (const [k, p] of Object.entries(D.pricedMoves)) {
+    const paths = p.history.map(m => meetingPath(p.startRate, m));
+    priced[k] = paths.slice(0, -1).map((path, d) =>
+      path.map((row, i) => ({ ...row, d1: r2(row.cum - paths[d + 1][i].cum) })));
+  }
+  return { outr, dec, priced };
+}
+
+const C = computeAll(MOCK_DATA);
+
+/* =====================================================================
+   UI HELPERS
+   ===================================================================== */
+const CURVE_COLOR = { SOFR: 'var(--sofr)', Euribor: 'var(--euribor)', SONIA: 'var(--sonia)', CORRA: 'var(--corra)', SARON: 'var(--saron)', 'Aussie Bills': 'var(--aussie)' };
+const fmt = (v, d = 2) => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+const el = (sel, root = document) => root.querySelector(sel);
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtDate = iso => { const d = new Date(iso + 'T00:00:00Z'); return `${String(d.getUTCDate()).padStart(2,'0')} ${MON[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}`; };
+const businessDaysAgo = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); while (n > 0) { d.setUTCDate(d.getUTCDate() - 1); const w = d.getUTCDay(); if (w && w !== 6) n--; } return d.toISOString().slice(0, 10); };
+
+/** Heat cell style: green +, red −, grey 0; alpha scaled to |v| / scaleMax. */
+function heatStyle(v, scaleMax) {
+  if (v == null) return { cls: 'na', style: '' };
+  if (Math.abs(v) < 0.005) return { cls: 'zero', style: '' };
+  const t = Math.min(1, Math.abs(v) / (scaleMax || 1));
+  const a = (0.14 + 0.66 * Math.sqrt(t)).toFixed(2);
+  return { cls: '', style: `background:rgba(var(${v > 0 ? '--pos' : '--neg'}),${a})` };
+}
+const maxAbs = arr => arr.reduce((m, v) => v == null ? m : Math.max(m, Math.abs(v)), 0);
+const argMaxAbs = arr => { let bi = -1, bv = -1; arr.forEach((v, i) => { if (v != null && Math.abs(v) > bv) { bv = Math.abs(v); bi = i; } }); return bv > 0 ? bi : -1; };
+
+function heatCell(v, scale, isMax, d = 2) {
+  const h = heatStyle(v, scale);
+  return `<td class="heat ${h.cls}${isMax ? ' maxcell' : ''}" style="${h.style}">${fmt(v, d)}</td>`;
+}
+const rowLabel = cv => `<td class="rowlab"><i style="background:${CURVE_COLOR[cv]}"></i>${cv}</td>`;
+
+/** Pill group bound to STATE[key]; re-renders via onChange. */
+function pills(container, options, key, onChange) {
+  container.innerHTML = options.map(o => `<button class="pill" data-v="${o}">${o}</button>`).join('');
+  const sync = () => container.querySelectorAll('.pill').forEach(b => b.classList.toggle('active', b.dataset.v === STATE[key]));
+  container.addEventListener('click', e => {
+    const b = e.target.closest('.pill'); if (!b) return;
+    STATE[key] = b.dataset.v; sync(); onChange();
+  });
+  sync();
+}
+
+const STATE = {
+  heatmap: MOCK_DATA.heatmap.default,
+  sentiment: MOCK_DATA.sentiment.default,
+  curve: MOCK_DATA.curve.default,
+  curveMode: MOCK_DATA.curve.defaultMode,
+  daysAgo: { SOFR: 1, CORRA: 1 },
+};
+
+/* =====================================================================
+   WIDGETS
+   ===================================================================== */
+function renderHeatmap() {
+  const H = MOCK_DATA.heatmap, data = C.outr[STATE.heatmap];
+  const scale = maxAbs(H.curves.flatMap(cv => H.columns.map(c => data[cv][c])));
+  let html = `<thead><tr><th></th>${H.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  for (const cv of H.curves) {
+    const vals = H.columns.map(c => data[cv][c]), mi = argMaxAbs(vals);
+    html += `<tr>${rowLabel(cv)}${vals.map((v, i) => heatCell(v, scale, i === mi)).join('')}</tr>`;
+  }
+  el('#heatmap-table').innerHTML = html + '</tbody>';
+}
+
+function renderDec() {
+  const S = MOCK_DATA.decSpreads;
+  const all = S.groups.flatMap(g => S.curves.flatMap(cv => C.dec[g.timeframe][cv]));
+  const scale = maxAbs(all);
+  let html = `<thead><tr><th></th>${S.groups.map(g => `<th class="grp" colspan="${S.pairs.length}">${g.label}</th>`).join('')}</tr>
+    <tr><th></th>${S.groups.map(() => S.pairs.map(p => `<th>${p[2]}</th>`).join('')).join('')}</tr></thead><tbody>`;
+  for (const cv of S.curves) {
+    const vals = S.groups.flatMap(g => C.dec[g.timeframe][cv]), mi = argMaxAbs(vals);
+    html += `<tr>${rowLabel(cv)}${vals.map((v, i) => heatCell(v, scale, i === mi)).join('')}</tr>`;
+  }
+  el('#dec-table').innerHTML = html + '</tbody>';
+}
+
+function renderSentiment() {
+  const S = MOCK_DATA.sentiment, vals = S.changes[STATE.sentiment];
+  const rows = Object.entries(vals).sort((a, b) => a[1] - b[1]);
+  const lim = Math.max(2, Math.ceil(maxAbs(rows.map(r => r[1])) / 5) * 5);
+  el('#sent-title').textContent = `${S.contract} · vs ${S.reference}`;
+  el('#sent-bars').innerHTML = rows.map(([k, v]) => {
+    const w = Math.abs(v) / lim * 50;
+    const pos = v >= 0 ? `left:50%;width:${w}%` : `left:${50 - w}%;width:${w}%`;
+    return `<div class="bar-row"><div class="bar-lab"><i style="background:${CURVE_COLOR[k]}"></i>${k}</div>
+      <div class="bar-track"><div class="bar" style="${pos};background:${CURVE_COLOR[k]}"></div></div>
+      <div class="bar-val ${v > 0 ? 'd-pos' : v < 0 ? 'd-neg' : 'd-zero'}">${fmt(v)}</div></div>`;
+  }).join('');
+  el('#sent-axis').innerHTML = `<div></div><div><span>${fmt(-lim, 0)}</span><span>0 bp</span><span>${fmt(lim, 0)}</span></div><div></div>`;
+}
+
+/** Catmull-Rom -> cubic Bézier path through points. */
+function smoothPath(pts) {
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2, k = 6;
+    d += ` C${p1[0] + (p2[0] - p0[0]) / k},${p1[1] + (p2[1] - p0[1]) / k} ${p2[0] - (p3[0] - p1[0]) / k},${p2[1] - (p3[1] - p1[1]) / k} ${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
+
+function renderCurve() {
+  const M = MOCK_DATA.curve.data[STATE.curveMode];
+  const vals = M.changes[STATE.curve], labels = M.contracts;
+  const imax = vals.indexOf(Math.max(...vals)), imin = vals.indexOf(Math.min(...vals));
+  el('#curve-sub').textContent = `· ${STATE.curveMode} · bp vs ${MOCK_DATA.curve.reference}`;
+  el('#curve-chips').innerHTML = labels.map((c, i) =>
+    `<span class="chip ${vals[i] > 0 ? 'pos' : vals[i] < 0 ? 'neg' : ''}${i === imax ? ' max' : i === imin ? ' min' : ''}"><b>${c}</b><span>${fmt(vals[i], 1)}</span></span>`).join('');
+
+  const W = 960, Hh = 300, pad = { l: 56, r: 24, t: 34, b: 34 };
+  const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), span = (hi - lo) || 1;
+  const yMin = lo - span * 0.08, yMax = hi + span * 0.12;
+  const x = i => pad.l + i * (W - pad.l - pad.r) / (vals.length - 1);
+  const y = v => pad.t + (yMax - v) / (yMax - yMin) * (Hh - pad.t - pad.b);
+  const pts = vals.map((v, i) => [x(i), y(v)]);
+  const ticks = []; const step = niceStep((yMax - yMin) / 5);
+  for (let t = Math.ceil(yMin / step) * step; t <= yMax; t += step) ticks.push(t);
+  const area = smoothPath(pts) + ` L${x(vals.length - 1)},${y(Math.max(lo, 0))} L${x(0)},${y(Math.max(lo, 0))} Z`;
+
+  el('#curve-chart').innerHTML = `
+  <svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Net change curve">
+    <defs><linearGradient id="cg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".22"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></linearGradient></defs>
+    ${ticks.map(t => `<line x1="${pad.l}" x2="${W - pad.r}" y1="${y(t)}" y2="${y(t)}" stroke="${Math.abs(t) < 1e-9 ? '#5d6576' : '#262e3c'}" stroke-dasharray="${Math.abs(t) < 1e-9 ? '' : '2 4'}"/>
+      <text x="${pad.l - 8}" y="${y(t) + 4}" text-anchor="end" fill="#6b7385" font-size="10" font-family="IBM Plex Mono">${Math.round(t)}</text>`).join('')}
+    <path d="${area}" fill="url(#cg)"/>
+    <path d="${smoothPath(pts)}" fill="none" stroke="#22d3ee" stroke-width="2"/>
+    ${pts.map(([px, py], i) => {
+      const hl = i === imax ? '#22c55e' : i === imin ? '#22d3ee' : null;
+      return `${hl ? `<circle cx="${px}" cy="${py}" r="9" fill="${hl}" fill-opacity=".18"/>` : ''}
+        <circle cx="${px}" cy="${py}" r="${hl ? 4.5 : 3}" fill="${hl || '#1b212d'}" stroke="${hl || '#22d3ee'}" stroke-width="1.5"/>
+        <text x="${i === 0 ? px + 8 : px}" y="${i === imin ? py + 22 : py - (hl ? 14 : 10)}" text-anchor="${i === 0 ? 'start' : 'middle'}" font-family="IBM Plex Mono" font-size="${hl ? 11.5 : 10.5}" font-weight="${hl ? 700 : 400}" fill="${hl || '#c4cad5'}">${fmt(vals[i], 1)}</text>
+        <text x="${px}" y="${Hh - 12}" text-anchor="middle" font-family="IBM Plex Mono" font-size="10.5" fill="#8a93a4">${labels[i]}</text>`;
+    }).join('')}
+    <text x="${W - pad.r}" y="16" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#6b7385">● max  <tspan fill="#22c55e">${labels[imax]} ${fmt(vals[imax], 1)}</tspan>   ● min  <tspan fill="#22d3ee">${labels[imin]} ${fmt(vals[imin], 1)}</tspan></text>
+  </svg>`;
+}
+function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / p; return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * p; }
+
+function renderPriced(card) {
+  const key = card.dataset.key, P = MOCK_DATA.pricedMoves[key], days = STATE.daysAgo[key];
+  const rows = C.priced[key][days], maxDays = C.priced[key].length - 1;
+  const date = businessDaysAgo(MOCK_DATA.meta.asOf, days);
+  const scale = maxAbs(rows.map(r => r.move)), mi = argMaxAbs(rows.map(r => r.move));
+  card.innerHTML = `
+    <div class="card-head">
+      <h2 class="card-title">Priced Moves <span class="sub">· ${P.label}</span></h2>
+      <div class="stepper"><button data-s="1" aria-label="More days ago" ${days >= maxDays ? 'disabled' : ''}>▼</button>
+        <span class="n">${days}</span><button data-s="-1" aria-label="Fewer days ago" ${days <= 0 ? 'disabled' : ''}>▲</button>
+        <span>DAYS AGO</span><span class="date">${fmtDate(date)}</span></div>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th style="text-align:left">Meeting</th><th>Move (bp)</th><th class="r">Cum (bp)</th><th class="r">Implied (%)</th><th class="r">Δ 1D (bp)</th></tr></thead>
+      <tbody>${rows.map((r, i) => `<tr>
+        <td class="rowlab" style="font-weight:500">${fmtDate(P.meetings[i])}</td>
+        ${heatCell(r.move, scale, i === mi, 1)}
+        <td class="num">${fmt(r.cum, 1)}</td>
+        <td class="num">${r.implied.toFixed(3)}</td>
+        <td class="num ${r.d1 > 0 ? 'd-pos' : r.d1 < 0 ? 'd-neg' : 'd-zero'}">${fmt(r.d1, 1)}</td></tr>`).join('')}
+      </tbody></table></div>
+    <div class="note">Start rate ${P.startRate.toFixed(2)}% · Implied = start + cumulative · Δ1D on cumulative.</div>`;
+  card.querySelectorAll('[data-s]').forEach(b => b.onclick = () => {
+    STATE.daysAgo[key] = Math.max(0, Math.min(maxDays, days + Number(b.dataset.s))); renderPriced(card);
+  });
+}
+
+const TOPIC = /^(Growth|Labour|Inflation|Expectations|Policy stance|Reaction function|Risks|Balance sheet|Pace):/;
+function speakerCard(s) {
+  const avg4 = s.last4.reduce((a, b) => a + b, 0) / s.last4.length;
+  const score = (s.last4.reduce((a, b) => a + b, 0) + s.hawkish) / (s.last4.length + 1);
+  const dev = s.hawkish - avg4;
+  const tagColor = s.hawkish >= 6 ? 'rgb(var(--neg))' : s.hawkish <= 4 ? 'rgb(var(--pos))' : 'var(--muted)';
+  const tagLabel = s.hawkish >= 6 ? 'Hawkish' : s.hawkish <= 4 ? 'Dovish' : 'Neutral';
+  const votes = /^Always|votes in next/i.test(s.voting) && !/Doesn't/i.test(s.voting);
+  return `<article class="card span-6">
+    <div class="spk-head">
+      <span class="badge">${s.bank}</span>
+      <span class="spk-name">${s.name}</span><span class="spk-role">${s.role}</span>
+      <span class="score">${score.toFixed(1)} <small>(${s.last4.length + 1})</small></span>
+      <span class="tag" style="color:${tagColor};background:color-mix(in srgb, ${tagColor} 14%, transparent);border:1px solid color-mix(in srgb, ${tagColor} 45%, transparent)">${tagLabel} ${s.hawkish}/10</span>
+      <span class="spk-date">${fmtDate(s.date)}</span>
+    </div>
+    <div class="voting"><span class="dot" style="background:${votes ? 'rgb(var(--pos))' : 'var(--faint)'}"></span>${s.voting}</div>
+    ${Math.abs(dev) >= 1.5 ? `<div class="warn">⚠ Today ${s.hawkish}/10 is ${fmt(dev, 1)} vs his last-4 average of ${avg4.toFixed(1)} — ${dev > 0 ? 'notably more hawkish' : 'notably more dovish'} than usual.</div>` : ''}
+    <div class="spk-title">${s.title}</div>
+    <p class="spk-headline">${s.headline}</p>
+    <ul class="spk-bullets">${s.bullets.map(b => `<li>${b.replace(TOPIC, '<b>$1</b> ·')}</li>`).join('')}</ul>
+    <div class="rates-read"><h4>RATES READ</h4><p>${s.ratesRead}</p></div>
+  </article>`;
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+el('#asof').textContent = `AS OF ${fmtDate(MOCK_DATA.meta.asOf).toUpperCase()} · ${MOCK_DATA.meta.asOfTime}`;
+pills(el('[data-group="heatmap"]'), MOCK_DATA.heatmap.timeframes, 'heatmap', renderHeatmap);
+pills(el('[data-group="sentiment"]'), MOCK_DATA.sentiment.timeframes, 'sentiment', renderSentiment);
+pills(el('[data-group="curveMode"]'), MOCK_DATA.curve.modes, 'curveMode', renderCurve);
+pills(el('[data-group="curve"]'), MOCK_DATA.curve.timeframes, 'curve', renderCurve);
+renderHeatmap(); renderDec(); renderSentiment(); renderCurve();
+document.querySelectorAll('.priced').forEach(renderPriced);
+el('#speakers').innerHTML = MOCK_DATA.speakers.map(speakerCard).join('');
+</script>
+</body>
+</html>
