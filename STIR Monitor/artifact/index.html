@@ -1,0 +1,119 @@
+<meta name="dash-one-writer">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+<div class="stir">
+  <header class="s-top" id="top">
+    <h1 class="s-h1"><span class="s-sq">■</span> STIR / Short-Rates Monitor</h1>
+    <p class="s-lede" data-read lang="en">SOFR Z27 is <b data-draw="hl_sofr" data-source="sent" data-field="change" data-where="curve=SOFR&amp;tf=Day" data-fetchpriority="high">—</b> bp on the day.
+      Fed Funds futures price <b data-draw="hl_dec" data-source="fed" data-field="move" data-where="days_ago=0&amp;meeting=2026-12-09" data-fetchpriority="high">—</b> bp for the 9 Dec FOMC and
+      <b data-draw="hl_jan" data-source="fed" data-field="cum" data-where="days_ago=0&amp;meeting=2027-01-27">—</b> bp cumulative by January;
+      the CORRA strip implies <b data-draw="hl_boc" data-source="boc" data-field="move" data-where="days_ago=0&amp;meeting=2026-12-09">—</b> bp at the BoC on 9 Dec.</p>
+    <p class="s-src">IBKR futures, delayed 10–15 min · rate changes in bp, positive = rates up</p>
+  </header>
+
+  <div class="s-grid">
+    <section class="s-card s-span12" id="net-change">
+      <div class="s-head">
+        <h2 class="s-title">Net change <span class="s-sub">· outrights · bp</span></h2>
+        <div class="s-pills" role="group" aria-label="Timeframe">
+          <button class="s-pill" data-pill="heat_tf" data-v="15m">15m</button>
+          <button class="s-pill" data-pill="heat_tf" data-v="30m">30m</button>
+          <button class="s-pill" data-pill="heat_tf" data-v="1h">1h</button>
+          <button class="s-pill" data-pill="heat_tf" data-v="Day">Day</button>
+          <button class="s-pill" data-pill="heat_tf" data-v="Week">Week</button>
+          <button class="s-pill" data-pill="heat_tf" data-v="Since">Since</button>
+          <button class="s-pill" data-pill="heat_tf" data-v="Since EU Open">Since EU Open</button>
+        </div>
+      </div>
+      <div class="s-draw" data-draw="heat"></div>
+      <div class="s-foot">
+        <span>Day = vs prior session · Week = vs last Friday's settle · Since EU Open = vs first bar after 07:00 London. White border = largest move in the row. — = expired or not listed.</span>
+        <label class="s-since" for="since">Since <input type="date" id="since" data-param="since" min="2026-05-01" max="2027-12-31"></label>
+      </div>
+    </section>
+
+    <section class="s-card s-span6" id="dec-spreads">
+      <div class="s-head"><h2 class="s-title">Dec spreads <span class="s-sub">· Δ bp</span></h2></div>
+      <div class="s-draw" data-draw="dec"></div>
+      <div class="s-foot"><span>Spread = price(front Dec) − price(back Dec). This week = vs last Friday's settle.</span></div>
+    </section>
+
+    <section class="s-card s-span6" id="z27">
+      <div class="s-head">
+        <h2 class="s-title">Z27 · vs Fri settle</h2>
+        <div class="s-pills" role="group" aria-label="Period">
+          <button class="s-pill" data-pill="sent_tf" data-v="Day">Day</button>
+          <button class="s-pill" data-pill="sent_tf" data-v="Week">Week</button>
+          <button class="s-pill" data-pill="sent_tf" data-v="1W">1W</button>
+          <button class="s-pill" data-pill="sent_tf" data-v="1M">1M</button>
+          <button class="s-pill" data-pill="sent_tf" data-v="3M">3M</button>
+          <button class="s-pill" data-pill="sent_tf" data-v="6M">6M</button>
+        </div>
+      </div>
+      <div class="s-draw s-rel" data-draw="sent" data-source="sent"></div>
+    </section>
+
+    <section class="s-card s-span12" id="curve">
+      <div class="s-head">
+        <h2 class="s-title">Net change curve <span class="s-sub">· bp by contract</span></h2>
+      </div>
+      <div class="s-controls">
+        <div class="s-toggle" role="group" aria-label="Curve">
+          <button class="s-pill" data-pill="curve" data-v="SOFR">SOFR</button>
+          <button class="s-pill" data-pill="curve" data-v="Euribor">Euribor</button>
+          <button class="s-pill" data-pill="curve" data-v="SONIA">SONIA</button>
+          <button class="s-pill" data-pill="curve" data-v="CORRA">CORRA</button>
+          <button class="s-pill" data-pill="curve" data-v="SARON">SARON</button>
+          <button class="s-pill" data-pill="curve" data-v="Aussie Bills">Aussie Bills</button>
+        </div>
+        <div class="s-pills" role="group" aria-label="Timeframe">
+          <button class="s-pill" data-pill="curve_tf" data-v="15m">15m</button>
+          <button class="s-pill" data-pill="curve_tf" data-v="30m">30m</button>
+          <button class="s-pill" data-pill="curve_tf" data-v="1h">1h</button>
+          <button class="s-pill" data-pill="curve_tf" data-v="Day">Day</button>
+          <button class="s-pill" data-pill="curve_tf" data-v="Since">Since</button>
+        </div>
+      </div>
+      <div class="s-draw" data-draw="curve"></div>
+    </section>
+
+    <section class="s-card s-span6" id="fed-pricing">
+      <div class="s-head">
+        <h2 class="s-title">Priced moves <span class="s-sub">· SOFR / Fed</span></h2>
+        <div class="s-stepper">
+          <button data-step="fed" data-d="1" aria-label="One more day ago">▼</button>
+          <b data-draw="fed_n">—</b>
+          <button data-step="fed" data-d="-1" aria-label="One day fewer">▲</button>
+          <span>DAYS AGO</span>
+          <span class="s-date" data-draw="fed_date">—</span>
+        </div>
+      </div>
+      <div class="s-draw" data-draw="fed"></div>
+      <div class="s-foot"><span>From 30-day Fed Funds futures, meeting by meeting (FedWatch method). Cumulative = running sum of moves; implied = start + cumulative; Δ 1D on cumulative.</span></div>
+    </section>
+
+    <section class="s-card s-span6" id="boc-pricing">
+      <div class="s-head">
+        <h2 class="s-title">Priced moves <span class="s-sub">· CORRA / BoC</span></h2>
+        <div class="s-stepper">
+          <button data-step="boc" data-d="1" aria-label="One more day ago">▼</button>
+          <b data-draw="boc_n">—</b>
+          <button data-step="boc" data-d="-1" aria-label="One day fewer">▲</button>
+          <span>DAYS AGO</span>
+          <span class="s-date" data-draw="boc_date">—</span>
+        </div>
+      </div>
+      <div class="s-draw" data-draw="boc"></div>
+      <div class="s-foot"><span>Approximate. No monthly CORRA future exists, so today's rate and the path are fitted to the quarterly 3M CORRA contracts (U26 to Z27) with light smoothing.</span></div>
+    </section>
+
+    <section class="s-span12 s-plain" id="speakers">
+      <h2 class="s-title">Central bank speakers</h2>
+      <div class="s-spk-grid" data-draw="speakers"></div>
+      <p class="s-src">Speaker notes and hawkishness scores are entered by hand. The bp figures in Rates read come live from Fed Funds futures.</p>
+    </section>
+  </div>
+</div>
+<script src="calc.js"></script>
+<script src="loaders.js"></script>
+<script src="app.js"></script>

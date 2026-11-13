@@ -1,0 +1,275 @@
+{
+ "sofr": {
+  "title": "SOFR futures \u00b7 daily",
+  "description": "Daily closes of the SOFR 3M futures strip from IBKR (Z27 over six months, the rest over one month).",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 385575897,
+    "exchange": "CME",
+    "security_type": "FUT",
+    "step": "ONE_DAY",
+    "period": "SIX_MONTHS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "sofr_5m": {
+  "title": "SOFR futures \u00b7 5-min",
+  "description": "5-minute bars over the last two days for the SOFR 3M futures strip from IBKR.",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 385575897,
+    "exchange": "CME",
+    "security_type": "FUT",
+    "step": "FIVE_MINS",
+    "period": "TWO_DAYS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "euribor": {
+  "title": "Euribor futures \u00b7 daily",
+  "description": "Daily closes of the Euribor 3M futures strip from IBKR (Z27 over six months, the rest over one month).",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 532513522,
+    "exchange": "ICEEU",
+    "security_type": "FUT",
+    "step": "ONE_DAY",
+    "period": "SIX_MONTHS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "euribor_5m": {
+  "title": "Euribor futures \u00b7 5-min",
+  "description": "5-minute bars over the last two days for the Euribor 3M futures strip from IBKR.",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 532513522,
+    "exchange": "ICEEU",
+    "security_type": "FUT",
+    "step": "FIVE_MINS",
+    "period": "TWO_DAYS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "sonia": {
+  "title": "SONIA futures \u00b7 daily",
+  "description": "Daily closes of the SONIA 3M futures strip from IBKR (Z27 over six months, the rest over one month).",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 532672437,
+    "exchange": "ICEEU",
+    "security_type": "FUT",
+    "step": "ONE_DAY",
+    "period": "SIX_MONTHS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "sonia_5m": {
+  "title": "SONIA futures \u00b7 5-min",
+  "description": "5-minute bars over the last two days for the SONIA 3M futures strip from IBKR.",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 532672437,
+    "exchange": "ICEEU",
+    "security_type": "FUT",
+    "step": "FIVE_MINS",
+    "period": "TWO_DAYS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "corra": {
+  "title": "CORRA futures \u00b7 daily",
+  "description": "Daily closes of the CORRA 3M futures strip from IBKR (Z27 over six months, the rest over one month).",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 769776256,
+    "exchange": "CDE",
+    "security_type": "FUT",
+    "step": "ONE_DAY",
+    "period": "SIX_MONTHS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "corra_5m": {
+  "title": "CORRA futures \u00b7 5-min",
+  "description": "5-minute bars over the last two days for the CORRA 3M futures strip from IBKR.",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 769776256,
+    "exchange": "CDE",
+    "security_type": "FUT",
+    "step": "FIVE_MINS",
+    "period": "TWO_DAYS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "saron": {
+  "title": "SARON futures \u00b7 daily",
+  "description": "Daily closes of the SARON 3M futures strip from IBKR (Z27 over six months, the rest over one month).",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 769600238,
+    "exchange": "EUREX",
+    "security_type": "FUT",
+    "step": "ONE_DAY",
+    "period": "SIX_MONTHS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "saron_5m": {
+  "title": "SARON futures \u00b7 5-min",
+  "description": "5-minute bars over the last two days for the SARON 3M futures strip from IBKR.",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 769600238,
+    "exchange": "EUREX",
+    "security_type": "FUT",
+    "step": "FIVE_MINS",
+    "period": "TWO_DAYS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "aussie": {
+  "title": "Aussie Bills futures \u00b7 daily",
+  "description": "Daily closes of the Aussie Bills 3M futures strip from IBKR (Z27 over six months, the rest over one month).",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 602063179,
+    "exchange": "SNFE",
+    "security_type": "FUT",
+    "step": "ONE_DAY",
+    "period": "SIX_MONTHS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "aussie_5m": {
+  "title": "Aussie Bills futures \u00b7 5-min",
+  "description": "5-minute bars over the last two days for the Aussie Bills 3M futures strip from IBKR.",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 602063179,
+    "exchange": "SNFE",
+    "security_type": "FUT",
+    "step": "FIVE_MINS",
+    "period": "TWO_DAYS",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ },
+ "zq": {
+  "title": "Fed Funds futures \u00b7 daily",
+  "description": "Daily closes of 30-day Fed Funds futures (CBOT ZQ), Nov 2026 to Dec 2027, from IBKR.",
+  "source": {
+   "kind": "call",
+   "connector": "Interactive Brokers (IBKR)",
+   "tool": "get_price_history",
+   "args": {
+    "contract_id": 529748903,
+    "exchange": "CBOT",
+    "security_type": "FUT",
+    "step": "ONE_DAY",
+    "period": "ONE_MONTH",
+    "outside_rth": true
+   }
+  },
+  "edit": {
+   "via": "claude",
+   "at": "2026-11-13T10:00:00Z"
+  }
+ }
+}
