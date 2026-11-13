@@ -656,5 +656,92 @@
     "russell_csv": "inputs/IWM_holdings.csv",
     "note": "Composition du Russell 2000 : deposer le CSV des positions d'IWM (iShares, bouton Download holdings) dans Sources du dashboard/inputs/. Pas de source API gratuite ; le site iShares impose une page de consentement, donc pas de telechargement automatique."
   },
-  "earnings_calendar_days": 90
+  "earnings_calendar_days": 90,
+  "thematic_etfs": {
+    "SMH": "VanEck Semiconductor",
+    "SOXX": "iShares Semiconductor",
+    "IGV": "iShares Software",
+    "QQQ": "Invesco Nasdaq 100",
+    "SPY": "SPDR S&P 500",
+    "IWM": "iShares Russell 2000",
+    "WGMI": "CoinShares Bitcoin Miners",
+    "CLOU": "Global X Cloud",
+    "SKYY": "First Trust Cloud",
+    "XLK": "Technology Select Sector",
+    "ARKK": "ARK Innovation",
+    "BOTZ": "Global X Robotics & AI"
+  },
+  "leopold_themes": {
+    "semis": [
+      "MU",
+      "SNDK",
+      "TSM",
+      "STM",
+      "VSH",
+      "CBRS",
+      "NVDA",
+      "AMD",
+      "INTC",
+      "ASML",
+      "GLW",
+      "WDC",
+      "STX"
+    ],
+    "mineurs / compute": [
+      "APLD",
+      "CORZ",
+      "CRWV",
+      "NBIS",
+      "IREN",
+      "RIOT",
+      "CLSK",
+      "HIVE",
+      "BTDR",
+      "WYFI",
+      "HUT",
+      "CIFR",
+      "WULF",
+      "GLXY",
+      "SHAZ",
+      "BITF"
+    ],
+    "énergie / infrastructure": [
+      "BE",
+      "SEI",
+      "KEEL",
+      "TE",
+      "BW",
+      "PUMP",
+      "PSIX",
+      "VST",
+      "CEG",
+      "OKLO",
+      "SMR"
+    ]
+  },
+  "alerts": {
+    "idio_sigma": 2.0,
+    "cross_max_sessions": 1,
+    "ratio_z": 2.0,
+    "asia_move": 0.02,
+    "futures_asia_window": 0.01,
+    "earnings_days_share": 10
+  },
+  "futures": {
+    "NQ": "NQ=F",
+    "ES": "ES=F",
+    "asia_end_utc": "06:00",
+    "europe_end_utc": "13:30",
+    "us_end_utc": "21:00",
+    "period": "730d"
+  },
+  "options_surface": {
+    "max_days_to_earnings": 60,
+    "back_offset_days": 75
+  },
+  "nport": {
+    "series_name": "iShares Russell 2000 ETF",
+    "cik": "0001100663",
+    "cusip_cache": "cusip_cache.json"
+  }
 }

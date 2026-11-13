@@ -137,6 +137,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   <div class="loading" id="loading">Chargement des fichiers « Sources du dashboard »…</div>
 
   <section class="panel" id="tab-monitor" hidden>
+    <div class="card"><div class="card-head"><h2>Alertes</h2><div class="controls"><div class="chips" id="al-sev"></div><span class="hint" id="al-hint"></span></div></div><div class="tscroll" id="tbl-alerts"></div></div>
     <div class="card">
       <div class="card-head"><h2>Actions — marché, fondamental, événement</h2>
         <div class="controls"><span class="hint">Groupe :</span><div class="chips" id="grp-chips"></div><span class="hint">Trier : cliquer un en-tête. Survoler un chiffre : source et horodatage. Date orange = clôture absente.</span></div>
@@ -163,6 +164,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       <div class="card"><div class="card-head"><h2>Technique — prix, MM20 / MM50 / MM200 et RSI 14</h2><div class="controls"><select id="tech-pick"></select><select id="tech-period"><option value="252">1A</option><option value="504" selected>2A</option><option value="126">6M</option></select></div></div><div class="chart tall" id="ch-tech"></div></div>
       <div class="card"><div class="card-head"><h2>Croisements récents et RSI extrêmes</h2><span class="hint">Golden / death cross 50/200 ≤ 20 séances, croisement 20/50 ≤ 5 séances, RSI 14 ≤ 30 ou ≥ 70. Cliquer un titre pour le tracer.</span></div><div class="tscroll" id="tbl-tech"></div></div>
     </div>
+    <div class="card"><div class="card-head"><h2>Volumes anormaux — proxy de flux</h2><div class="controls"><div class="chips" id="vol-set"></div><span class="hint" id="flows-hint"></span></div></div><div class="tscroll" id="tbl-flows"></div></div>
     <div class="card"><div class="card-head"><h2>Backtest des signaux techniques</h2><span class="hint" id="techbt-hint"></span></div><div class="tscroll" id="tbl-techbt"></div><div class="chart tall" id="ch-techbt"></div><div id="techbt-caveats" class="note"></div></div>
   </section>
 
@@ -180,6 +182,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       <div class="card"><div class="card-head"><h2>Résultats des 14 derniers jours — réaction</h2></div><div class="tscroll" id="tbl-recent-earn"></div></div>
       <div class="card"><div class="card-head"><h2>À venir (liste, 90 jours)</h2></div><div class="tscroll" id="tbl-ecal-list"></div></div>
     </div>
+    <div class="card"><div class="card-head"><h2>Surface d'options avant publication — skew 25 delta et structure par terme</h2><span class="hint">IV par strike dérivée des derniers prix traités (Black-Scholes, r = 0) ; 25 delta = strike dont le delta BS est le plus proche de ±0,25. Skew = IV put 25Δ − IV call 25Δ. Terme : IV ATM 1re échéance après résultats vs échéance ~75 j plus tard ; move événementiel = √(T × (IV²front − IV²back)).</span></div><div class="tscroll" id="tbl-surface"></div></div>
     <div class="card"><div class="card-head"><h2>Calendrier 30 jours</h2><span class="hint">Move implicite = straddle ATM / spot sur la 1re échéance après publication ; historique = |réaction| moyenne 12 trimestres ; ratio &gt; 1 = l'option paie cher l'événement.</span></div><div class="tscroll" id="tbl-cal"></div></div>
     <div class="card"><div class="card-head"><h2>Réaction aux earnings — synthèse 12 trimestres</h2><span class="hint">Réaction = clôture avant → clôture après (AMC : J→J+1, BMO : J−1→J). Anormale = réaction − β(1 an avant) × SPX.</span></div><div class="tscroll" id="tbl-react"></div></div>
     <div class="grid">
@@ -232,6 +235,10 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       <div class="card"><div class="card-head"><h2>Paniers base 100</h2><select id="bk-period"><option value="63">3M</option><option value="126">6M</option><option value="252" selected>1A</option><option value="756">3A</option></select></div><div class="chart tall" id="ch-baskets"></div></div>
       <div class="card"><div class="card-head"><h2>Membres du panier</h2><select id="bk-pick"></select></div><div class="tscroll" id="tbl-bk-members"></div></div>
     </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Attribution : beta marché, beta secteur, résidu</h2><span class="hint">Régression 1 an des rendements quotidiens sur SPX et sur le facteur secteur orthogonalisé (NDX ou SOX selon le panier). Contribution = β × facteur sur l'horizon ; résidu = le reste.</span></div><div class="tscroll" id="tbl-attr"></div><div class="chart" id="ch-attr"></div></div>
+      <div class="card"><div class="card-head"><h2>Membres publiant sous 10 jours · Leopold par thème</h2></div><div class="tscroll" id="tbl-bk-earn"></div><div class="tscroll" id="tbl-leo-theme" style="margin-top:10px"></div></div>
+    </div>
     <div class="card"><div class="card-head"><h2>Qui bat qui — excès de performance (ligne − colonne), en USD</h2><div class="controls"><div class="chips" id="rel-h"></div><span class="hint" id="rel-note"></span></div></div><div class="tscroll" id="tbl-rel"></div></div>
     <div class="card"><div class="card-head"><h2>Paires relatives — ratio base 100, 1 an</h2><span class="hint">Trait plein = ratio ; infobulle : perf relative 1M / 3M, ratio vs sa MM50.</span></div><div class="chart tall" id="ch-pairs"></div><div class="tscroll" id="tbl-pairs"></div></div>
   </section>
@@ -244,6 +251,11 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       <div class="card"><div class="card-head"><h2>Corrélation glissante 60 j avec la séance US</h2><select id="asia-target"></select></div><div class="chart" id="ch-asia-roll"></div></div>
       <div class="card"><div class="card-head"><h2>Règle : long ouverture → clôture US quand l'Asie monte</h2><span class="hint" id="asia-rule-hint"></span></div><div class="chart" id="ch-asia-rule"></div></div>
     </div>
+    <div class="card"><div class="card-head"><h2>Futures ES / NQ : fenêtre Asie, relais Europe, séance US</h2><div class="controls"><div class="chips" id="fut-pick"></div><span class="hint" id="fut-hint"></span></div></div>
+      <div class="tiles" id="fut-tiles"></div>
+      <div class="grid" style="margin-top:12px"><div><div class="tscroll" id="tbl-fut-relay"></div></div><div><div class="tscroll" id="tbl-fut-cond"></div></div></div>
+      <div class="grid" style="margin-top:12px"><div><div class="chart" id="ch-fut-roll"></div></div><div><div class="chart" id="ch-fut-hist"></div></div></div>
+      <div class="note" id="fut-method" style="margin-top:8px"></div></div>
     <div class="grid">
       <div class="card"><div class="card-head"><h2>Paniers asiatiques, base 100, 1 an</h2></div><div class="chart" id="ch-asia-hist"></div></div>
       <div class="card"><div class="card-head"><h2>Membres asiatiques</h2></div><div class="tscroll" id="tbl-asia-members"></div></div>
@@ -277,7 +289,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
 <script>
 (function () {
   'use strict';
-  const FILES = ['universe', 'prices', 'quotes', 'events', 'breadth', 'constituents', 'sa_13f', 'risk', 'sectors', 'baskets', 'asia', 'constituents_stats', 'run_status', 'backtest'];
+  const FILES = ['universe', 'prices', 'quotes', 'events', 'breadth', 'constituents', 'sa_13f', 'risk', 'sectors', 'baskets', 'asia', 'constituents_stats', 'flows', 'alerts', 'run_status', 'backtest'];
   const D = {};
   const $ = (id) => document.getElementById(id);
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -378,7 +390,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   function renderAllCharts() { charts.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } }); }
 
   // ---------------------------------------------------------------- state
-  const state = { group: new Set(['all']), groupF: new Set(['all']), heat: 'r_1d', volPick: new Set(), bench: new Set(['SPX']), thresholds: null, region: new Set(['US']), secHeat: 'r_1d', secRs: new Set(), secTh: null, basket: null, relH: '1M', asiaPick: 'Asie IA', compoIdx: new Set(['SPX']), compoSector: 'all', compoQ: '' };
+  const state = { group: new Set(['all']), groupF: new Set(['all']), heat: 'r_1d', volPick: new Set(), bench: new Set(['SPX']), thresholds: null, region: new Set(['US']), secHeat: 'r_1d', secRs: new Set(), secTh: null, basket: null, relH: '1M', asiaPick: 'Asie IA', compoIdx: new Set(['SPX']), compoSector: 'all', compoQ: '', alSev: new Set(['all']), volSet: new Set(['stocks']), fut: new Set(['NQ']) };
 
   // ---------------------------------------------------------------- header
   function renderStatus() {
@@ -920,6 +932,120 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     renderSecSigCtl(); renderSectors();
   }
 
+  // ---------------------------------------------------------------- ALERTES
+  function renderAlerts() {
+    const A = D.alerts; if (!A || !A.alerts) { $('al-hint').textContent = 'alerts.json absent'; return; }
+    const c = A.counts || {}; $('al-hint').textContent = `${c.high || 0} hautes · ${c.medium || 0} moyennes · ${c.low || 0} basses · seuils : idio ≥ ${A.thresholds.idio_sigma} σ, |z| ratio ≥ ${A.thresholds.ratio_z}, Asie ≥ ${pctAbs(A.thresholds.asia_move, 0)}, fenêtre Asie futures ≥ ${pctAbs(A.thresholds.futures_asia_window, 0)}, croisement MM ≤ ${A.thresholds.cross_max_sessions} séance`;
+    chips('al-sev', [{ value: 'all', label: 'toutes' }, { value: 'high', label: 'hautes' }, { value: 'medium', label: 'moyennes' }, { value: 'low', label: 'basses' }], state.alSev, renderAlertsTable);
+    renderAlertsTable();
+  }
+  function renderAlertsTable() {
+    const A = D.alerts; const sev = [...state.alSev][0]; const rows = (A.alerts || []).filter((a) => sev === 'all' || a.severity === sev);
+    const dot = (s_) => `<span class="pill ${s_ === 'high' ? 'error' : (s_ === 'medium' ? 'partial' : '')}" style="padding:0 7px"><span class="dot"></span>${s_ === 'high' ? 'haute' : (s_ === 'medium' ? 'moyenne' : 'basse')}</span>`;
+    table('tbl-alerts', [
+      { key: 'severity', label: 'Niveau', left: true, render: (a) => dot(a.severity), sortVal: (a) => ({ high: 0, medium: 1, low: 2 })[a.severity] },
+      { key: 'kind', label: 'Type', left: true, render: (a) => `<span class="tag">${esc(a.kind)}</span>` }, { key: 'symbol', label: 'Objet', left: true, render: (a) => `<b>${esc(a.symbol)}</b>` },
+      { key: 'text', label: 'Alerte', left: true, render: (a) => esc(a.text), src: (a) => a.source }, { key: 'value', label: 'Valeur', render: (a) => isNum(a.value) ? (Math.abs(a.value) < 1 ? pct(a.value, 1) : num(a.value, 1)) : '' },
+    ], rows, { defaultSort: 'severity', defaultDir: 1 });
+  }
+
+  // ---------------------------------------------------------------- VOLUMES
+  function renderFlows() {
+    const F = D.flows; if (!F) { $('flows-hint').textContent = 'flows.json absent'; return; }
+    $('flows-hint').textContent = F.note || '';
+    chips('vol-set', [{ value: 'stocks', label: 'actions suivies' }, { value: 'thematic_etfs', label: 'ETF thématiques' }, { value: 'sector_etfs', label: 'ETF sectoriels US' }], state.volSet, renderFlowsTable);
+    renderFlowsTable();
+  }
+  function renderFlowsTable() {
+    const F = D.flows; const set = [...state.volSet][0]; const rows = Object.entries(F[set] || {}).map(([t, v]) => ({ t, ...v }));
+    table('tbl-flows', [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(r.name || '')}</span>`, src: (r) => src('yfinance.download Volume · séance ' + r.last_date, F.fetched_at) },
+      { key: 'r_1d', label: '1D', render: (r) => pct(r.r_1d), cls: (r) => sgnClass(r.r_1d) },
+      { key: 'ratio_vs_20d', label: 'Volume / moy. 20 j', render: (r) => isNum(r.ratio_vs_20d) ? `×${r.ratio_vs_20d.toFixed(2)}` : NA, cls: (r) => isNum(r.ratio_vs_20d) ? (r.ratio_vs_20d >= 2 ? 'warn' : '') : '' },
+      { key: 'z_20d', label: 'z 20 j', render: (r) => num(r.z_20d, 1), cls: (r) => isNum(r.z_20d) && r.z_20d >= 2 ? 'warn' : '' },
+      { key: 'ratio_5d', label: 'Vol. 5 j / 20 j', render: (r) => isNum(r.ratio_5d) ? `×${r.ratio_5d.toFixed(2)}` : NA },
+      { key: 'dollar_volume_m', label: '$ volume (M)', render: (r) => int(r.dollar_volume_m), src: (r) => `moyenne 20 j ${int(r.dollar_volume_avg_20d_m)} M$` },
+      { key: 'up_down_volume_10d', label: 'Vol. hausse / baisse 10 j', title: 'volume des séances de hausse / volume des séances de baisse', render: (r) => isNum(r.up_down_volume_10d) ? `×${r.up_down_volume_10d.toFixed(2)}` : NA, cls: (r) => isNum(r.up_down_volume_10d) ? (r.up_down_volume_10d > 1.5 ? 'up' : (r.up_down_volume_10d < 0.67 ? 'down' : '')) : '' },
+      { key: 'obv_slope_20d', label: 'OBV 20 j', title: 'variation de l\'on-balance volume sur 20 j, en volumes moyens', render: (r) => num(r.obv_slope_20d, 1), cls: (r) => sgnClass(r.obv_slope_20d) },
+    ], rows, { defaultSort: 'z_20d' });
+  }
+
+  // ---------------------------------------------------------------- ATTRIBUTION & EARNINGS SHARE
+  function renderAttribution() {
+    const bk = BK(); const order = (bk.order || []).filter((n) => bk.baskets[n] && !bk.baskets[n].missing && bk.baskets[n].attribution);
+    const rows = order.map((n) => ({ n, b: bk.baskets[n], a: bk.baskets[n].attribution }));
+    const h = (r, k, f_) => ((r.a.horizons || {})[k] || {})[f_];
+    table('tbl-attr', [
+      { key: 'n', label: 'Panier', left: true, render: (r) => `<b>${esc(r.b.label.split(' (')[0])}</b> <span class="muted">secteur ${esc(r.a.sector_factor)}</span>`, src: (r) => `n=${r.a.n}, R² ${num(r.a.r2)}` },
+      { key: 'bm', label: 'β marché', render: (r) => num(r.a.beta_market), sortVal: (r) => r.a.beta_market }, { key: 'bs', label: 'β secteur ⊥', title: 'beta sur le facteur secteur orthogonalisé au marché', render: (r) => num(r.a.beta_sector_orth), sortVal: (r) => r.a.beta_sector_orth }, { key: 'r2', label: 'R²', render: (r) => num(r.a.r2) },
+      { key: 't1', label: '1M total', render: (r) => pct(h(r, '1m', 'total')), cls: (r) => sgnClass(h(r, '1m', 'total')), sortVal: (r) => h(r, '1m', 'total') }, { key: 'm1', label: '1M marché', render: (r) => pct(h(r, '1m', 'market')), cls: (r) => sgnClass(h(r, '1m', 'market')) }, { key: 's1', label: '1M secteur', render: (r) => pct(h(r, '1m', 'sector')), cls: (r) => sgnClass(h(r, '1m', 'sector')) }, { key: 'e1', label: '1M résidu', render: (r) => pct(h(r, '1m', 'residual')), cls: (r) => sgnClass(h(r, '1m', 'residual')), sortVal: (r) => h(r, '1m', 'residual') },
+      { key: 't3', label: '3M total', render: (r) => pct(h(r, '3m', 'total')), cls: (r) => sgnClass(h(r, '3m', 'total')) }, { key: 'm3', label: '3M marché', render: (r) => pct(h(r, '3m', 'market')), cls: (r) => sgnClass(h(r, '3m', 'market')) }, { key: 's3', label: '3M secteur', render: (r) => pct(h(r, '3m', 'sector')), cls: (r) => sgnClass(h(r, '3m', 'sector')) }, { key: 'e3', label: '3M résidu', render: (r) => pct(h(r, '3m', 'residual')), cls: (r) => sgnClass(h(r, '3m', 'residual')) },
+    ], rows);
+    const x = rows.map((r) => r.b.label.split(' (')[0]);
+    plot('ch-attr', [
+      { type: 'bar', name: 'marché', x, y: rows.map((r) => (h(r, '1m', 'market') || 0) * 100), marker: { color: css('--s1') } },
+      { type: 'bar', name: 'secteur ⊥', x, y: rows.map((r) => (h(r, '1m', 'sector') || 0) * 100), marker: { color: css('--s4') } },
+      { type: 'bar', name: 'résidu', x, y: rows.map((r) => (h(r, '1m', 'residual') || 0) * 100), marker: { color: css('--s2') } },
+    ], { barmode: 'relative', yaxis: { title: { text: 'perf 1M (%)' }, gridcolor: css('--border'), zerolinecolor: css('--muted') } });
+    const es = bk.earnings_share || {};
+    table('tbl-bk-earn', [
+      { key: 'n', label: 'Panier', left: true, render: (r) => `<b>${esc(r.n)}</b>` }, { key: 'share', label: 'Publient ≤ 10 j', render: (r) => `${pctAbs(r.share, 0)} <span class="muted">${r.n_reporting}/${r.nn}</span>`, sortVal: (r) => r.share },
+      { key: 'tickers', label: 'Titres', left: true, render: (r) => r.tickers.map((t) => `${t}${isNum(r.implied_moves[t]) ? ' <span class="muted mono">' + pctAbs(r.implied_moves[t], 0) + '</span>' : ''}`).join(', '), sortVal: (r) => r.tickers.length },
+      { key: 'd', label: 'Dates', left: true, render: (r) => r.next_dates.join(', ') }, { key: 'drift', label: 'Dérive 5 j moyenne', title: 'perf 5 j moyenne des membres qui publient', render: (r) => pct(r.avg_pre_drift_5d), cls: (r) => sgnClass(r.avg_pre_drift_5d) },
+    ], Object.entries(es).map(([n, v]) => ({ n, nn: v.n, ...v })), { defaultSort: 'share' });
+    const leo = (bk.baskets || {}).Leopold || {}; const th = leo.theme_attribution || {};
+    table('tbl-leo-theme', [{ key: 'th', label: 'Leopold par thème', left: true, render: (r) => `<b>${esc(r.th)}</b> <span class="muted">${r.tickers.join(', ')}</span>`, src: () => leo.theme_note }, { key: 'weight', label: 'Poids EW', render: (r) => pctAbs(r.weight, 0) }, { key: 'contrib_1d', label: 'Contrib. 1D', render: (r) => pct(r.contrib_1d), cls: (r) => sgnClass(r.contrib_1d) }, { key: 'contrib_1m', label: 'Contrib. 1M', render: (r) => pct(r.contrib_1m), cls: (r) => sgnClass(r.contrib_1m), sortVal: (r) => r.contrib_1m }], Object.entries(th).map(([k, v]) => ({ th: k, ...v })), { defaultSort: 'contrib_1m' });
+  }
+
+  // ---------------------------------------------------------------- FUTURES RELAY
+  function renderFutures() {
+    const F = (AS().futures) || {}; const keys = Object.keys(F.futures || {}); if (!keys.length) { $('fut-hint').textContent = F.error ? 'erreur : ' + F.error : 'futures indisponibles'; return; }
+    chips('fut-pick', keys.map((k) => ({ value: k, label: k + ' (' + ((F.tickers || {})[k] || '') + ')' })), state.fut, () => { renderFuturesTables(); chartFutures(); });
+    if (!F.futures[[...state.fut][0]]) state.fut = new Set([keys[0]]);
+    $('fut-method').textContent = F.method || ''; $('fut-hint').textContent = `${F.lookback_days} séances · barres horaires Yahoo · ${(F.fetched_at || '').replace('T', ' ')}`;
+    renderFuturesTables();
+  }
+  function renderFuturesTables() {
+    const F = AS().futures; const k = [...state.fut][0]; const r = F.futures[k]; const t = r.today || {};
+    $('fut-tiles').innerHTML = [['Fenêtre Asie 21:00 → 06:00 UTC', t.asia, 'mouvement déjà dans le prix avant Londres'], ['Fenêtre Europe 06:00 → 13:30 UTC', t.europe, t.europe == null ? 'pas encore observée' : 'relais européen'], ['Séance US 13:30 → 21:00 UTC', t.us, t.partial ? 'en cours / non observée' : 'séance complète']]
+      .map(([k_, v, s_]) => `<div class="tile"><div class="k">${k_}</div><div class="v ${sgnClass(v)}">${pct(v, 2)}</div><div class="s">${t.date} · ${s_}</div></div>`).join('') +
+      `<div class="tile"><div class="k">|mouvement| moyen</div><div class="v" style="font-size:14px">Asie ${pctAbs((r.avg_abs || {}).asia, 2)} · Europe ${pctAbs((r.avg_abs || {}).europe, 2)} · US ${pctAbs((r.avg_abs || {}).us, 2)}</div><div class="s">part de variance : Asie ${pctAbs((r.share_of_variance || {}).asia, 0)}, Europe ${pctAbs((r.share_of_variance || {}).europe, 0)}, US ${pctAbs((r.share_of_variance || {}).us, 0)}</div></div>`;
+    const rows = [];
+    for (const [a, st] of Object.entries(r.stats || {})) rows.push({ what: `${a} → fenêtre Asie ${k}`, ...(st.asia_window_on_asia || {}) }, { what: `${a} → fenêtre Europe ${k}`, ...(st.europe_window_on_asia || {}) }, { what: `${a} → séance US ${k}`, ...(st.us_window_on_asia || {}) });
+    for (const [kk, st] of Object.entries(r.relay || {})) rows.push({ what: ({ europe_on_asia_window: 'fenêtre Asie → fenêtre Europe (relais)', us_on_asia_window: 'fenêtre Asie → séance US', us_on_europe_window: 'fenêtre Europe → séance US', us_on_asia_plus_europe: 'Asie + Europe → séance US' })[kk], ...(st || {}) });
+    table('tbl-fut-relay', [{ key: 'what', label: 'Relation', left: true }, { key: 'corr', label: 'Corr.', render: (x) => num(x.corr), cls: (x) => isNum(x.t_stat) && Math.abs(x.t_stat) > 2 ? 'warn' : '' }, { key: 'beta', label: 'β', render: (x) => num(x.beta) }, { key: 't_stat', label: 't', render: (x) => num(x.t_stat, 1) }, { key: 'n', label: 'n' }], rows);
+    const c = r.conditional || {};
+    table('tbl-fut-cond', [{ key: 'w', label: 'Condition', left: true }, { key: 'n', label: 'n' }, { key: 'mean', label: 'Séance US moyenne', render: (x) => pct(x.mean, 2), cls: (x) => sgnClass(x.mean) }, { key: 'hit', label: '% hausses', render: (x) => pctAbs(x.hit, 0) }, { key: 'europe_mean', label: 'Europe moyenne', render: (x) => x.europe_mean == null ? '' : pct(x.europe_mean, 2), cls: (x) => sgnClass(x.europe_mean) }],
+      [['Asie futures > +' + pctAbs(AS().threshold, 1), c.us_if_asia_up], ['Asie futures < −' + pctAbs(AS().threshold, 1), c.us_if_asia_down], ['Asie ↑ et Europe ↑', c.us_if_asia_and_europe_up], ['Asie ↑ et Europe ↓', c.us_if_asia_up_europe_down]].filter((x) => x[1]).map(([w, v]) => ({ w, ...v })));
+  }
+  function chartFutures() {
+    const F = AS().futures; if (!F || !F.futures) return; const r = F.futures[[...state.fut][0]]; if (!r || !r.history_60d) return; const cols = SERIES();
+    plot('ch-fut-roll', [
+      { type: 'scatter', mode: 'lines', name: 'corr. 60 j Asie → Europe', x: r.rolling_corr_europe_on_asia_60d.dates, y: r.rolling_corr_europe_on_asia_60d.values, line: { color: cols[2], width: 1.8 } },
+      { type: 'scatter', mode: 'lines', name: 'corr. 60 j Asie → séance US', x: r.rolling_corr_us_on_asia_60d.dates, y: r.rolling_corr_us_on_asia_60d.values, line: { color: cols[1], width: 1.8 } },
+    ], { hovermode: 'x unified', yaxis: { range: [-0.6, 0.6], gridcolor: css('--border'), zerolinecolor: css('--muted') } });
+    const h = r.history_60d;
+    plot('ch-fut-hist', [
+      { type: 'bar', name: 'Asie', x: h.dates, y: h.asia.map((v) => v * 100), marker: { color: cols[0] } }, { type: 'bar', name: 'Europe', x: h.dates, y: h.europe.map((v) => v * 100), marker: { color: cols[2] } }, { type: 'bar', name: 'US', x: h.dates, y: h.us.map((v) => v * 100), marker: { color: cols[1] } },
+    ], { barmode: 'relative', hovermode: 'x unified', yaxis: { title: { text: '% par fenêtre, 60 j' }, gridcolor: css('--border'), zerolinecolor: css('--muted') } });
+  }
+
+  // ---------------------------------------------------------------- OPTION SURFACE
+  function renderSurface() {
+    const S_ = (E().options_surface) || {}; const rows = Object.entries(S_).filter(([t, v]) => v && !v.error).map(([t, v]) => ({ t, ...v, fr: v.front || {}, bk: v.back || {}, tm: v.term || {} }));
+    table('tbl-surface', [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b> <span class="muted">${esc(sym(r.t).group || '')}</span>`, src: (r) => src(`spot ${num(r.spot)} · ${r.front_kind}`, r.fetched_at) },
+      { key: 'days_to_earnings', label: 'J → résultats', render: (r) => r.days_to_earnings == null ? NA : `${r.days_to_earnings} <span class="muted">${(r.earnings_date || '').slice(5)}</span>` },
+      { key: 'fe', label: 'Front', left: true, render: (r) => `${r.front_expiry} <span class="muted">${r.fr.n_strikes || 0} strikes, ${r.fr.basis || ''}</span>` },
+      { key: 'fiv', label: 'IV ATM front', render: (r) => pctAbs(r.fr.atm_iv), sortVal: (r) => r.fr.atm_iv }, { key: 'biv', label: 'IV ATM back', render: (r) => `${pctAbs(r.bk.atm_iv)} <span class="muted">${(r.back_expiry || '').slice(5)}</span>`, sortVal: (r) => r.bk.atm_iv },
+      { key: 'ratio', label: 'Front / back', render: (r) => isNum(r.tm.ratio_front_back) ? `×${r.tm.ratio_front_back.toFixed(2)}` : NA, cls: (r) => isNum(r.tm.ratio_front_back) ? (r.tm.ratio_front_back > 1.3 ? 'down' : (r.tm.ratio_front_back < 0.95 ? 'up' : '')) : '', sortVal: (r) => r.tm.ratio_front_back },
+      { key: 'ev', label: 'Move évén. (terme)', render: (r) => pctAbs(r.tm.implied_event_move_from_term), sortVal: (r) => r.tm.implied_event_move_from_term, src: (r) => r.tm.note || '' },
+      { key: 'skew', label: 'Skew 25Δ (put − call)', render: (r) => isNum(r.fr.skew_25d) ? `${(r.fr.skew_25d * 100).toFixed(1)} pts` : NA, cls: (r) => isNum(r.fr.skew_25d) ? (r.fr.skew_25d > 0.08 ? 'down' : (r.fr.skew_25d < 0 ? 'up' : '')) : '', sortVal: (r) => r.fr.skew_25d, src: (r) => `put 25Δ K ${num(r.fr.put25_strike, 1)} IV ${pctAbs(r.fr.put25_iv)} · call 25Δ K ${num(r.fr.call25_strike, 1)} IV ${pctAbs(r.fr.call25_iv)}` },
+      { key: 'ps', label: 'Put − ATM', render: (r) => isNum(r.fr.put_skew) ? `${(r.fr.put_skew * 100).toFixed(1)} pts` : NA, sortVal: (r) => r.fr.put_skew }, { key: 'cs', label: 'Call − ATM', render: (r) => isNum(r.fr.call_skew) ? `${(r.fr.call_skew * 100).toFixed(1)} pts` : NA, sortVal: (r) => r.fr.call_skew },
+      { key: 'bskew', label: 'Skew back', render: (r) => isNum(r.bk.skew_25d) ? `${(r.bk.skew_25d * 100).toFixed(1)} pts` : NA },
+    ], rows, { defaultSort: 'days_to_earnings', defaultDir: 1 });
+  }
+
   // ---------------------------------------------------------------- EARNINGS CALENDAR
   function renderEarningsCalendar() {
     const ev = E(); const list = ev.earnings_calendar || []; const today = new Date(ev.today + 'T00:00:00Z');
@@ -1130,9 +1256,9 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     const safe = (fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } };
     [renderStocks, renderIndices, renderHeat, volChipsInit, etfPickInit, techPickInit, renderTech, renderTechBacktest, renderFonda, render13f, renderCalendar, renderReact, renderReactDetail].forEach(safe);
     chips('bench-chips', ['SPX', 'NDX', 'SOX'].map((b) => ({ value: b, label: b })), state.bench, renderBeta);
-    [renderBeta, renderVol, renderBreadth, renderSigControls, renderSignals, renderBacktest, initSectors, renderEarningsCalendar, renderBaskets, renderAsia, renderCompo, renderSources, renderReading].forEach(safe);
+    [renderBeta, renderVol, renderBreadth, renderSigControls, renderSignals, renderBacktest, initSectors, renderEarningsCalendar, renderBaskets, renderAttribution, renderAsia, renderFutures, renderCompo, renderAlerts, renderFlows, renderSurface, renderSources, renderReading].forEach(safe);
     $('base-period').addEventListener('change', chartBase100); $('base-ccy').addEventListener('change', chartBase100); $('contrib-h').addEventListener('change', chartContrib);
-    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat, chartRRG, chartSecRs, chartSecPairs, renderSecRefs, renderSecHeat, chartTech, renderTechBacktest, chartBaskets, chartPairs, chartAsia);
+    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat, chartRRG, chartSecRs, chartSecPairs, renderSecRefs, renderSecHeat, chartTech, renderTechBacktest, chartBaskets, chartPairs, chartAsia, renderAttribution, chartFutures);
     showTab(location.hash.slice(1) || 'monitor');
   }
   load().then(init).catch((e) => { console.error(e); $('loading').textContent = 'Erreur de chargement : ' + e.message; });

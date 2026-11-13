@@ -30,7 +30,7 @@ par `fetch` quand il est servi par un serveur / publié. Les graphiques utilisen
 locale `lib/plotly.min.js` (Plotly 2.35.2, MIT) ; cdnjs n'est appelé qu'en secours, le
 dashboard fonctionne donc hors ligne.
 
-Options : `--skip-breadth`, `--skip-options`, `--skip-13f`, `--skip-wiki` réutilisent le
+Options : `--skip-breadth`, `--skip-options`, `--skip-13f`, `--skip-wiki`, `--skip-rty` réutilisent le
 fichier du run précédent (marqué comme tel dans `run_status.json`).
 
 Avant de lancer, remplacer dans `monitor_config.json` le `sec.user_agent` par votre nom et
@@ -72,6 +72,10 @@ sont souvent encore à J−2, le dashboard le montre tel quel.
 | `baskets.json` | paniers thématiques US (Mag7, hyperscalers, neo-clouds, mémoire, photonique, Leopold 13F) : indice équipondéré, perf, relatif au benchmark, z du ratio, betas, largeur, membres ; matrice « qui bat qui » et paires relatives |
 | `asia.json` | séance asiatique → séance US : corrélations et betas sur gap / intraday / close-close, beta partiel, taux de signes, moyennes conditionnelles, règle ouverture→clôture, corrélations glissantes |
 | `constituents_stats.json` | statistiques par titre des constituants SPX / NDX (et RTY si `inputs/IWM_holdings.csv` est présent), agrégats sectoriels |
+| `flows.json` | volumes anormaux (actions, ETF thématiques, ETF sectoriels US) : ratio et z 20 j, volume dollars, hausse/baisse 10 j, OBV ; proxy de flux, Yahoo n'ayant pas les parts en circulation |
+| `alerts.json` | alertes classées (idio ≥ 2 σ, croisement MM du jour, |z| ratio ≥ 2, quadrant RRG, Asie ≥ ±2 %, fenêtre Asie futures ≥ ±1 %, réaction post-earnings hors implicite, RSI extrême) |
+| `implied_history.json` | move implicite mémorisé par titre et date de résultats (sert à l'alerte post-earnings) |
+| `cusip_cache.json` | mapping CUSIP → ticker OpenFIGI persistant (Russell 2000) |
 | `backtest.json` | momentum US (avec / sans panier 13F), mean reversion Europe, et rotation sectorielle (top 3 momentum 12-1 mensuel, avec / sans filtre Faber, US et Europe), in/out-of-sample, frais et slippage |
 | `run_status.json` | étapes, erreurs, journal par symbole, séries sans clôture, lecture du marché |
 | `data.js` | les dix fichiers ci-dessus dans `window.EQUITY_MONITOR_DATA` |
@@ -102,7 +106,7 @@ sont souvent encore à J−2, le dashboard le montre tel quel.
 
 ## Russell 2000
 
-Déposer l'export iShares des positions d'IWM (`IWM_holdings.csv`) dans `Sources du dashboard/inputs/` ; le run suivant télécharge les prix des 2000 titres (compter 5 minutes de plus) et remplit l'onglet Compositions.
+Composition lue automatiquement dans le dernier N-PORT-P public de l'iShares Russell 2000 ETF (EDGAR), CUSIP convertis par OpenFIGI avec cache (`cusip_cache.json`). Première passe sans clé OpenFIGI : ~9 minutes ; ensuite quelques secondes. `--skip-rty` réutilise la composition précédente. Un export iShares `inputs/IWM_holdings.csv` déposé à la main reste prioritaire.
 
 ## Non fait (idées)
 

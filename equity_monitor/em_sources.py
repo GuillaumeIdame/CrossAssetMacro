@@ -41,7 +41,7 @@ def download_ohlc(tickers, period, logger, keep_today_for=None, batch_size=50):
     """Open and Close frames for intraday / gap analysis. `keep_today_for(ticker) -> bool` keeps today's bar
     (an Asian exchange already closed at run time); everything else drops the partial bar of the day."""
     tickers = list(dict.fromkeys(t for t in tickers if t))
-    opens, closes = [], []
+    opens, closes, vols = [], [], []
     today = pd.Timestamp(date.today())
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i:i + batch_size]
@@ -53,7 +53,7 @@ def download_ohlc(tickers, period, logger, keep_today_for=None, batch_size=50):
             continue
         if raw is None or raw.empty:
             continue
-        for field, store in (("Open", opens), ("Close", closes)):
+        for field, store in (("Open", opens), ("Close", closes), ("Volume", vols)):
             if isinstance(raw.columns, pd.MultiIndex):
                 fr = raw[field] if field in raw.columns.get_level_values(0) else pd.DataFrame()
             else:
@@ -67,6 +67,8 @@ def download_ohlc(tickers, period, logger, keep_today_for=None, batch_size=50):
         time.sleep(0.4)
     o = pd.concat(opens, axis=1).sort_index() if opens else pd.DataFrame()
     c = pd.concat(closes, axis=1).sort_index() if closes else pd.DataFrame()
+    v = pd.concat(vols, axis=1).sort_index() if vols else pd.DataFrame()
+    download_ohlc.last_volumes = v
     return o, c
 
 

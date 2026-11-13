@@ -22,7 +22,9 @@ from em_common import SymbolLog, load_config, now_iso, output_dir, read_json, se
 from em_metrics import (TRADING_DAYS, beta_block, breadth_block, correlation_matrix, earnings_reactions, f,
                         horizon_return, idio_contribution, market_stats, mean_reversion_signal, momentum_signal,
                         next_13f_deadline, option_expiries, percentile_of_last, realized_vol, timing_from_hour, to_usd)
-from em_baskets import asia_lead, basket_block, pair_history, relative_matrix
+from em_baskets import asia_lead, basket_block, ew_index, pair_history, relative_matrix
+from em_extras import (basket_earnings_share, build_alerts, chain_surface, futures_relay, nport_latest_holdings, session_windows,
+                       term_structure, two_factor_attribution, volume_anomalies)
 from em_sectors import region_summary, sector_table
 from em_sources import (SecClient, download_closes, download_ohlc, fetch_constituents, fetch_fundamentals, fetch_option_metrics,
                         figi_ticker_to_yahoo, load_iwm_holdings_csv, long_equity_positions, map_cusips_openfigi)
@@ -328,7 +330,7 @@ class MonitorRun:
         return res, cons_closes
 
     # ------------------------------------------------------------------ baskets + relative matrix
-    def run_baskets(self, universe, closes, prices_payload):
+    def run_baskets(self, universe, closes, prices_payload, upcoming=None, quotes=None):
         cfg = self.cfg
         usd = self._usd
         spx, ndx, sox = closes[universe["index_keys"]["SPX"]], closes[universe["index_keys"]["NDX"]], self._sox
@@ -341,10 +343,47 @@ class MonitorRun:
             blk = basket_block(bname, bc, members, closes, usd, bench_series, spx, ndx, sox, prices_payload)
             out["baskets"][bname] = blk
             if not blk.get("missing"):
-                idx, _ = __import__("em_baskets").ew_index(closes, members)
+                idx, _ = ew_index(closes, members)
                 series["basket:" + bname] = idx
         for k, v in bench_series.items():
             series[k] = v
+        # attribution: market beta (SPX), sector beta (benchmark of the basket, orthogonalised), residual
+        for bname, bc in cfg["baskets"].items():
+            blk = out["baskets"][bname]
+            if blk.get("missing"):
+                continue
+            sec = bench_series.get(bc.get("benchmark", "NDX"))
+            idx = series.get("basket:" + bname)
+            blk["attribution"] = two_factor_attribution(idx, spx, sec) if sec is not None and idx is not None else None
+            if blk["attribution"]:
+                blk["attribution"]["sector_factor"] = bc.get("benchmark", "NDX")
+        themes = cfg.get("leopold_themes", {})
+        leo = out["baskets"].get("Leopold") or {}
+        if not leo.get("missing"):
+            n = max(1, leo.get("n_with_data", 1))
+            by = {}
+            for mrow in leo.get("members_table", []):
+                if mrow.get("missing"):
+                    continue
+                th = next((k for k, v in themes.items() if mrow["ticker"] in v), "autre")
+                b = by.setdefault(th, {"tickers": [], "contrib_1m": 0.0, "contrib_1d": 0.0, "n": 0})
+                b["tickers"].append(mrow["ticker"]); b["n"] += 1
+                b["contrib_1m"] += (mrow.get("r_1m") or 0) / n
+                b["contrib_1d"] += (mrow.get("r_1d") or 0) / n
+            leo["theme_attribution"] = {k: {**v, "contrib_1m": f(v["contrib_1m"]), "contrib_1d": f(v["contrib_1d"]), "weight": f(v["n"] / n)} for k, v in by.items()}
+            leo["theme_note"] = "Themes definis dans monitor_config.json (leopold_themes) ; contribution = somme des perfs equiponderees des membres du theme."
+        # stock-level attribution (market SPX, sector = benchmark of the primary basket)
+        if quotes is not None:
+            for t, q in quotes.get("stocks", {}).items():
+                prim = (q.get("baskets") or [None])[0]
+                bkey = cfg["baskets"].get(prim, {}).get("benchmark") if prim else ("SOX" if t == "AMD" else "NDX")
+                sec = bench_series.get(bkey or "NDX")
+                if t in usd and sec is not None:
+                    q["attribution"] = two_factor_attribution(usd[t], spx, sec)
+                    if q["attribution"]:
+                        q["attribution"]["sector_factor"] = bkey or "NDX"
+        if upcoming is not None:
+            out["earnings_share"] = basket_earnings_share(universe["baskets"], upcoming, (quotes or {}).get("stocks", {}), cfg.get("alerts", {}).get("earnings_days_share", 10))
         rel_cfg = cfg["relative"]
         out["relative"] = relative_matrix(series, rel_cfg["benchmarks"], rel_cfg["horizons"])
         out["pairs"] = pair_history(series, [tuple(p) for p in rel_cfg["pairs"]])
@@ -381,7 +420,7 @@ class MonitorRun:
                 sx = closes[t].dropna().iloc[-252:]
                 hist[k] = {"dates": [str(d.date()) for d in sx.index], "values": [f(v / sx.iloc[0] * 100) for v in sx.values]}
         for b, v in acfg["baskets"].items():
-            idx, _ = __import__("em_baskets").ew_index(closes, list(v["members"]))
+            idx, _ = ew_index(closes, list(v["members"]))
             if idx is not None:
                 sx = idx.iloc[-252:]
                 hist[b] = {"dates": [str(d.date()) for d in sx.index], "values": [f(x / sx.iloc[0] * 100) for x in sx.values]}
@@ -395,7 +434,102 @@ class MonitorRun:
                     snap.append({"basket": b, "ticker": t, "name": name, "last_date": str(sx.index[-1].date()), "r_1d": f(sx.iloc[-1] / sx.iloc[-2] - 1) if len(sx) > 1 else None,
                                  "r_5d": f(sx.iloc[-1] / sx.iloc[-6] - 1) if len(sx) > 6 else None, "r_1m": f(sx.iloc[-1] / sx.iloc[-22] - 1) if len(sx) > 22 else None, "is_today": bool(sx.index[-1] == pd.Timestamp(self.today))})
         res["members_snapshot"] = snap
+        # futures ES / NQ hourly: Asia / Europe / US windows and the European relay
+        fcfg = self.cfg.get("futures", {})
+        try:
+            import yfinance as yf
+            fut_t = {k: v for k, v in fcfg.items() if k in ("NQ", "ES")}
+            raw = yf.download(list(fut_t.values()), period=fcfg.get("period", "730d"), interval="1h", auto_adjust=True, progress=False, group_by="column")
+            hc = raw["Close"] if isinstance(raw.columns, pd.MultiIndex) else raw[["Close"]].rename(columns={"Close": list(fut_t.values())[0]})
+            hc.index = hc.index.tz_convert("UTC") if hc.index.tz is not None else hc.index.tz_localize("UTC")
+            windows = {k: session_windows(hc[t], fcfg.get("asia_end_utc", "06:00"), fcfg.get("europe_end_utc", "13:30"), fcfg.get("us_end_utc", "21:00")) for k, t in fut_t.items() if t in hc.columns}
+            windows = {k: w for k, w in windows.items() if not w.empty}
+            asia_rets = {}
+            for b, v in acfg["baskets"].items():
+                cols = [t for t in v["members"] if t in closes.columns]
+                if cols:
+                    asia_rets[b] = closes[cols].pct_change().mean(axis=1, skipna=True).dropna()
+            for k, ic in acfg["indices"].items():
+                if ic["ticker"] in closes.columns:
+                    asia_rets[k] = closes[ic["ticker"]].dropna().pct_change().dropna()
+            res["futures"] = futures_relay(windows, asia_rets, {}, acfg["lookback_days"], acfg["signal_threshold"])
+            res["futures"]["tickers"] = fut_t
+            res["futures"]["fetched_at"] = now_iso()
+            for k in fut_t:
+                self.symlog.add(fut_t[k], "yfinance.download(1h)", "ok" if k in windows else "missing", f"{len(windows.get(k, []))} jours de fenetres", now_iso())
+        except Exception as exc:  # noqa: BLE001
+            self.log.warning("futures windows failed: %s", exc)
+            res["futures"] = {"error": str(exc)[:200]}
         return res
+
+    # ------------------------------------------------------------------ volumes (flow proxy)
+    def run_volumes(self, universe, quotes):
+        cfg = self.cfg
+        stocks = [t for t, s_ in universe["symbols"].items() if s_["type"] == "stock"]
+        etfs = list(cfg.get("thematic_etfs", {}).keys())
+        sec_us = list(cfg["sectors"]["US"]["members"].keys())
+        tickers = list(dict.fromkeys(stocks + etfs + sec_us))
+        opens, closes = download_ohlc(tickers, "6mo", self.log)
+        vols = getattr(download_ohlc, "last_volumes", pd.DataFrame())
+        names = {**{t: (quotes["stocks"].get(t) or {}).get("name", t) for t in stocks}, **cfg.get("thematic_etfs", {}), **cfg["sectors"]["US"]["members"]}
+        va = volume_anomalies(vols, closes, names)
+        out = {"generated_at": now_iso(), "fetched_at": now_iso(), "stocks": {t: va[t] for t in stocks if t in va}, "thematic_etfs": {t: va[t] for t in etfs if t in va},
+               "sector_etfs": {t: va[t] for t in sec_us if t in va},
+               "note": "Yahoo ne fournit pas l'historique des parts en circulation des ETF : pas de flux au sens creations/rachats. Proxy = volume du jour / moyenne 20 j (z-score), "
+                       "volume en dollars, ratio volume hausse/baisse 10 j, pente de l'OBV 20 j. Volumes de la derniere seance complete."}
+        return out
+
+    # ------------------------------------------------------------------ option surface: skew 25 delta, term structure
+    def run_surface(self, universe, closes, upcoming):
+        import yfinance as yf
+        ocfg = self.cfg.get("options_surface", {})
+        out = {}
+        for t, s_ in universe["symbols"].items():
+            if s_["type"] != "stock" or t not in closes.columns:
+                continue
+            spot = float(closes[t].dropna().iloc[-1])
+            up = upcoming.get(t) or {}
+            stamp = now_iso()
+            try:
+                tk = yf.Ticker(t)
+                exps = [datetime.strptime(e, "%Y-%m-%d").date() for e in (tk.options or [])]
+            except Exception as exc:  # noqa: BLE001
+                out[t] = {"error": str(exc)[:120], "fetched_at": stamp}
+                continue
+            if not exps:
+                out[t] = {"error": "pas d'options", "fetched_at": stamp}
+                continue
+            ed = date.fromisoformat(up["date"]) if up.get("date") else None
+            if ed and 0 <= (ed - self.today).days <= ocfg.get("max_days_to_earnings", 60):
+                front = next((e for e in exps if (e > ed if up.get("timing") == "AMC" else e >= ed)), None)
+                kind = "première échéance après résultats"
+            else:
+                target = self.today + timedelta(days=30)
+                front = min((e for e in exps if e > self.today), key=lambda e: abs((e - target).days), default=None)
+                kind = "échéance ~30 j (pas de résultats sous 60 j)"
+            if not front:
+                out[t] = {"error": "pas d'échéance utilisable", "fetched_at": stamp}
+                continue
+            back_target = front + timedelta(days=ocfg.get("back_offset_days", 75))
+            back = min((e for e in exps if e > front + timedelta(days=20)), key=lambda e: abs((e - back_target).days), default=None)
+            rec = {"fetched_at": stamp, "spot": spot, "front_expiry": front.isoformat(), "front_kind": kind, "back_expiry": back.isoformat() if back else None,
+                   "earnings_date": up.get("date"), "days_to_earnings": up.get("days_to")}
+            try:
+                oc = tk.option_chain(front.isoformat())
+                tf = max((front - self.today).days, 0.5) / 365
+                rec["front"] = chain_surface(oc.calls, oc.puts, spot, tf)
+                if back:
+                    ob = tk.option_chain(back.isoformat())
+                    tb = max((back - self.today).days, 1) / 365
+                    rec["back"] = chain_surface(ob.calls, ob.puts, spot, tb)
+                    rec["term"] = term_structure(rec.get("front"), rec.get("back"), tf, tb)
+                self.symlog.add(t, "yfinance.option_chain(surface)", "ok" if rec.get("front") else "missing", f"{front} / {back}", stamp)
+            except Exception as exc:  # noqa: BLE001
+                rec["error"] = str(exc)[:160]
+                self.symlog.add(t, "yfinance.option_chain(surface)", "error", exc, stamp)
+            out[t] = rec
+            time.sleep(0.25)
+        return out
 
     # ------------------------------------------------------------------ constituents stats (SPX / NDX / RTY)
     def run_constituent_stats(self, constituents, cons_closes, universe):
@@ -427,7 +561,28 @@ class MonitorRun:
             except Exception as exc:  # noqa: BLE001
                 out["indices"]["RTY"] = {"n": 0, "error": str(exc)[:200]}
         else:
-            out["indices"]["RTY"] = {"n": 0, "source": None, "reason": f"fichier {ccfg['russell_csv']} absent : {ccfg['note']}"}
+            ncfg = self.cfg.get("nport", {})
+            prev = (read_json(self.out / "constituents_stats.json") or {}).get("indices", {}).get("RTY") or {}
+            if self.args.skip_rty and prev.get("n"):
+                prev_rows = (read_json(self.out / "constituents_stats.json") or {}).get("rows", {})
+                for t, r in prev_rows.items():
+                    if "RTY" in r.get("indices", []):
+                        members.setdefault(t, {"name": r.get("name"), "sector": r.get("sector"), "indices": []})["indices"].append("RTY")
+                out["indices"]["RTY"] = {**prev, "reused_from_previous_run": True}
+            else:
+                try:
+                    out["indices"]["RTY"] = self._rty_from_nport(members, ncfg)
+                except Exception as exc:  # noqa: BLE001
+                    self.log.error("N-PORT RTY failed: %s", exc)
+                    out["indices"]["RTY"] = {"n": 0, "source": "SEC N-PORT", "error": str(exc)[:200], "reason": ccfg["note"]}
+            extra = [t for t in members if "RTY" in members[t]["indices"] and t not in cons_closes.columns]
+            if extra and out["indices"]["RTY"].get("n"):
+                sub = SymbolLog()
+                more, meta = download_closes(extra, "1y", self.log, sub, source_tag="yfinance.download(russell)", batch_size=100)
+                if not more.empty:
+                    cons_closes = pd.concat([cons_closes, more], axis=1)
+                out["indices"]["RTY"]["missing_on_yahoo"] = [t for t, m in meta.items() if not m["status"].startswith("ok")][:200]
+                out["indices"]["RTY"]["n_with_prices"] = int(sum(1 for t in extra if t in more.columns))
         for t, meta in members.items():
             if t not in cons_closes.columns:
                 out["rows"][t] = {**meta, "missing": True}
@@ -453,6 +608,36 @@ class MonitorRun:
         out["sector_aggregates"] = agg
         out["n_rows"] = len(out["rows"])
         return out
+
+    def _rty_from_nport(self, members, ncfg):
+        """Russell 2000 composition from the latest public N-PORT of the iShares Russell 2000 ETF, CUSIP -> ticker via OpenFIGI (cached)."""
+        scfg = self.cfg["sec"]
+        sec = SecClient(scfg["user_agent"], scfg.get("max_requests_per_second", 8), self.log)
+        np_ = nport_latest_holdings(sec, ncfg.get("series_name", "iShares Russell 2000 ETF"), ncfg.get("cik", "0001100663"), self.log)
+        if not np_:
+            return {"n": 0, "source": "SEC N-PORT", "reason": "aucun N-PORT-P de la serie trouve sur 8 mois"}
+        cache_path = self.out / ncfg.get("cusip_cache", "cusip_cache.json")
+        cache = read_json(cache_path) or {}
+        cusips = [h["cusip"] for h in np_["holdings"] if h["cusip"]]
+        api_key = os.environ.get(scfg.get("openfigi_api_key_env", "OPENFIGI_API_KEY")) or None
+        todo = [c for c in cusips if c not in cache or not cache[c].get("ticker")]
+        self.log.info("N-PORT %s: %d holdings, %d CUSIP to map via OpenFIGI (%s)", np_["period"], len(cusips), len(todo), "with key" if api_key else "no key: 10 per request, ~2.6 s each")
+        mapping, calls = map_cusips_openfigi(cusips, self.log, api_key=api_key, cache=cache)
+        for c, m in mapping.items():
+            if m.get("ticker"):
+                cache[c] = {"ticker": m["ticker"], "name": m.get("name"), "exchCode": m.get("exchCode"), "securityType": m.get("securityType"), "idType": m.get("idType"), "fetched_at": m.get("fetched_at")}
+        write_json(cache_path, cache)
+        n_ok = 0
+        for h in np_["holdings"]:
+            m = mapping.get(h["cusip"]) or {}
+            y = figi_ticker_to_yahoo(m.get("ticker"))
+            if not y:
+                continue
+            n_ok += 1
+            members.setdefault(y, {"name": h["name"], "sector": None, "indices": []})["indices"].append("RTY")
+            members[y]["weight_rty"] = h["pct"]
+        return {"n": len(np_["holdings"]), "n_mapped": n_ok, "source": f"SEC N-PORT-P {np_['accession']} (periode {np_['period']}, depose le {np_['filing_date']}) + OpenFIGI", "url": np_["url"],
+                "fetched_at": np_["fetched_at"], "openfigi_calls": len(calls), "note": "Secteur non fourni par le N-PORT ; composition a la date de la periode du depot (decalage de 1 a 3 mois)."}
 
     # ------------------------------------------------------------------ sectors
     def run_sectors(self, universe, closes, prices_payload):
@@ -917,10 +1102,24 @@ class MonitorRun:
             breadth = breadth_res[0] if breadth_res else {"indices": {}, "error": "breadth non calculee"}
             cons_closes = breadth_res[1] if breadth_res and isinstance(breadth_res[1], pd.DataFrame) else pd.DataFrame()
             self._sectors = self.step("Rotation sectorielle US / Europe", lambda: self.run_sectors(universe, closes, prices_payload)) or {}
-            self._baskets = self.step("Paniers thématiques et matrice relative", lambda: self.run_baskets(universe, closes, prices_payload)) or {}
-            self._asia = self.step("Asie → US (gap / intraday)", lambda: self.run_asia(universe)) or {}
+            self._baskets = self.step("Paniers thématiques, attribution, matrice relative", lambda: self.run_baskets(universe, closes, prices_payload, upcoming, quotes)) or {}
+            self._asia = self.step("Asie → US (gap / intraday) et futures ES / NQ", lambda: self.run_asia(universe)) or {}
+            self._flows = self.step("Volumes anormaux (proxy de flux)", lambda: self.run_volumes(universe, quotes)) or {}
+            surface = (self.step("Surface d'options : skew 25 delta et structure par terme", lambda: self.run_surface(universe, closes, upcoming)) or {}) if not self.args.skip_options else {}
             self._cons_stats = self.step("Compositions SPX / NDX / RTY par titre", lambda: self.run_constituent_stats(constituents, cons_closes, universe)) or {}
             quotes, risk, events = self.step("Signaux, corrélations, lecture", lambda: self.finish(universe, closes, quotes, risk, events, upcoming, options, breadth), critical=True)
+            events["options_surface"] = surface
+            # implied-move history: remember today's implied move per (ticker, earnings date) for the post-earnings alert
+            hist = read_json(self.out / "implied_history.json") or {}
+            for t, u in events["upcoming"].items():
+                if u.get("date") and u.get("implied_move") is not None:
+                    hist.setdefault(t, {})[u["date"]] = u["implied_move"]
+            write_json(self.out / "implied_history.json", hist)
+            self.cfg["_implied_history"] = hist
+            self._alerts = self.step("Alertes", lambda: build_alerts(quotes, risk, events, self._sectors, self._baskets, self._asia, (self._asia or {}).get("futures"), self.cfg, self.today)) or {}
+            if self._alerts.get("alerts") is not None:
+                top = [a for a in self._alerts["alerts"] if a["severity"] in ("high", "medium")][:8]
+                risk["market_reading"].append("Alertes — " + ("; ".join(f"{a['symbol']} : {a['text']}" for a in top) if top else "aucune alerte haute ou moyenne") + f" ({self._alerts['counts']} ; détail dans l'onglet Monitor).")
             status = "ok" if not self.errors else "partial"
         except Exception as exc:  # noqa: BLE001
             status = "error"
@@ -941,6 +1140,8 @@ class MonitorRun:
         write_json(self.out / "baskets.json", self._baskets)
         write_json(self.out / "asia.json", self._asia)
         write_json(self.out / "constituents_stats.json", self._cons_stats)
+        write_json(self.out / "flows.json", getattr(self, "_flows", {}))
+        write_json(self.out / "alerts.json", getattr(self, "_alerts", {}))
         self.write_status(status)
         self.bundle()
         if status == "ok" and (self.out.parent / "LAST_ERROR.txt").exists():
@@ -965,7 +1166,7 @@ class MonitorRun:
 
     def bundle(self):
         """data.js: every JSON in one global so index.html works from file:// (no fetch) as well as from a server."""
-        names = ["universe", "prices", "quotes", "events", "breadth", "constituents", "sa_13f", "risk", "sectors", "baskets", "asia", "constituents_stats", "run_status", "backtest"]
+        names = ["universe", "prices", "quotes", "events", "breadth", "constituents", "sa_13f", "risk", "sectors", "baskets", "asia", "constituents_stats", "flows", "alerts", "run_status", "backtest"]
         parts = []
         for n in names:
             p = self.out / f"{n}.json"
@@ -979,6 +1180,7 @@ def main():
     ap.add_argument("--skip-options", action="store_true")
     ap.add_argument("--skip-13f", action="store_true")
     ap.add_argument("--skip-wiki", action="store_true")
+    ap.add_argument("--skip-rty", action="store_true", help="reuse the previous Russell 2000 composition (no N-PORT / OpenFIGI calls)")
     ap.add_argument("--bundle-only", action="store_true", help="only rebuild data.js from the existing JSON files")
     args = ap.parse_args()
     run = MonitorRun(args)

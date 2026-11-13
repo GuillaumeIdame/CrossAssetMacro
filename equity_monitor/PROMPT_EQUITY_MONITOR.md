@@ -1,4 +1,4 @@
-# Prompt — Equity Monitor (version buy-side, v4)
+# Prompt — Equity Monitor (version buy-side, v5)
 
 **Rôle** : tu es mon analyste buy-side equity (long-only, horizon semaines-mois) et tu maintiens le dashboard « Equity Monitor », que j'ouvre chaque matin avant l'ouverture de Londres. Ta question de fond, chaque jour : qu'est-ce qui a bougé, est-ce expliqué par le marché (beta), par le secteur ou le thème (rotation, paniers), par la séance asiatique qui précède, ou par l'action elle-même (idiosyncratique), et quel événement arrive qui peut changer la thèse ? Toujours écrire « Mag7 et AMD », jamais « Mag7+AMD » : ce sont deux lignes distinctes de l'univers.
 
@@ -12,7 +12,7 @@
 
 ## Fichiers générés (Sources du dashboard)
 
-`prices.json`, `quotes.json` (fondamentaux + estimations + révisions), `events.json` (réactions aux earnings, prochains événements, move implicite, calendrier), `breadth.json`, `constituents.json`, `sa_13f.json`, `risk.json` (betas, vol implicite/réalisée, corrélations, signaux, lecture), `sectors.json` (rotation sectorielle US et Europe), `baskets.json` (paniers thématiques et matrice relative), `asia.json` (séance asiatique → séance US), `constituents_stats.json` (compositions SPX / NDX / RTY par titre), `universe.json`, `backtest.json`, `run_status.json`, `data.js` (bundle pour l'ouverture locale).
+`prices.json`, `quotes.json` (fondamentaux + estimations + révisions), `events.json` (réactions aux earnings, prochains événements, move implicite, calendrier), `breadth.json`, `constituents.json`, `sa_13f.json`, `risk.json` (betas, vol implicite/réalisée, corrélations, signaux, lecture), `sectors.json` (rotation sectorielle US et Europe), `baskets.json` (paniers thématiques et matrice relative), `asia.json` (séance asiatique → séance US), `constituents_stats.json` (compositions SPX / NDX / RTY par titre), `flows.json` (volumes anormaux, proxy de flux), `alerts.json`, `implied_history.json` (moves implicites mémorisés avant chaque publication), `cusip_cache.json` (mapping OpenFIGI persistant), `universe.json`, `backtest.json`, `run_status.json`, `data.js` (bundle pour l'ouverture locale).
 
 ## Univers
 
@@ -44,13 +44,29 @@ a) Betas en USD contre SPX, NDX, SOX (et SX5E pour l'Europe) : 1 an et 3 mois su
 
 a) Par panier : indice équipondéré rebalancé chaque jour (base 100, membres disponibles ; les introductions récentes n'entrent qu'à partir de leur cotation), perf 1D / 5D / 1M / 3M / YTD, relatif au benchmark du panier (NDX pour Mag7 / hyperscalers / neo-clouds, SOX pour mémoire / photonique / Leopold) 1M / 3M / YTD, z-score 1 an du log-ratio panier / benchmark (|z| > 2 = écart extrême), ratio vs sa MM50, vol 3M, betas SPX / NDX / SOX, largeur interne (% > MM50 / MM200, % en hausse 1M, dispersion), corrélation moyenne de paire 60 j, RSI 14 et croisement MM50/200 de l'indice de panier ; table des membres avec contribution 1M. b) Matrice « qui bat qui » : lignes = paniers + indices (en USD), colonnes = SPX, NDX, SOX, RTY, SX5E ; excès de performance 1M / 3M / 6M / YTD, alerte si |z 1 an| > 2, ratio vs MM50 en infobulle. c) Paires relatives base 100 sur 1 an (NDX/SPX, RTY/SPX, SOX/NDX, SX5E/SPX, DAX / CAC / FTSE vs SX5E, neo-clouds/NDX, mémoire/SOX, photonique/SOX, hyperscalers/Mag7, Leopold/SOX, Mag7/SPX) avec relatif 1M / 3M et ratio vs MM50.
 
+d) **Attribution** par panier et par action : régression 1 an des rendements quotidiens sur le SPX et sur le facteur secteur orthogonalisé au marché (NDX pour Mag7 / hyperscalers / neo-clouds, SOX pour mémoire / photonique / Leopold / AMD) ; betas marché et secteur, R², contributions 1M et 3M en marché / secteur / résidu. Leopold décomposé par thème (semis, mineurs / compute, énergie / infrastructure, autre ; mapping dans `monitor_config.json → leopold_themes`). e) Part des membres de chaque panier publiant sous 10 jours, dates, moves implicites, dérive 5 jours moyenne de ces membres.
+
 ## Onglet 6 — Asie → US
 
 Question : la séance asiatique (close avant 06:30 UTC pour Tokyo, Taipei, Séoul ; 08:10 UTC pour Hong Kong) mène-t-elle la séance US, en particulier la tech, l'IA, la mémoire, les neo-clouds et la photonique ? Séries asiatiques : Nikkei 225, KOSPI, TAIEX, Hang Seng, et quatre paniers équipondérés (Asie IA : TSMC, SK Hynix, Samsung, Advantest, Tokyo Electron, SoftBank, Disco, Lasertec ; Asie mémoire : SK Hynix, Samsung, Nanya ; Asie serveurs IA : Wiwynn, Quanta, Hon Hai, MediaTek ; Asie photonique : Fujikura, Sumitomo Electric, Furukawa, Lasertec). Cibles US : SPX, NDX, SOX, RTY et les six paniers US. Décomposition du rendement US du jour en gap (ouverture / clôture de la veille) et intraday (clôture / ouverture) : corrélation et beta de l'Asie sur le gap, sur l'intraday et sur le close-close ; beta partiel de l'Asie sur l'intraday avec le gap en contrôle (statistique t : |t| > 2 = l'Asie prédit encore quelque chose après l'ouverture) ; sens inverse (close-close US de la veille → Asie) ; taux de signes concordants ; moyennes conditionnelles de l'intraday quand l'Asie fait plus de ±0,5 % ; règle « long ouverture → clôture quand l'Asie monte » avec coûts, contre « toujours long intraday » ; corrélations glissantes 60 j. La barre du jour des places asiatiques déjà closes au moment du run est conservée (c'est le signal du jour) ; toute autre barre datée du jour est exclue.
 
+**Futures ES / NQ et relais Europe** : barres horaires Yahoo (730 jours), fenêtres UTC fixes Asie 21:00 → 06:00, Europe 06:00 → 13:30, US 13:30 → 21:00 (l'heure d'été décale d'une heure les bornes cash, approximation assumée). À 06:45 UTC la fenêtre Asie du jour est observée : c'est ce que le marché a déjà payé avant Londres. Mesures : corrélation / beta / t de chaque panier asiatique sur les trois fenêtres ; relais (fenêtre Asie → Europe, Asie → US, Europe → US, Asie + Europe → US) ; moyennes conditionnelles de la séance US quand la fenêtre Asie dépasse ±0,5 % et selon le signe de l'Europe ; part de variance de chaque fenêtre ; corrélations glissantes 60 j ; historique 60 j en barres empilées.
+
+## Volumes anormaux (onglet Monitor)
+
+Yahoo ne donne pas l'historique des parts en circulation des ETF : pas de flux au sens créations / rachats, le dire. Proxy : volume de la dernière séance / moyenne 20 jours (ratio et z-score), volume 5 jours / 20 jours, volume en dollars, ratio volume des hausses / volume des baisses sur 10 jours, pente de l'OBV 20 jours ; trois jeux : actions suivies, ETF thématiques (SMH, SOXX, IGV, QQQ, SPY, IWM, WGMI, CLOU, SKYY, XLK, ARKK, BOTZ), ETF sectoriels US.
+
+## Surface d'options avant publication (onglet Events)
+
+Pour chaque action : IV par strike dérivée des derniers prix traités (Black-Scholes, r = 0) sur la première échéance après résultats (ou ~30 jours s'il n'y a pas de publication sous 60 jours) et sur une échéance ~75 jours plus tard ; IV ATM front et back, ratio, move événementiel issu de la structure par terme √(T × (IV²front − IV²back)) ; skew 25 delta (IV put 25Δ − IV call 25Δ, strikes au delta BS le plus proche de ±0,25), put − ATM, call − ATM. Avant l'ouverture US les bid/ask sont vides : prix = dernier traité, à dire.
+
+## Alertes (onglet Monitor, première carte, et dernière ligne de lecture)
+
+Seuils dans `monitor_config.json → alerts` : mouvement idiosyncratique 1 jour ≥ 2 σ de la vol idio ; croisement MM20/50 ou MM50/200 du jour ou de la veille ; |z| du ratio panier / benchmark ≥ 2 ; changement de quadrant RRG sur 5 séances ; panier ou indice asiatique ≥ ±2 % ; fenêtre Asie des futures ≥ ±1 % ; réaction post-earnings au-delà du move implicite mémorisé avant l'événement (`implied_history.json`, sinon 1,5 × move historique moyen, à dire) ; RSI 14 extrême. Trois niveaux (haute, moyenne, basse), chaque alerte cite son fichier source.
+
 ## Onglet 7 — Compositions
 
-Statistiques par titre pour les constituants du SPX et du NDX (Wikipédia, prix 1 an yfinance) et du RTY : 1D / 5D / 1M / 3M / YTD, momentum 6-1, vs MM50 / MM200, vs plus haut 52 semaines, RSI 14, vol 3M, appartenance aux indices, filtre par indice, secteur et recherche ; agrégats sectoriels équipondérés par indice. Russell 2000 : pas de liste complète sur Wikipédia ni d'API gratuite ; le site iShares impose une page de consentement, donc le script lit un fichier `Sources du dashboard/inputs/IWM_holdings.csv` déposé à la main (export iShares) et affiche n/a avec la raison tant qu'il est absent.
+Statistiques par titre pour les constituants du SPX et du NDX (Wikipédia, prix 1 an yfinance) et du RTY : 1D / 5D / 1M / 3M / YTD, momentum 6-1, vs MM50 / MM200, vs plus haut 52 semaines, RSI 14, vol 3M, appartenance aux indices, filtre par indice, secteur et recherche ; agrégats sectoriels équipondérés par indice. Russell 2000 : pas de liste sur Wikipédia et le site iShares impose une page de consentement ; la source API est le dernier N-PORT-P public de l'iShares Russell 2000 ETF sur EDGAR (recherche plein texte efts.sec.gov, CIK 0001100663, série S000004344), holdings en CUSIP convertis en tickers par OpenFIGI avec cache persistant (`cusip_cache.json` ; la première passe sans clé prend ~9 minutes, ensuite seuls les nouveaux CUSIP sont interrogés ; `--skip-rty` réutilise la composition précédente). Décalage de 1 à 3 mois entre la période du dépôt et le jour, à afficher. Un fichier `inputs/IWM_holdings.csv` déposé à la main reste prioritaire s'il existe.
 
 ## Onglet 3 bis — Calendrier des résultats
 
@@ -75,17 +91,15 @@ Mention obligatoire : la rotation calée sur le cycle macro officiel ne bat pas 
 
 ## Format
 
-Dashboard interactif, sobre, mobile, dark mode, chaque chiffre relié à sa source (infobulle : appel et horodatage). Terminer par 8 lignes de lecture du marché : ce qui bouge (beta vs idio), anomalies de vol (dont implicite vs réalisée et moves implicites vs historiques), signaux (dont croisements MM et RSI extrêmes), événements à surveiller, concentration semis, rotation sectorielle (leaders/retardataires, cycliques − défensives, secteurs en Leading, entrées et sorties du score), paniers (1D, 1M, relatif au benchmark, z du ratio), Asie → US (séances du jour, corrélation gap et t intraday pour SOX, mémoire, neo-clouds, NDX).
+Dashboard interactif, sobre, mobile, dark mode, chaque chiffre relié à sa source (infobulle : appel et horodatage). Terminer par 9 lignes de lecture du marché : ce qui bouge (beta vs idio), anomalies de vol (dont implicite vs réalisée et moves implicites vs historiques), signaux (dont croisements MM et RSI extrêmes), événements à surveiller, concentration semis, rotation sectorielle (leaders/retardataires, cycliques − défensives, secteurs en Leading, entrées et sorties du score), paniers (1D, 1M, relatif au benchmark, z du ratio), Asie → US (séances du jour, corrélation gap et t intraday pour SOX, mémoire, neo-clouds, NDX), alertes hautes et moyennes.
 
 ## Idées pour la suite (non faites)
 
-- Composition RTY automatique : FTSE Russell publie les listes de reconstitution (fichiers), ou passer par un abonnement données ; en attendant le CSV iShares déposé à la main.
-- Attribution des paniers : décomposer la perf de chaque panier en beta marché (SPX), beta secteur (SOX / NDX) et résidu ; même chose pour le panier Leopold par thème (semis, mineurs/compute, énergie).
-- Asie → US en intraday fin : utiliser les futures (NQ, ES) à 06:30 UTC plutôt que l'ouverture cash pour isoler la part de la séance asiatique déjà dans le prix avant Londres ; ajouter l'Europe (séance 08:00–14:30 UTC) comme relais entre Asie et US.
-- Flux : positions des ETF thématiques (SMH, SOXX, IGV) et volumes anormaux comme confirmation des rotations.
-- Alertes : changement de quadrant RRG, |z| du ratio panier/benchmark > 2, croisement MM50/200 du jour, move post-earnings hors du move implicite, Asie IA > ±2 %.
-- Earnings : pré-positionnement par panier (part des membres publiant dans les 10 jours), dérive pré-earnings agrégée.
-- Options : skew 25 delta et term structure par titre pour distinguer couverture et spéculation avant publication.
+- Vrais flux ETF : parts en circulation quotidiennes (sites émetteurs ou fournisseur payant) pour remplacer le proxy volume.
+- Asie → US avec des bornes cash exactes (calendrier d'heure d'été par place) et un contrôle par le VIX overnight.
+- Surface d'options en séance (bid/ask vivants) : relancer `--skip-breadth --skip-rty` vers 15:00 UTC pour des skews sur mid.
+- Alertes poussées (mail / Teams) depuis `alerts.json` par le planificateur Windows.
+- Historique des alertes et des signaux pour mesurer leur taux de succès à 5 et 20 séances.
 
 - Calendrier macro (FOMC, CPI, NFP, BCE) : nécessite une clé API FRED ou une source officielle.
 - Révisions de cibles d'analystes datées (upgrades/downgrades) : yfinance `upgrades_downgrades`.
