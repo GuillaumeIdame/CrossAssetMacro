@@ -220,7 +220,8 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   </section>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script src="lib/plotly.min.js"></script>
+<script>if (typeof Plotly === 'undefined') { document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>'); }</script>
 <script src="Sources%20du%20dashboard/data.js"></script>
 <script>
 (function () {
@@ -318,7 +319,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   }
   const PCFG = { displayModeBar: false, responsive: true };
   const charts = [];
-  function plot(id, traces, lay) { const el = $(id); if (!el) return; if (typeof Plotly === 'undefined') { el.innerHTML = '<div class="note">graphique indisponible : la librairie Plotly (cdnjs) n\'a pas pu être chargée.</div>'; return; } Plotly.react(el, traces, Object.assign(layout(lay), { height: el.clientHeight || 320 }), PCFG); }
+  function plot(id, traces, lay) { const el = $(id); if (!el) return; if (typeof Plotly === 'undefined') { el.innerHTML = '<div class="note">graphique en attente : la librairie Plotly (lib/plotly.min.js, puis cdnjs) n\'est pas chargée.</div>'; return; } Plotly.react(el, traces, Object.assign(layout(lay), { height: el.clientHeight || 320 }), PCFG); }
   function renderAllCharts() { charts.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } }); }
 
   // ---------------------------------------------------------------- state
@@ -829,6 +830,8 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   }
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
   window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+  // if the chart library arrives after the first render (slow network), draw the charts then
+  window.addEventListener('load', () => { if (typeof Plotly !== 'undefined' && D.universe) renderAllCharts(); });
 
   // ---------------------------------------------------------------- boot
   async function load() {

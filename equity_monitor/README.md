@@ -26,7 +26,9 @@ schtasks /Create /TN "EquityMonitor" /TR "\"C:\chemin\equity_monitor\run_monitor
 maintenir à la main lors des changements d'heure.)
 
 Puis ouvrir `index.html` : il lit `Sources du dashboard/data.js` (file://) ou les JSON
-par `fetch` quand il est servi par un serveur / publié.
+par `fetch` quand il est servi par un serveur / publié. Les graphiques utilisent la copie
+locale `lib/plotly.min.js` (Plotly 2.35.2, MIT) ; cdnjs n'est appelé qu'en secours, le
+dashboard fonctionne donc hors ligne.
 
 Options : `--skip-breadth`, `--skip-options`, `--skip-13f`, `--skip-wiki` réutilisent le
 fichier du run précédent (marqué comme tel dans `run_status.json`).
