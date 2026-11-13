@@ -416,6 +416,22 @@
     }
   });
 
+  /* ------------------------------------------------------------------ transient-error retry */
+  // The connector sometimes answers "org policy check unavailable — retry" when many calls run at once.
+  // Re-run such a source up to 3 times, a few seconds apart. Other errors are left to the Sources panel.
+  const RETRY = {}, PENDING = {};
+  dash.onData(() => {
+    for (const id of ["sofr", "euribor", "sonia", "corra", "saron", "aussie", "zq",
+      "sofr_5m", "euribor_5m", "sonia_5m", "corra_5m", "saron_5m", "aussie_5m"]) {
+      if (id.endsWith("_5m") && !INTRA_TF.includes(UI.heat_tf) && !INTRA_TF.includes(UI.curve_tf)) continue;
+      const d = dash.data(id);
+      if (d.status !== "error" || PENDING[id] || (RETRY[id] || 0) >= 3) continue;
+      if (!/unavailable|retry|timeout|timed out|rate|busy|try again/i.test(d.message || "")) continue;
+      RETRY[id] = (RETRY[id] || 0) + 1; PENDING[id] = true;
+      setTimeout(() => { PENDING[id] = false; dash.refresh(id); }, 2500 * RETRY[id] + Math.random() * 1500);
+    }
+  });
+
   /* ------------------------------------------------------------------ controls */
   const REDRAW = { heat_tf: ["heat"], sent_tf: ["sent"], curve: ["curve"], curve_tf: ["curve"] };
   function syncPills() {

@@ -15,12 +15,24 @@ def loader(ds, title, conids, own, other_period, desc):
       return {{ code, rows: a.time.map((t, i) => ({{ contract: code, time: t,
         session: new Date(Date.parse(t) + 12 * 3600e3).toISOString().slice(0, 10), close: Number(a.close[i]) }})) }};
     }};
+    // One contract at a time, retrying transient connector errors, so IBKR isn't flooded.
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const fetchOne = async (code, id, extra) => {{
+      let last;
+      for (let attempt = 0; attempt < 4; attempt++) {{
+        if (attempt) await wait(1000 * 2 ** (attempt - 1));
+        try {{
+          const r = toRows(code, await call("get_price_history", {{ ...args, ...extra, contract_id: id }}));
+          if (r.rows || !/unavailable|retry|timeout|timed out|rate|busy|try again/i.test(r.error)) return r;
+          last = r;
+        }} catch (e) {{ last = {{ code, error: String((e && e.message) || e) }}; }}
+      }}
+      return last;
+    }};
     const results = [toRows(OWN, answer)];
-    const rest = Object.entries(CONTRACTS).filter(([k]) => k !== OWN);
-    for (let i = 0; i < rest.length; i += 4) {{
-      results.push(...await Promise.all(rest.slice(i, i + 4).map(([code, id]) =>
-        call("get_price_history", {{ ...args, {period_line}contract_id: id }}).then((a) => toRows(code, a),
-          (e) => ({{ code, error: String((e && e.message) || e) }})))));
+    if (!results[0].rows) results[0] = await fetchOne(OWN, CONTRACTS[OWN], {{}});
+    for (const [code, id] of Object.entries(CONTRACTS)) {{
+      if (code !== OWN) results.push(await fetchOne(code, id, {{ {period_line}}}));
     }}
     const ok = results.filter((r) => r.rows && r.rows.length);
     if (!ok.length) throw new Error("IBKR returned no bars: " + results.map((r) => r.code + " " + r.error).join("; "));
