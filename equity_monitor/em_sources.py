@@ -32,6 +32,8 @@ def _closes_from_download(raw: pd.DataFrame, tickers):
         closes = raw[["Close"]].rename(columns={"Close": tickers[0]}) if "Close" in raw.columns else pd.DataFrame()
     closes = closes.copy()
     closes.index = pd.DatetimeIndex(closes.index).tz_localize(None).normalize()
+    # a bar dated today is a partial session (pre-market or intraday print), never a close
+    closes = closes[closes.index < pd.Timestamp(date.today())]
     return closes
 
 

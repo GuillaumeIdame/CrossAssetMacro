@@ -2,35 +2,135 @@
   "history_years": 5,
   "output_dir": "Sources du dashboard",
   "indices": {
-    "SPX":  {"ticker": "^GSPC",     "name": "S&P 500",        "currency": "USD"},
-    "NDX":  {"ticker": "^NDX",      "name": "Nasdaq 100",     "currency": "USD"},
-    "SOX":  {"ticker": "^SOX",      "name": "PHLX Semiconductor", "currency": "USD", "proxy": "SMGB.L"},
-    "SX5E": {"ticker": "^STOXX50E", "name": "Euro Stoxx 50",  "currency": "EUR"},
-    "DAX":  {"ticker": "^GDAXI",    "name": "DAX 40",         "currency": "EUR"},
-    "CAC":  {"ticker": "^FCHI",     "name": "CAC 40",         "currency": "EUR"},
-    "FTSE": {"ticker": "^FTSE",     "name": "FTSE 100",       "currency": "GBP"}
+    "SPX": {
+      "ticker": "^GSPC",
+      "name": "S&P 500",
+      "currency": "USD"
+    },
+    "NDX": {
+      "ticker": "^NDX",
+      "name": "Nasdaq 100",
+      "currency": "USD"
+    },
+    "SOX": {
+      "ticker": "^SOX",
+      "name": "PHLX Semiconductor",
+      "currency": "USD",
+      "proxy": "SMGB.L"
+    },
+    "SX5E": {
+      "ticker": "^STOXX50E",
+      "name": "Euro Stoxx 50",
+      "currency": "EUR"
+    },
+    "DAX": {
+      "ticker": "^GDAXI",
+      "name": "DAX 40",
+      "currency": "EUR"
+    },
+    "CAC": {
+      "ticker": "^FCHI",
+      "name": "CAC 40",
+      "currency": "EUR"
+    },
+    "FTSE": {
+      "ticker": "^FTSE",
+      "name": "FTSE 100",
+      "currency": "GBP"
+    }
   },
   "fx": {
-    "EURUSD": {"ticker": "EURUSD=X", "name": "EUR/USD"},
-    "GBPUSD": {"ticker": "GBPUSD=X", "name": "GBP/USD"}
+    "EURUSD": {
+      "ticker": "EURUSD=X",
+      "name": "EUR/USD"
+    },
+    "GBPUSD": {
+      "ticker": "GBPUSD=X",
+      "name": "GBP/USD"
+    }
   },
   "implied_vol": {
-    "VIX":    {"ticker": "^VIX", "name": "VIX (SPX 30j)", "index": "SPX"},
-    "VXN":    {"ticker": "^VXN", "name": "VXN (NDX 30j)", "index": "NDX"},
-    "VSTOXX": {"ticker": null,   "name": "VSTOXX (SX5E 30j)", "index": "SX5E",
-               "reason": "Le VSTOXX (V2TX) n'est pas distribue par Yahoo Finance ; source officielle STOXX/Eurex payante."}
+    "VIX": {
+      "ticker": "^VIX",
+      "name": "VIX (SPX 30j)",
+      "index": "SPX"
+    },
+    "VXN": {
+      "ticker": "^VXN",
+      "name": "VXN (NDX 30j)",
+      "index": "NDX"
+    },
+    "VSTOXX": {
+      "ticker": null,
+      "name": "VSTOXX (SX5E 30j)",
+      "index": "SX5E",
+      "reason": "Le VSTOXX (V2TX) n'est pas distribue par Yahoo Finance ; source officielle STOXX/Eurex payante."
+    }
   },
   "stock_groups": {
-    "Mag7+AMD": ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AMD"]
+    "Mag7+AMD": [
+      "AAPL",
+      "MSFT",
+      "NVDA",
+      "AMZN",
+      "GOOGL",
+      "META",
+      "TSLA",
+      "AMD"
+    ]
   },
-  "mag7": ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"],
+  "mag7": [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "TSLA"
+  ],
   "etfs": [
-    {"ticker": "CNX1.L",  "name": "iShares Nasdaq 100 UCITS (Acc)",  "line": "LSE",   "underlying": "NDX", "held": true},
-    {"ticker": "SXRV.DE", "name": "iShares Nasdaq 100 UCITS (Acc)",  "line": "Xetra", "underlying": "NDX", "held": true},
-    {"ticker": "CSP1.L",  "name": "iShares Core S&P 500 UCITS (Acc)", "line": "LSE",   "underlying": "SPX", "held": true},
-    {"ticker": "SXR8.DE", "name": "iShares Core S&P 500 UCITS (Acc)", "line": "Xetra", "underlying": "SPX", "held": true},
-    {"ticker": "SMGB.L",  "name": "VanEck Semiconductor UCITS",       "line": "LSE",   "underlying": "SOX", "held": true},
-    {"ticker": "VVSM.DE", "name": "VanEck Semiconductor UCITS",       "line": "Xetra", "underlying": "SOX", "held": true}
+    {
+      "ticker": "CNX1.L",
+      "name": "iShares Nasdaq 100 UCITS (Acc)",
+      "line": "LSE",
+      "underlying": "NDX",
+      "held": true
+    },
+    {
+      "ticker": "SXRV.DE",
+      "name": "iShares Nasdaq 100 UCITS (Acc)",
+      "line": "Xetra",
+      "underlying": "NDX",
+      "held": true
+    },
+    {
+      "ticker": "CSP1.L",
+      "name": "iShares Core S&P 500 UCITS (Acc)",
+      "line": "LSE",
+      "underlying": "SPX",
+      "held": true
+    },
+    {
+      "ticker": "SXR8.DE",
+      "name": "iShares Core S&P 500 UCITS (Acc)",
+      "line": "Xetra",
+      "underlying": "SPX",
+      "held": true
+    },
+    {
+      "ticker": "SMGB.L",
+      "name": "VanEck Semiconductor UCITS",
+      "line": "LSE",
+      "underlying": "SOX",
+      "held": true
+    },
+    {
+      "ticker": "VVSM.DE",
+      "name": "VanEck Semiconductor UCITS",
+      "line": "Xetra",
+      "underlying": "SOX",
+      "held": true
+    }
   ],
   "sec": {
     "filer_name": "Situational Awareness LP",
@@ -42,23 +142,72 @@
   "wikipedia": {
     "user_agent": "EquityMonitorBot/1.0 (https://github.com/GuillaumeIdame/CrossAssetMacro)",
     "pages": {
-      "SPX":  {"page": "List of S&P 500 companies",    "ticker_col": "Symbol", "name_col": "Security", "sector_col": "GICS Sector", "suffix": ""},
-      "NDX":  {"page": "List of NASDAQ-100 companies", "ticker_col": "Ticker", "name_col": "Company",  "sector_col": "ICB Industry", "suffix": ""},
-      "SX5E": {"page": "EURO STOXX 50",                "ticker_col": "Ticker", "name_col": "Name",     "sector_col": "Sector", "suffix": null, "listing_col": "Main listing"},
-      "DAX":  {"page": "DAX",                          "ticker_col": "Ticker", "name_col": "Company",  "sector_col": "Prime Standard Sector", "suffix": ".DE"},
-      "CAC":  {"page": "CAC 40",                       "ticker_col": "Ticker", "name_col": "Company",  "sector_col": "Sector", "suffix": ".PA"},
-      "FTSE": {"page": "FTSE 100 Index",               "ticker_col": "Ticker", "name_col": "Company",  "sector_col": "FTSE industry classification benchmark sector", "suffix": ".L"}
+      "SPX": {
+        "page": "List of S&P 500 companies",
+        "ticker_col": "Symbol",
+        "name_col": "Security",
+        "sector_col": "GICS Sector",
+        "suffix": ""
+      },
+      "NDX": {
+        "page": "List of NASDAQ-100 companies",
+        "ticker_col": "Ticker",
+        "name_col": "Company",
+        "sector_col": "ICB Industry",
+        "suffix": ""
+      },
+      "SX5E": {
+        "page": "EURO STOXX 50",
+        "ticker_col": "Ticker",
+        "name_col": "Name",
+        "sector_col": "Sector",
+        "suffix": null,
+        "listing_col": "Main listing"
+      },
+      "DAX": {
+        "page": "DAX",
+        "ticker_col": "Ticker",
+        "name_col": "Company",
+        "sector_col": "Prime Standard Sector",
+        "suffix": ".DE"
+      },
+      "CAC": {
+        "page": "CAC 40",
+        "ticker_col": "Ticker",
+        "name_col": "Company",
+        "sector_col": "Sector",
+        "suffix": ".PA"
+      },
+      "FTSE": {
+        "page": "FTSE 100 Index",
+        "ticker_col": "Ticker",
+        "name_col": "Company",
+        "sector_col": "FTSE industry classification benchmark sector",
+        "suffix": ".L"
+      }
     },
     "listing_suffix": {
-      "FWB": ".DE", "Frankfurt": ".DE", "Xetra": ".DE",
-      "Euronext Paris": ".PA", "Paris": ".PA",
-      "Euronext Amsterdam": ".AS", "Amsterdam": ".AS",
-      "Euronext Brussels": ".BR", "Brussels": ".BR",
-      "Euronext Milan": ".MI", "Borsa Italiana": ".MI", "Milan": ".MI",
-      "BME": ".MC", "Madrid": ".MC", "Bolsa de Madrid": ".MC",
-      "Euronext Dublin": ".IR", "Dublin": ".IR",
-      "Nasdaq Helsinki": ".HE", "Helsinki": ".HE",
-      "SIX": ".SW", "Swiss": ".SW"
+      "FWB": ".DE",
+      "Frankfurt": ".DE",
+      "Xetra": ".DE",
+      "Euronext Paris": ".PA",
+      "Paris": ".PA",
+      "Euronext Amsterdam": ".AS",
+      "Amsterdam": ".AS",
+      "Euronext Brussels": ".BR",
+      "Brussels": ".BR",
+      "Euronext Milan": ".MI",
+      "Borsa Italiana": ".MI",
+      "Milan": ".MI",
+      "BME": ".MC",
+      "Madrid": ".MC",
+      "Bolsa de Madrid": ".MC",
+      "Euronext Dublin": ".IR",
+      "Dublin": ".IR",
+      "Nasdaq Helsinki": ".HE",
+      "Helsinki": ".HE",
+      "SIX": ".SW",
+      "Swiss": ".SW"
     }
   },
   "signals": {
@@ -79,13 +228,193 @@
       "earnings_flag_days": 5
     }
   },
-  "vol_thresholds": {"expensive_pct": 80, "cheap_pct": 20},
+  "vol_thresholds": {
+    "expensive_pct": 80,
+    "cheap_pct": 20
+  },
   "correlation_window_days": 60,
   "correlation_pair_threshold": 0.8,
   "backtest": {
     "rebalance": "W-FRI",
     "fee_bps_per_side": 5,
     "slippage_bps_per_side": 5,
-    "in_sample_share": 0.6
+    "in_sample_share": 0.6,
+    "sector_rebalance": "ME"
+  },
+  "sectors": {
+    "US": {
+      "label": "États-Unis",
+      "benchmark": "^GSPC",
+      "benchmark_label": "S&P 500",
+      "equal_weight": "RSP",
+      "currency": "USD",
+      "members": {
+        "XLK": "Technologie",
+        "XLF": "Financières",
+        "XLV": "Santé",
+        "XLY": "Conso. discrétionnaire",
+        "XLP": "Conso. de base",
+        "XLE": "Énergie",
+        "XLI": "Industrie",
+        "XLB": "Matériaux",
+        "XLU": "Services publics",
+        "XLRE": "Immobilier",
+        "XLC": "Communication"
+      },
+      "cyclical": [
+        "XLY",
+        "XLI",
+        "XLF",
+        "XLB",
+        "XLE",
+        "XLK"
+      ],
+      "defensive": [
+        "XLP",
+        "XLU",
+        "XLV",
+        "XLRE"
+      ],
+      "pairs": [
+        [
+          "XLY",
+          "XLP",
+          "Discrétionnaire / base"
+        ],
+        [
+          "XLI",
+          "XLU",
+          "Industrie / services publics"
+        ],
+        [
+          "XLK",
+          "XLP",
+          "Tech / base"
+        ],
+        [
+          "XLF",
+          "XLU",
+          "Financières / services publics"
+        ]
+      ]
+    },
+    "EU": {
+      "label": "Europe",
+      "benchmark": "^STOXX",
+      "benchmark_label": "STOXX Europe 600",
+      "equal_weight": null,
+      "etf_benchmark": "EXSA.DE",
+      "currency": "EUR",
+      "members": {
+        "EXV1.DE": "Banques",
+        "EXH5.DE": "Assurance",
+        "EXV3.DE": "Technologie",
+        "EXV4.DE": "Santé",
+        "EXV5.DE": "Automobiles",
+        "EXV6.DE": "Ressources de base",
+        "EXV7.DE": "Chimie",
+        "EXV8.DE": "Construction & matériaux",
+        "EXV9.DE": "Voyages & loisirs",
+        "EXH1.DE": "Pétrole & gaz",
+        "EXH3.DE": "Alimentation & boissons",
+        "EXH4.DE": "Biens & services industriels",
+        "EXH6.DE": "Médias",
+        "EXH7.DE": "Biens personnels & ménagers",
+        "EXH8.DE": "Distribution",
+        "EXH9.DE": "Services publics",
+        "EXV2.DE": "Télécoms",
+        "EXI5.DE": "Immobilier"
+      },
+      "cyclical": [
+        "EXV1.DE",
+        "EXV5.DE",
+        "EXV6.DE",
+        "EXV7.DE",
+        "EXV8.DE",
+        "EXV9.DE",
+        "EXH4.DE",
+        "EXH1.DE",
+        "EXV3.DE",
+        "EXH8.DE"
+      ],
+      "defensive": [
+        "EXH3.DE",
+        "EXH7.DE",
+        "EXH9.DE",
+        "EXV4.DE",
+        "EXV2.DE",
+        "EXI5.DE"
+      ],
+      "pairs": [
+        [
+          "EXV5.DE",
+          "EXH3.DE",
+          "Autos / alimentation"
+        ],
+        [
+          "EXV1.DE",
+          "EXH9.DE",
+          "Banques / services publics"
+        ],
+        [
+          "EXV6.DE",
+          "EXH7.DE",
+          "Ressources / biens ménagers"
+        ],
+        [
+          "EXV3.DE",
+          "EXV4.DE",
+          "Tech / santé"
+        ]
+      ]
+    }
+  },
+  "sector_signals": {
+    "description": "Score d'entrée en rotation sectorielle : 5 conditions issues de la littérature, entrée si score >= entry_min_score",
+    "top_n": 3,
+    "rs_ratio_window": 50,
+    "rs_momentum_window": 10,
+    "faber_ma_days": 200,
+    "high_52w_proximity": 0.05,
+    "reversal_avoid_top": 2,
+    "entry_min_score": 4,
+    "exit_rank": 6,
+    "references": [
+      {
+        "key": "MG1999",
+        "ref": "Moskowitz & Grinblatt (1999), « Do Industries Explain Momentum? », Journal of Finance 54(4)",
+        "signal": "Momentum industriel 12-1 mois : acheter les secteurs du premier tercile de performance sur 12 mois hors dernier mois"
+      },
+      {
+        "key": "Faber2007",
+        "ref": "Faber (2007), « A Quantitative Approach to Tactical Asset Allocation », Journal of Wealth Management",
+        "signal": "Filtre de tendance : exposé seulement si le prix est au-dessus de sa moyenne 10 mois (~200 séances)"
+      },
+      {
+        "key": "Antonacci2014",
+        "ref": "Antonacci (2014), « Dual Momentum Investing », McGraw-Hill ; Antonacci (2013) « Absolute Momentum: A Simple Rule-Based Strategy »",
+        "signal": "Momentum relatif (classement) ET momentum absolu 12 mois > 0"
+      },
+      {
+        "key": "GH2004",
+        "ref": "George & Hwang (2004), « The 52-Week High and Momentum Investing », Journal of Finance 59(5)",
+        "signal": "Proximité du plus haut 52 semaines (ancrage) : à moins de 5 % du plus haut"
+      },
+      {
+        "key": "Jegadeesh1990",
+        "ref": "Jegadeesh (1990), « Evidence of Predictable Behavior of Security Returns », Journal of Finance 45(3) ; Novy-Marx (2012), « Is Momentum Really Momentum? », JFE 103",
+        "signal": "Renversement court terme : ne pas acheter le secteur qui vient de faire le plus gros mois ; privilégier le momentum intermédiaire (mois 12 à 7)"
+      },
+      {
+        "key": "RRG",
+        "ref": "de Kempenaer (2011), Relative Rotation Graphs (JdK RS-Ratio / RS-Momentum), simplifiés ici : ratio / MM50 du ratio et son taux de variation 10 séances",
+        "signal": "Quadrant Improving → Leading : force relative qui repasse au-dessus de sa tendance avec un momentum relatif positif"
+      },
+      {
+        "key": "SJV2009",
+        "ref": "Stangl, Jacobsen & Visaltanachoti (2009), « Sector Rotation over Business Cycles », working paper",
+        "signal": "Mise en garde : la rotation sectorielle calée sur le cycle économique officiel ne bat pas le marché après coûts ; d'où des règles de prix, pas de macro"
+      }
+    ]
   }
 }

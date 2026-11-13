@@ -1,5 +1,7 @@
 # Equity Monitor
 
+Le cahier des charges complet (prompt v3) est dans `PROMPT_EQUITY_MONITOR.md`.
+
 Dashboard buy-side (long only, horizon semaines-mois) ouvert chaque matin avant Londres.
 Question de fond : qu'est-ce qui a bougé, est-ce du beta ou de l'idiosyncratique, et quel
 événement arrive qui peut changer la thèse ?
@@ -64,7 +66,8 @@ sont souvent encore à J−2, le dashboard le montre tel quel.
 | `constituents.json` | compositions Wikipédia converties au format Yahoo, tickers non résolus |
 | `sa_13f.json` | positions longues en actions, poids, changements vs trimestre précédent, mapping OpenFIGI, appels SEC |
 | `risk.json` | betas (SPX/NDX/SOX, 1 an, 3 mois, hebdo, downside, R², vol idio), vol implicite vs réalisée, corrélations 60 j, signaux, lecture du marché |
-| `backtest.json` | momentum US (avec / sans panier 13F) et mean reversion Europe, in/out-of-sample, frais et slippage |
+| `sectors.json` | rotation sectorielle US (11 SPDR vs S&P 500, RSP) et Europe (18 iShares STOXX Europe 600 sectoriels vs ^STOXX) : perf absolue et relative, momentum 12-1 et rang, RRG simplifié avec traces, paires cycliques/défensives, score d'entrée sur 6 conditions avec références |
+| `backtest.json` | momentum US (avec / sans panier 13F), mean reversion Europe, et rotation sectorielle (top 3 momentum 12-1 mensuel, avec / sans filtre Faber, US et Europe), in/out-of-sample, frais et slippage |
 | `run_status.json` | étapes, erreurs, journal par symbole, séries sans clôture, lecture du marché |
 | `data.js` | les dix fichiers ci-dessus dans `window.EQUITY_MONITOR_DATA` |
 
@@ -82,11 +85,16 @@ sont souvent encore à J−2, le dashboard le montre tel quel.
   mean reversion Europe = z-score 20 j et RSI 14 sous les seuils. Seuils dans
   `monitor_config.json`, modifiables en direct dans l'onglet Beta & risque. Astérisque si
   résultats ≤ 5 j.
+- Rotation sectorielle : force relative = ETF / indice ; RS-ratio = ratio / MM50 du ratio × 100, RS-momentum = RS-ratio / RS-ratio[−10] × 100
+  (quadrants Leading / Weakening / Lagging / Improving) ; score d'entrée sur 6 conditions (Moskowitz-Grinblatt 12-1, Faber MM200,
+  Antonacci momentum absolu, George-Hwang plus haut 52 s., RRG, Jegadeesh renversement 1 mois) ; entrée = top 3 du 12-1 + score ≥ 4 +
+  tendance intacte ; sortie = secteur détenu passé sous MM200 ou en Weakening ; références dans `monitor_config.json → sector_signals`.
+- Les barres datées du jour du run sont exclues (pas encore de clôture).
 - Backtest : hebdomadaire, long only, frais 5 bp + slippage 5 bp par côté sur le turnover,
   in-sample = 60 % de l'historique. Le panier 13F est connu après coup : son résultat est
   présenté séparément et marqué comme biaisé.
 
 ## Non fait (idées)
 
-Calendrier macro (FOMC, CPI, NFP, BCE) ; upgrades / downgrades datés (`upgrades_downgrades`) ;
+Alertes sur changement de quadrant RRG ; beta sectoriel du panier 13F ; calendrier macro (FOMC, CPI, NFP, BCE) ; upgrades / downgrades datés (`upgrades_downgrades`) ;
 attribution du panier 13F par thème ; alertes (idio > 2 σ, move post-earnings hors du move implicite).

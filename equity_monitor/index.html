@@ -117,6 +117,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     <button class="tab" role="tab" data-tab="fonda">Fondamentaux</button>
     <button class="tab" role="tab" data-tab="events">Events</button>
     <button class="tab" role="tab" data-tab="risk">Beta &amp; risque</button>
+    <button class="tab" role="tab" data-tab="sectors">Secteurs</button>
     <button class="tab" role="tab" data-tab="sources">Sources &amp; run</button>
   </nav>
 </header>
@@ -183,6 +184,26 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     </div>
   </section>
 
+  <section class="panel" id="tab-sectors" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Rotation sectorielle</h2><div class="controls"><div class="chips" id="sec-region"></div><span class="hint" id="sec-hint"></span></div></div>
+      <div class="tiles" id="sec-tiles"></div>
+    </div>
+    <div class="card"><div class="card-head"><h2>Secteurs — performance absolue et relative à l'indice</h2><span class="hint">Rel. = perf secteur − perf indice. RS / MM50 = force relative vs sa moyenne 50 j. Quadrant RRG simplifié (RS-ratio = ratio / MM50 du ratio × 100 ; RS-mom = variation 10 séances).</span></div><div class="tscroll" id="tbl-sectors"></div></div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Relative Rotation Graph (simplifié)</h2><span class="hint">Trace = 8 dernières semaines, point plein = aujourd'hui. Sens horaire : Improving → Leading → Weakening → Lagging.</span></div><div class="chart tall" id="ch-rrg"></div></div>
+      <div class="card"><div class="card-head"><h2>Force relative vs indice, base 100, 1 an</h2><div class="chips" id="sec-rs-chips"></div></div><div class="chart tall" id="ch-sec-rs"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Cycliques vs défensives — paires</h2><span class="hint">ratio base 100, 1 an</span></div><div class="chart" id="ch-sec-pairs"></div></div>
+      <div class="card"><div class="card-head"><h2>Heatmap sectorielle</h2><div class="controls"><button type="button" class="chip" data-secheat="r_1d" aria-pressed="true">1D</button><button type="button" class="chip" data-secheat="r_5d">5D</button><button type="button" class="chip" data-secheat="r_1m">1M rel.</button><button type="button" class="chip" data-secheat="r_3m">3M rel.</button></div></div><div class="heat" id="sec-heat"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Signaux d'entrée en rotation — score de recherche</h2><span class="hint">Six conditions tirées de la littérature (références ci-dessous). Entrée = top N du momentum 12-1 ET score ≥ seuil ; surveiller = score atteint sans le rang ; sortie = secteur détenu (top N ou Leading) passé sous sa MM200 ou en Weakening ; éviter = rang ≥ 6 ou sous MM200. Seuils modifiables.</span></div><div id="sec-sig-ctl" class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))"></div><div class="tscroll" id="tbl-sec-sig" style="margin-top:10px"></div></div>
+      <div class="card"><div class="card-head"><h2>Références et backtest sectoriel</h2><span class="hint" id="sec-bt-hint"></span></div><div class="tscroll" id="tbl-sec-bt"></div><div class="chart" id="ch-sec-bt"></div><ol id="sec-refs" class="note" style="padding-left:18px;display:grid;gap:6px"></ol></div>
+    </div>
+  </section>
+
   <section class="panel" id="tab-sources" hidden>
     <div class="grid">
       <div class="card"><div class="card-head"><h2>Dernier run</h2></div><dl class="kv" id="run-kv"></dl></div>
@@ -204,7 +225,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
 <script>
 (function () {
   'use strict';
-  const FILES = ['universe', 'prices', 'quotes', 'events', 'breadth', 'constituents', 'sa_13f', 'risk', 'run_status', 'backtest'];
+  const FILES = ['universe', 'prices', 'quotes', 'events', 'breadth', 'constituents', 'sa_13f', 'risk', 'sectors', 'run_status', 'backtest'];
   const D = {};
   const $ = (id) => document.getElementById(id);
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -301,7 +322,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   function renderAllCharts() { charts.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } }); }
 
   // ---------------------------------------------------------------- state
-  const state = { group: new Set(['all']), groupF: new Set(['all']), heat: 'r_1d', volPick: new Set(), bench: new Set(['SPX']), thresholds: null };
+  const state = { group: new Set(['all']), groupF: new Set(['all']), heat: 'r_1d', volPick: new Set(), bench: new Set(['SPX']), thresholds: null, region: new Set(['US']), secHeat: 'r_1d', secRs: new Set(), secTh: null };
 
   // ---------------------------------------------------------------- header
   function renderStatus() {
@@ -631,7 +652,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   function renderBacktest() {
     const bt = D.backtest; if (!bt) { $('bt-hint').textContent = 'backtest.json absent : lancer backtest_signals.py'; return; }
     $('bt-hint').textContent = `Hebdo ${bt.rebalance}, frais ${bt.costs.fee_bps_per_side} bp + slippage ${bt.costs.slippage_bps_per_side} bp par côté, in-sample = ${Math.round(bt.in_sample_share * 100)} % de l'historique · ${(bt.generated_at || '').replace('T', ' ')}`;
-    const rows = Object.entries(bt.strategies || {}).map(([k, s]) => ({ k, s }));
+    const rows = Object.entries(bt.strategies || {}).filter(([k, s]) => s.kind !== 'sector').map(([k, s]) => ({ k, s }));
     const st = (o, f) => (o && isNum(o[f])) ? o[f] : null;
     table('tbl-bt', [
       { key: 'k', label: 'Stratégie', left: true, render: (r) => `<b>${esc(r.k)}</b> <span class="muted">${r.s.n_names} titres</span>${r.s.selection_bias ? ' <span class="warn" title="' + esc(r.s.selection_bias) + '">biais</span>' : ''}`, src: (r) => (r.s.universe || []).join(', ') },
@@ -647,6 +668,133 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     rows.forEach((r, i) => { const e = r.s.equity; if (!e) return; tr.push({ type: 'scatter', mode: 'lines', name: r.k + ' (net)', x: e.dates, y: e.strategy, line: { color: cols[i % 8], width: 2 } }); tr.push({ type: 'scatter', mode: 'lines', name: r.k + ' bench', x: e.dates, y: e.benchmark, line: { color: cols[i % 8], width: 1, dash: 'dot' } }); });
     plot('ch-bt', tr, { hovermode: 'x unified', yaxis: { type: 'log', gridcolor: css('--border') } });
     $('bt-caveats').innerHTML = (bt.caveats || []).map((c) => '• ' + esc(c)).join('<br>');
+  }
+
+  // ---------------------------------------------------------------- SECTEURS
+  const SEC = () => D.sectors || { regions: {}, thresholds: {} };
+  const region = () => SEC().regions[[...state.region][0]] || null;
+  const QCOL = { Leading: '--s3', Weakening: '--s4', Lagging: '--s8', Improving: '--s1' };
+  function secRows(reg) { return Object.values(reg.sectors || {}).filter((r) => !r.missing); }
+  function secTh() { if (!state.secTh) state.secTh = { ...SEC().thresholds }; return state.secTh; }
+  function secScore(r, T) {
+    const c = [
+      ['MG1999', `momentum 12-1 top ${T.top_n} (rang ${r.rank_12_1 ?? '—'})`, r.rank_12_1 != null && r.rank_12_1 <= T.top_n],
+      ['Faber2007', `prix > MM${T.faber_ma_days} (${pct(r.pct_vs_ma_faber)})`, r.above_ma_faber === true],
+      ['Antonacci2014', `momentum absolu 12M > 0 (${pct(r.r_12m)})`, isNum(r.r_12m) && r.r_12m > 0],
+      ['GH2004', `≤ ${pctAbs(T.high_52w_proximity, 0)} du plus haut 52 sem. (${pct(r.pct_vs_52w_high)})`, isNum(r.pct_vs_52w_high) && r.pct_vs_52w_high >= -T.high_52w_proximity],
+      ['RRG', `quadrant ${r.quadrant || '—'} (RS-mom ${num(r.rs_momentum, 1)})`, (r.quadrant === 'Leading' || r.quadrant === 'Improving') && (r.rs_momentum || 0) >= 100],
+      ['Jegadeesh1990', `hors top ${T.reversal_avoid_top} du dernier mois (rang 1M ${r.rank_1m ?? '—'})`, r.rank_1m != null && r.rank_1m > T.reversal_avoid_top],
+    ];
+    const score = c.filter((x) => x[2]).length;
+    const inTop = r.rank_12_1 != null && r.rank_12_1 <= T.top_n; const heldLike = inTop || r.quadrant === 'Leading';
+    const broken = r.above_ma_faber === false || (r.quadrant === 'Weakening' && (r.rs_momentum || 100) < 100);
+    const entry = inTop && score >= T.entry_min_score && !broken; const exit = heldLike && broken;
+    const avoid = !heldLike && ((r.rank_12_1 || 0) >= T.exit_rank || r.above_ma_faber === false);
+    const watch = !entry && !exit && !avoid && score >= T.entry_min_score;
+    return { score, max: c.length, entry, exit, avoid, watch, state: entry ? 'entrée' : (exit ? 'sortie' : (avoid ? 'éviter' : (watch ? 'surveiller' : 'neutre'))), pullback: inTop && (r.abs.r_1m || 0) < 0, conds: c };
+  }
+  function renderSectors() {
+    const reg = region(); if (!reg) { $('sec-hint').textContent = 'sectors.json absent : relancer update_monitor.py'; return; }
+    const sm = reg.summary || {}; const T = secTh();
+    $('sec-hint').textContent = `${reg.label} · indice ${reg.benchmark_label} (${reg.benchmark}) · ${sm.n} secteurs · ${(SEC().note || '')}`;
+    const lab = (t) => (reg.sectors[t] || {}).label || t;
+    const tile = (k, v, s_, title) => `<div class="tile" title="${esc(title || '')}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s_ || ''}</div></div>`;
+    $('sec-tiles').innerHTML =
+      tile('Indice 1D / 1M / 3M', `${pct(reg.benchmark_market.r_1d)}`, `${pct(reg.benchmark_market.r_1m)} / ${pct(reg.benchmark_market.r_3m)} · ${reg.benchmark_market.last_date || ''}`, 'yfinance ' + reg.benchmark) +
+      tile('Cycliques − défensives', `<span class="${sgnClass(sm.cyc_minus_def_1m)}">${pct(sm.cyc_minus_def_1m)}</span>`, `1M · 3M ${pct(sm.cyc_minus_def_3m)} · 5D ${pct(sm.cyc_minus_def_5d)}`, `EW cycliques (${reg.cyclical.map(lab).join(', ')}) − EW défensives (${reg.defensive.map(lab).join(', ')})`) +
+      tile('Secteurs > MM50 / MM200', `${isNum(sm.pct_above_ma50) ? sm.pct_above_ma50.toFixed(0) : NA}% / ${isNum(sm.pct_above_ma200) ? sm.pct_above_ma200.toFixed(0) : NA}%`, `Leading : ${isNum(sm.pct_leading) ? sm.pct_leading.toFixed(0) : NA}% · dispersion 1M ${pctAbs(sm.dispersion_1m)}`, 'dispersion = écart-type transversal des perfs 1M') +
+      tile('Leaders / retardataires 1M', (sm.leaders_1m || []).map(lab).join(', '), 'retard : ' + (sm.laggards_1m || []).map(lab).join(', ')) +
+      tile(`Entrées (top ${T.top_n} + score ≥ ${T.entry_min_score}/6)`, `<span class="up">${(sm.entries || []).map(lab).join(', ') || 'aucune'}</span>`, 'surveiller : ' + ((sm.watch || []).map(lab).join(', ') || 'aucun') + '<br>sorties : ' + ((sm.exits || []).map(lab).join(', ') || 'aucune'), 'valeurs du run (seuils de monitor_config.json) ; le tableau des signaux recalcule avec vos seuils') +
+      (sm.ew_minus_cw ? tile('Équipondéré − capi.', `<span class="${sgnClass(sm.ew_minus_cw['1m'])}">${pct(sm.ew_minus_cw['1m'])}</span>`, `1M · 3M ${pct(sm.ew_minus_cw['3m'])} (${sm.ew_minus_cw.ticker} vs ${reg.benchmark})`) : '');
+    const rows = secRows(reg).map((r) => ({ ...r, sc: secScore(r, T) }));
+    const S = (r) => src(`yfinance.download ${r.ticker} vs ${reg.benchmark} · dernière clôture ${r.last_date || ''}`, r.fetched_at);
+    const rc = (k, label, rel) => ({ key: (rel ? 'rel_' : 'abs_') + k, label, render: (r) => pct((rel ? r.rel : r.abs)[k]), cls: (r) => sgnClass((rel ? r.rel : r.abs)[k]), sortVal: (r) => (rel ? r.rel : r.abs)[k], src: S });
+    table('tbl-sectors', [
+      { key: 'label', label: 'Secteur', left: true, render: (r) => `<b>${esc(r.label)}</b> <span class="muted">${esc(r.ticker)}</span>${r.stale ? ' <span class="stale" title="clôture absente">●</span>' : ''}`, sortVal: (r) => r.label },
+      rc('r_1d', '1D'), rc('r_5d', '5D'), rc('r_1m', '1M'), rc('r_3m', '3M'), rc('r_ytd', 'YTD'),
+      rc('r_1m', 'Rel. 1M', true), rc('r_3m', 'Rel. 3M', true), rc('r_6m', 'Rel. 6M', true),
+      { key: 'rel_ytd', label: 'Rel. YTD', render: (r) => pct(r.rel_ytd), cls: (r) => sgnClass(r.rel_ytd), sortVal: (r) => r.rel_ytd },
+      { key: 'mom_12_1', label: 'Mom. 12-1', render: (r) => `${pct(r.mom_12_1, 0)} <span class="muted">#${r.rank_12_1 ?? '—'}</span>`, cls: (r) => sgnClass(r.mom_12_1), sortVal: (r) => r.mom_12_1, src: () => 'P[t−21] / P[t−252] − 1 (Moskowitz & Grinblatt)' },
+      { key: 'rs_vs_ma50', label: 'RS / MM50', render: (r) => pct(r.rs_vs_ma50), cls: (r) => sgnClass(r.rs_vs_ma50), sortVal: (r) => r.rs_vs_ma50, src: () => 'ratio secteur/indice vs sa moyenne 50 j' },
+      { key: 'quadrant', label: 'Quadrant', left: true, render: (r) => `<span class="tag" style="color:${css(QCOL[r.quadrant] || '--muted')};border-color:${css(QCOL[r.quadrant] || '--border')}">${esc(r.quadrant || NA)}</span>${r.quadrant_prev && r.quadrant_prev !== r.quadrant ? ` <span class="muted">← ${esc(r.quadrant_prev)}</span>` : ''}`, sortVal: (r) => ['Leading', 'Improving', 'Weakening', 'Lagging'].indexOf(r.quadrant), src: (r) => `RS-ratio ${num(r.rs_ratio, 1)} · RS-mom ${num(r.rs_momentum, 1)} · précédent (5 j) ${r.quadrant_prev || ''}` },
+      { key: 'h52', label: 'vs haut 52 s.', render: (r) => pct(r.pct_vs_52w_high), cls: (r) => sgnClass(r.pct_vs_52w_high), sortVal: (r) => r.pct_vs_52w_high },
+      { key: 'vol_3m', label: 'Vol 3M', render: (r) => pctAbs(r.vol_3m, 0), sortVal: (r) => r.vol_3m },
+      { key: 'score', label: 'Score', render: (r) => `${r.sc.entry ? '<span class="tag sig">' : '<span class="tag">'}${r.sc.score}/${r.sc.max}</span>${r.sc.exit ? ' <span class="down" title="condition de sortie">sortie</span>' : ''}${r.sc.pullback ? ' <span class="muted" title="momentum 12-1 top avec dernier mois négatif">repli</span>' : ''}`, sortVal: (r) => r.sc.score, src: (r) => r.sc.conds.map((c) => (c[2] ? '✓ ' : '✗ ') + c[1]).join('\n') },
+    ], rows, { defaultSort: 'rel_1m' });
+    renderSecHeat(); renderSecSignals(); renderSecRefs();
+    if (!state.secRs.size || ![...state.secRs].every((t) => reg.sectors[t])) { state.secRs = new Set(rows.slice().sort((a, b) => (b.rel.r_3m || 0) - (a.rel.r_3m || 0)).slice(0, 4).map((r) => r.ticker)); }
+    chips('sec-rs-chips', rows.map((r) => ({ value: r.ticker, label: r.label })), state.secRs, chartSecRs, true);
+  }
+  function renderSecHeat() {
+    const reg = region(); if (!reg) return; const key = state.secHeat; const rel = key === 'r_1m' || key === 'r_3m'; const scale = key === 'r_1d' ? 0.03 : (key === 'r_5d' ? 0.06 : 0.1);
+    const rows = secRows(reg).slice().sort((a, b) => ((rel ? b.rel : b.abs)[key] || 0) - ((rel ? a.rel : a.abs)[key] || 0));
+    $('sec-heat').innerHTML = rows.map((r) => { const v = (rel ? r.rel : r.abs)[key]; const c = heatColor(v, scale); return `<div class="cell" style="background:${c.bg};color:${c.fg}" title="${esc(r.ticker + ' · ' + r.label + ' · ' + (rel ? 'relatif à ' + reg.benchmark : 'absolu'))}"><b style="font-size:11px;line-height:1.15">${esc(r.label)}</b><span>${pct(v)}</span></div>`; }).join('');
+    document.querySelectorAll('[data-secheat]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.secheat === key));
+  }
+  document.querySelectorAll('[data-secheat]').forEach((b) => b.addEventListener('click', () => { state.secHeat = b.dataset.secheat; renderSecHeat(); }));
+  function chartRRG() {
+    const reg = region(); if (!reg) return; const rows = secRows(reg).filter((r) => isNum(r.rs_ratio) && isNum(r.rs_momentum)); const traces = [];
+    rows.forEach((r) => { const tr = (r.trail || []).filter((p) => isNum(p.rsr) && isNum(p.rsm)); const col = css(QCOL[r.quadrant] || '--muted');
+      traces.push({ type: 'scatter', mode: 'lines+markers', name: r.label, x: tr.map((p) => p.rsr), y: tr.map((p) => p.rsm), line: { color: col, width: 1.2 }, marker: { size: tr.map((p, i) => i === tr.length - 1 ? 11 : 4), color: col, line: { width: 1, color: css('--surface') } }, text: tr.map((p) => `${r.label} ${p.date}`), hovertemplate: '%{text}<br>RS-ratio %{x:.1f}<br>RS-mom %{y:.1f}<extra></extra>', showlegend: false });
+      traces.push({ type: 'scatter', mode: 'text', x: [tr.length ? tr[tr.length - 1].rsr : r.rs_ratio], y: [tr.length ? tr[tr.length - 1].rsm : r.rs_momentum], text: [r.ticker.replace('.DE', '')], textposition: 'top center', textfont: { size: 10, color: css('--fg') }, hoverinfo: 'skip', showlegend: false }); });
+    const xs = rows.flatMap((r) => (r.trail || []).map((p) => p.rsr)).filter(isNum), ys = rows.flatMap((r) => (r.trail || []).map((p) => p.rsm)).filter(isNum);
+    const padx = Math.max(2, (Math.max(...xs, 101) - Math.min(...xs, 99)) * 0.1), pady = Math.max(1.5, (Math.max(...ys, 101) - Math.min(...ys, 99)) * 0.1);
+    const x0 = Math.min(...xs, 99) - padx, x1 = Math.max(...xs, 101) + padx, y0 = Math.min(...ys, 99) - pady, y1 = Math.max(...ys, 101) + pady;
+    const q = (xa, xb, ya, yb, name, col) => ({ type: 'rect', x0: xa, x1: xb, y0: ya, y1: yb, fillcolor: col, opacity: 0.08, line: { width: 0 }, layer: 'below' });
+    const ann = (x, y, t) => ({ x, y, text: t, showarrow: false, font: { color: css('--muted'), size: 11 }, xanchor: 'center' });
+    plot('ch-rrg', traces, { shapes: [q(100, x1, 100, y1, 'Leading', css('--s3')), q(100, x1, y0, 100, 'Weakening', css('--s4')), q(x0, 100, y0, 100, 'Lagging', css('--s8')), q(x0, 100, 100, y1, 'Improving', css('--s1'))],
+      annotations: [ann((100 + x1) / 2, y1 - pady / 3, 'LEADING'), ann((100 + x1) / 2, y0 + pady / 3, 'WEAKENING'), ann((x0 + 100) / 2, y0 + pady / 3, 'LAGGING'), ann((x0 + 100) / 2, y1 - pady / 3, 'IMPROVING')],
+      xaxis: { title: { text: 'RS-ratio (force relative vs tendance 50 j)' }, range: [x0, x1], gridcolor: css('--border'), zeroline: false }, yaxis: { title: { text: 'RS-momentum (10 séances)' }, range: [y0, y1], gridcolor: css('--border'), zeroline: false }, margin: { l: 50, r: 16, t: 10, b: 44 } });
+  }
+  function chartSecRs() {
+    const reg = region(); if (!reg) return; const cols = SERIES(); const picks = [...state.secRs].filter((t) => reg.sectors[t] && reg.sectors[t].rs_history);
+    plot('ch-sec-rs', picks.map((t, i) => ({ type: 'scatter', mode: 'lines', name: reg.sectors[t].label, x: reg.sectors[t].rs_history.dates, y: reg.sectors[t].rs_history.values, line: { color: cols[i % 8], width: 1.8 }, hovertemplate: '%{x}<br>' + reg.sectors[t].label + ' %{y:.1f}<extra></extra>' })), { hovermode: 'x unified', yaxis: { title: { text: `secteur / ${reg.benchmark_label}, base 100` }, gridcolor: css('--border') } });
+  }
+  function chartSecPairs() {
+    const reg = region(); if (!reg) return; const cols = SERIES();
+    plot('ch-sec-pairs', (reg.summary.pairs || []).map((p, i) => ({ type: 'scatter', mode: 'lines', name: `${p.label} (1M ${pct(p.r_1m)})`, x: p.dates, y: p.values, line: { color: cols[i % 8], width: 1.8 } })), { hovermode: 'x unified', yaxis: { gridcolor: css('--border') } });
+  }
+  function renderSecSigCtl() {
+    const T = secTh();
+    const sl = (id, label, v, min, max, step) => `<label class="slider" for="${id}"><span>${label}</span><span class="mono" id="${id}-v">${v}</span><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${v}" style="grid-column:1/-1"></label>`;
+    $('sec-sig-ctl').innerHTML = `<div>${sl('st-top', 'top N momentum 12-1', T.top_n, 1, 6, 1)}</div><div>${sl('st-min', 'score minimum d\'entrée', T.entry_min_score, 2, 6, 1)}</div><div>${sl('st-prox', 'proximité plus haut 52 s.', T.high_52w_proximity, 0.01, 0.15, 0.01)}</div><div>${sl('st-rev', 'éviter le top N du dernier mois', T.reversal_avoid_top, 0, 4, 1)}</div>`;
+    const bind = (id, key) => { const el = $(id); el.addEventListener('input', () => { T[key] = Number(el.value); $(id + '-v').textContent = el.value; renderSectors(); }); };
+    bind('st-top', 'top_n'); bind('st-min', 'entry_min_score'); bind('st-prox', 'high_52w_proximity'); bind('st-rev', 'reversal_avoid_top');
+  }
+  function renderSecSignals() {
+    const reg = region(); if (!reg) return; const T = secTh();
+    const rows = secRows(reg).map((r) => ({ ...r, sc: secScore(r, T) })).sort((a, b) => b.sc.score - a.sc.score);
+    table('tbl-sec-sig', [
+      { key: 'label', label: 'Secteur', left: true, render: (r) => `<b>${esc(r.label)}</b> <span class="muted">${esc(r.ticker)}</span>` },
+      { key: 'score', label: 'Score', render: (r) => `${r.sc.entry ? '<span class="tag sig">' : '<span class="tag">'}${r.sc.score}/${r.sc.max}</span>`, sortVal: (r) => r.sc.score },
+      { key: 'state', label: 'Lecture', left: true, render: (r) => r.sc.entry ? `<span class="up">entrée</span>${r.sc.pullback ? ' <span class="muted">(repli dans la tendance)</span>' : ''}` : (r.sc.exit ? '<span class="down">sortie</span>' : (r.sc.avoid ? '<span class="down">éviter</span>' : (r.sc.watch ? '<span class="warn">surveiller</span>' : '<span class="muted">neutre</span>'))), sortVal: (r) => r.sc.entry ? 3 : (r.sc.watch ? 2 : (r.sc.exit ? 0 : 1)) },
+      { key: 'conds', label: 'Conditions', left: true, render: (r) => `<span class="cond">${r.sc.conds.map((c) => `<span class="${c[2] ? 'ok' : 'ko'}" title="${esc(c[0])}">${c[2] ? '✓' : '✗'} ${esc(c[1])}</span>`).join(' · ')}</span>`, sortVal: () => 0 },
+    ], rows);
+  }
+  function renderSecRefs() {
+    const refs = (SEC().thresholds || {}).references || [];
+    $('sec-refs').innerHTML = refs.map((r) => `<li><b>${esc(r.key)}</b> — ${esc(r.ref)}<br><span class="muted">${esc(r.signal)}</span></li>`).join('');
+    const bt = D.backtest; const rk = [...state.region][0];
+    const rows = Object.entries((bt || {}).strategies || {}).filter(([k, s_]) => s_.kind === 'sector' && s_.region === rk).map(([k, s_]) => ({ k, s: s_ }));
+    $('sec-bt-hint').textContent = rows.length ? `Mensuel, frais ${bt.costs.fee_bps_per_side} bp + slippage ${bt.costs.slippage_bps_per_side} bp par côté · ${(bt.generated_at || '').replace('T', ' ')}` : 'backtest sectoriel absent (relancer backtest_signals.py)';
+    const st = (o, f_) => (o && isNum(o[f_])) ? o[f_] : null;
+    table('tbl-sec-bt', [
+      { key: 'k', label: 'Règle', left: true, render: (r) => esc(r.s.rule || r.k), src: (r) => (r.s.universe || []).join(', ') },
+      { key: 'cagr', label: 'CAGR net', render: (r) => pct(st(r.s.net, 'cagr')), cls: (r) => sgnClass(st(r.s.net, 'cagr')) },
+      { key: 'bench', label: 'Indice', render: (r) => pct(st(r.s.benchmark_stats, 'cagr')), src: (r) => r.s.benchmark },
+      { key: 'sh', label: 'Sharpe', render: (r) => num(st(r.s.net, 'sharpe')) }, { key: 'dd', label: 'Max DD', render: (r) => pct(st(r.s.net, 'max_drawdown')), cls: () => 'down' },
+      { key: 'oos', label: 'OOS net / indice', render: (r) => `${pct(st(r.s.out_of_sample.strategy, 'cagr'))} / ${pct(st(r.s.out_of_sample.benchmark, 'cagr'))}`, cls: (r) => sgnClass(st(r.s.out_of_sample.strategy, 'cagr') - st(r.s.out_of_sample.benchmark, 'cagr')) },
+      { key: 'inv', label: 'Investi', render: (r) => pctAbs(r.s.time_invested, 0) },
+    ], rows);
+    const cols = SERIES(); const tr = [];
+    rows.forEach((r, i) => { const e = r.s.equity; if (!e) return; tr.push({ type: 'scatter', mode: 'lines', name: r.s.rule.length > 40 ? r.k : r.s.rule, x: e.dates, y: e.strategy, line: { color: cols[i % 8], width: 2 } }); if (i === 0) tr.push({ type: 'scatter', mode: 'lines', name: r.s.benchmark, x: e.dates, y: e.benchmark, line: { color: css('--muted'), width: 1.2, dash: 'dot' } }); });
+    plot('ch-sec-bt', tr, { hovermode: 'x unified', yaxis: { gridcolor: css('--border') }, legend: { orientation: 'h', y: -0.2, font: { size: 10 } } });
+  }
+  function initSectors() {
+    const regs = Object.keys(SEC().regions || {}); if (!regs.length) { $('sec-hint').textContent = 'sectors.json absent : relancer update_monitor.py'; return; }
+    if (!SEC().regions[[...state.region][0]]) state.region = new Set([regs[0]]);
+    chips('sec-region', regs.map((k) => ({ value: k, label: SEC().regions[k].label })), state.region, () => { state.secRs = new Set(); renderSectors(); chartRRG(); chartSecRs(); chartSecPairs(); });
+    renderSecSigCtl(); renderSectors();
   }
 
   // ---------------------------------------------------------------- SOURCES
@@ -671,7 +819,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   }
 
   // ---------------------------------------------------------------- tabs
-  const TABS = ['monitor', 'fonda', 'events', 'risk', 'sources'];
+  const TABS = ['monitor', 'fonda', 'events', 'risk', 'sectors', 'sources'];
   function showTab(name) {
     if (!TABS.includes(name)) name = 'monitor';
     TABS.forEach((t) => { $('tab-' + t).hidden = t !== name; });
@@ -698,9 +846,9 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     const safe = (fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } };
     [renderStocks, renderIndices, renderHeat, volChipsInit, etfPickInit, renderFonda, render13f, renderCalendar, renderReact, renderReactDetail].forEach(safe);
     chips('bench-chips', ['SPX', 'NDX', 'SOX'].map((b) => ({ value: b, label: b })), state.bench, renderBeta);
-    [renderBeta, renderVol, renderBreadth, renderSigControls, renderSignals, renderBacktest, renderSources, renderReading].forEach(safe);
+    [renderBeta, renderVol, renderBreadth, renderSigControls, renderSignals, renderBacktest, initSectors, renderSources, renderReading].forEach(safe);
     $('base-period').addEventListener('change', chartBase100); $('base-ccy').addEventListener('change', chartBase100); $('contrib-h').addEventListener('change', chartContrib);
-    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat);
+    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat, chartRRG, chartSecRs, chartSecPairs, renderSecRefs, renderSecHeat);
     showTab(location.hash.slice(1) || 'monitor');
   }
   load().then(init).catch((e) => { console.error(e); $('loading').textContent = 'Erreur de chargement : ' + e.message; });

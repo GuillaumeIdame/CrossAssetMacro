@@ -185,11 +185,54 @@ def main():
         "n_entries": int(((w > 0) & (w.shift(1).fillna(0) == 0)).sum().sum()),
         "equity": {"dates": [str(d.date()) for d in eq.index], "strategy": [float(v) for v in eq.values], "benchmark": [float(v) for v in beq.values]},
     }
+    # ---------------- sector rotation: 12-1 momentum top N, monthly rebalance, with and without Faber trend filter
+    sc = cfg.get("sector_signals", {})
+    for rk, rc in cfg.get("sectors", {}).items():
+        cols = {t: series_from_prices(prices, t) for t in rc["members"]}
+        cols = {t: s_ for t, s_ in cols.items() if s_ is not None and len(s_) > 300}
+        bench_s = series_from_prices(prices, rc["benchmark"])
+        if len(cols) < 3 or bench_s is None:
+            continue
+        px_d = pd.DataFrame(cols).dropna(how="all").ffill()
+        bench_d = bench_s.reindex(px_d.index).ffill()
+        px_m = px_d.resample(bt.get("sector_rebalance", "ME")).last().dropna(how="all")
+        bench_m = bench_d.resample(bt.get("sector_rebalance", "ME")).last()
+        mom = px_m.shift(1) / px_m.shift(12) - 1                       # 12-1 months, known at rebalance
+        ma = px_d.rolling(sc.get("faber_ma_days", 200)).mean().resample(bt.get("sector_rebalance", "ME")).last()
+        above = px_m > ma
+        top_n = sc.get("top_n", 3)
+        for variant, use_filter in (("sector_momentum_12_1_top%d_%s" % (top_n, rk), False), ("sector_momentum_12_1_top%d_faber_%s" % (top_n, rk), True)):
+            ranks = mom.rank(axis=1, ascending=False)
+            sel = ranks <= top_n
+            if use_filter:
+                sel = sel & above
+            n_sel = sel.sum(axis=1)
+            w = sel.astype(float).div(n_sel.replace(0, np.nan), axis=0).fillna(0.0) if not use_filter else sel.astype(float) / top_n
+            gross, net, to = run_strategy(w, px_m, cost_side)
+            bench_r = bench_m.pct_change().reindex(net.index).fillna(0.0)
+            start = mom.dropna(how="all").index[0]
+            net, gross, bench_r, to = net[net.index > start], gross[gross.index > start], bench_r[bench_r.index > start], to[to.index > start]
+            ins, oos = split(net, bt["in_sample_share"])
+            bins, boos = split(bench_r, bt["in_sample_share"])
+            eq = (1 + net).cumprod()
+            beq = (1 + bench_r).cumprod()
+            result["strategies"][variant] = {
+                "universe": list(px_d.columns), "n_names": int(px_d.shape[1]), "benchmark": rc["benchmark_label"], "region": rk, "kind": "sector",
+                "rule": f"top {top_n} momentum 12-1 mois, rebalancement mensuel" + (f", cash si prix < MM{sc.get('faber_ma_days', 200)} (Faber)" if use_filter else ""),
+                "gross": perf_stats(gross, 12), "net": perf_stats(net, 12), "benchmark_stats": perf_stats(bench_r, 12),
+                "in_sample": {"strategy": perf_stats(ins, 12), "benchmark": perf_stats(bins, 12)},
+                "out_of_sample": {"strategy": perf_stats(oos, 12), "benchmark": perf_stats(boos, 12)},
+                "avg_turnover_one_way": float(to.mean()), "avg_cost_per_week_bps": float((to * cost_side).mean()),
+                "time_invested": float((w[w.index > start].sum(axis=1)).mean()),
+                "equity": {"dates": [str(d.date()) for d in eq.index], "strategy": [float(v) for v in eq.values], "benchmark": [float(v) for v in beq.values]},
+                "selection_bias": None,
+            }
     result["caveats"] = [
         "Rendements hebdomadaires sur clotures ajustees Yahoo ; execution supposee au cours de cloture du vendredi (pas d'intraday).",
         "Long only, pas de levier, cash non remunere.",
         "Seuils = ceux de monitor_config.json, non optimises ; le decoupage in/out-of-sample mesure la stabilite, pas une optimisation.",
         "Cinq ans d'historique : peu d'episodes de mean reversion en Europe, resultat statistiquement fragile.",
+        "Rotation sectorielle : 5 ans de prix Yahoo = 4 ans de signaux 12-1 et ~48 rebalancements mensuels ; la litterature citee porte sur 50 a 90 ans d'historique, ce backtest ne la reproduit pas, il verifie seulement que la regle se comporte normalement sur la periode recente.",
     ]
     write_json(out / "backtest.json", result)
     for k, v in result["strategies"].items():

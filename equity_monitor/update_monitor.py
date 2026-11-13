@@ -4,7 +4,7 @@ Usage:  py -3.13 update_monitor.py [--skip-breadth] [--skip-options] [--skip-13f
 
 Files written to "Sources du dashboard/":
   universe.json, prices.json, quotes.json, events.json, breadth.json, constituents.json,
-  sa_13f.json, risk.json, run_status.json and data.js (bundle for file:// use of index.html).
+  sa_13f.json, risk.json, sectors.json, run_status.json and data.js (bundle for file:// use of index.html).
 """
 
 import argparse
@@ -22,6 +22,7 @@ from em_common import SymbolLog, load_config, now_iso, output_dir, read_json, se
 from em_metrics import (TRADING_DAYS, beta_block, breadth_block, correlation_matrix, earnings_reactions, f,
                         horizon_return, idio_contribution, market_stats, mean_reversion_signal, momentum_signal,
                         next_13f_deadline, option_expiries, percentile_of_last, realized_vol, timing_from_hour, to_usd)
+from em_sectors import region_summary, sector_table
 from em_sources import (SecClient, download_closes, fetch_constituents, fetch_fundamentals, fetch_option_metrics,
                         figi_ticker_to_yahoo, long_equity_positions, map_cusips_openfigi)
 
@@ -191,6 +192,15 @@ class MonitorRun:
             symbols[y] = {"key": y, "name": p.get("figi_name") or p["issuer"], "type": "stock", "group": sa_group, "currency": "USD",
                           "weight_13f": p["weight"], "cusip": p["cusip"], "change_13f": p["change_vs_prior"]}
             groups[sa_group].append(y)
+        for rk, rc in cfg.get("sectors", {}).items():
+            g = f"Secteurs {rk}"
+            groups[g] = []
+            for t, label in rc["members"].items():
+                symbols[t] = {"key": t, "name": label, "type": "sector", "group": g, "currency": rc["currency"], "region": rk}
+                groups[g].append(t)
+            for bt in (rc.get("benchmark"), rc.get("equal_weight"), rc.get("etf_benchmark")):
+                if bt and bt not in symbols:
+                    symbols[bt] = {"key": bt, "name": f"{rc['benchmark_label']} ({bt})", "type": "sector_bench", "group": g, "currency": rc["currency"], "region": rk}
         groups["ETFs"] = []
         for e in cfg["etfs"]:
             symbols[e["ticker"]] = {"key": e["ticker"], "name": f"{e['name']} — {e['line']}", "type": "etf", "group": "ETFs", "currency": None,
@@ -297,6 +307,25 @@ class MonitorRun:
                                              "mag7_members": m7, "n_rest": len(rest)}
             res["indices"][key] = block
         return res, cons_closes
+
+    # ------------------------------------------------------------------ sectors
+    def run_sectors(self, universe, closes, prices_payload):
+        cfg = self.cfg
+        out = {"generated_at": now_iso(), "thresholds": cfg["sector_signals"], "regions": {},
+               "note": "ETF sectoriels (SPDR Select Sector pour les US, iShares STOXX Europe 600 sectoriels sur Xetra pour l'Europe) ; "
+                       "force relative = ETF / indice de reference ; RRG simplifie (ratio / MM50 du ratio, variation 10 seances)."}
+        for rk, rc in cfg["sectors"].items():
+            rows, n = sector_table(closes, rc, cfg["sector_signals"])
+            summ = region_summary(rows, closes, rc)
+            bench_t = rc["benchmark"]
+            bm = market_stats(closes[bench_t]) if bench_t in closes.columns else {}
+            for t, r in rows.items():
+                r["fetched_at"] = prices_payload["symbols"].get(t, {}).get("fetched_at")
+                r["stale"] = prices_payload["symbols"].get(t, {}).get("stale")
+            out["regions"][rk] = {"label": rc["label"], "benchmark": bench_t, "benchmark_label": rc["benchmark_label"], "currency": rc["currency"],
+                                  "benchmark_market": bm, "sectors": rows, "summary": summ, "cyclical": rc["cyclical"], "defensive": rc["defensive"]}
+            self.log.info("sectors %s: %d/%d with data, entries %s, exits %s", rk, n, len(rc["members"]), summ.get("entries"), summ.get("exits"))
+        return out
 
     # ------------------------------------------------------------------ assembly
     def assemble(self, universe, closes, prices_payload, fundamentals, sa13f, constituents):
@@ -653,6 +682,16 @@ class MonitorRun:
         lines.append(f"Concentration semis — corrélation 60 j moyenne du panier 13F {corr.get('basket_avg_pair_corr') and round(corr['basket_avg_pair_corr'], 2)}, "
                      f"{len(corr.get('pairs_above_threshold', []))} paires > {corr.get('threshold')} ; SMGB le plus corrélé à {', '.join(f'{x['symbol']} ({x['corr']:.2f})' for x in top) or 'n/a'} ; "
                      f"top 13F : {', '.join(f'{t} {w * 100:.0f}%' for t, w in w13) or 'n/a'} ; NDX {'n/a' if bn.get('pct_above_ma50') is None else round(bn['pct_above_ma50'])}% des titres > MM50 (au {bn.get('as_of', 'n/a')}).")
+        sec = getattr(self, "_sectors", None) or {}
+        parts = []
+        for rk, reg in sec.get("regions", {}).items():
+            sm = reg.get("summary", {})
+            lab = lambda t: reg["sectors"].get(t, {}).get("label", t)
+            parts.append(f"{reg['label']} : leaders 1M {', '.join(lab(t) for t in sm.get('leaders_1m', []))} ; retardataires {', '.join(lab(t) for t in sm.get('laggards_1m', []))} ; "
+                         f"cycliques − défensives 1M {pct(sm.get('cyc_minus_def_1m'))} ; Leading : {', '.join(lab(t) for t in sm.get('quadrants', {}).get('Leading', [])) or 'aucun'} ; "
+                         f"entrées (top {sec['thresholds']['top_n']} momentum 12-1 + score ≥ {sec['thresholds']['entry_min_score']}/6) : {', '.join(lab(t) for t in sm.get('entries', [])) or 'aucune'} ; "
+                         f"à surveiller : {', '.join(lab(t) for t in sm.get('watch', [])[:4]) + (' …' if len(sm.get('watch', [])) > 4 else '') or 'aucun'} ; sorties : {', '.join(lab(t) for t in sm.get('exits', [])) or 'aucune'}")
+        lines.append("Rotation sectorielle — " + (" | ".join(parts) if parts else "non calculée") + ".")
         return lines
 
     # ------------------------------------------------------------------ main
@@ -669,6 +708,7 @@ class MonitorRun:
             options = self.step("Options : move implicite et IV (yfinance)", lambda: self.run_options(universe, fundamentals, closes, upcoming)) or {}
             breadth_res = self.step("Breadth locale (constituants)", lambda: self.run_breadth(constituents, closes, universe))
             breadth = breadth_res[0] if breadth_res else {"indices": {}, "error": "breadth non calculee"}
+            self._sectors = self.step("Rotation sectorielle US / Europe", lambda: self.run_sectors(universe, closes, prices_payload)) or {}
             quotes, risk, events = self.step("Signaux, corrélations, lecture", lambda: self.finish(universe, closes, quotes, risk, events, upcoming, options, breadth), critical=True)
             status = "ok" if not self.errors else "partial"
         except Exception as exc:  # noqa: BLE001
@@ -686,6 +726,7 @@ class MonitorRun:
         write_json(self.out / "events.json", events)
         write_json(self.out / "breadth.json", breadth)
         write_json(self.out / "risk.json", risk)
+        write_json(self.out / "sectors.json", self._sectors)
         self.write_status(status)
         self.bundle()
         if status == "ok" and (self.out.parent / "LAST_ERROR.txt").exists():
@@ -710,7 +751,7 @@ class MonitorRun:
 
     def bundle(self):
         """data.js: every JSON in one global so index.html works from file:// (no fetch) as well as from a server."""
-        names = ["universe", "prices", "quotes", "events", "breadth", "constituents", "sa_13f", "risk", "run_status", "backtest"]
+        names = ["universe", "prices", "quotes", "events", "breadth", "constituents", "sa_13f", "risk", "sectors", "run_status", "backtest"]
         parts = []
         for n in names:
             p = self.out / f"{n}.json"
