@@ -64,7 +64,7 @@ def sector_table(closes: pd.DataFrame, region_cfg: dict, sig_cfg: dict):
             "abs": {k: m[k] for k in ("r_1d", "r_5d", "r_1m", "r_3m", "r_6m", "r_1y", "r_ytd")},
             "rel": {k: (f(m[k] - horizon_return(bench, nn)) if m[k] is not None else None) for k, nn in (("r_1d", 1), ("r_5d", 5), ("r_1m", 21), ("r_3m", 63), ("r_6m", 126), ("r_1y", 252))},
             "rel_ytd": f(m["r_ytd"] - ytd_return(bench)) if m["r_ytd"] is not None and ytd_return(bench) is not None else None,
-            "vol_3m": m["vol_3m"], "rsi_14": m["rsi_14"],
+            "vol_3m": m["vol_3m"], "rsi_14": m["rsi_14"], "rsi_state": m.get("rsi_state"), "cross_50_200": m.get("cross_50_200"), "cross_20_50": m.get("cross_20_50"), "mom_6_1": m.get("mom_6_1"),
             "rs_vs_ma50": f(ratio.iloc[-1] / ma_r50 - 1) if ma_r50 else None,
             "rs_vs_ma200": f(ratio.iloc[-1] / ma_r200 - 1) if ma_r200 and not np.isnan(ma_r200) else None,
             "rs_ratio": f(rsr.iloc[-1]), "rs_momentum": f(rsm.iloc[-1]), "quadrant": quadrant(f(rsr.iloc[-1]), f(rsm.iloc[-1])),

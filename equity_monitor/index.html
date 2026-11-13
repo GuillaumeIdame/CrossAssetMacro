@@ -148,6 +148,11 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       <div class="card"><div class="card-head"><h2>Relatifs : SX5E / SPX (EUR et USD), NDX / SPX</h2><span class="hint">base 100, 1 an</span></div><div class="chart" id="ch-rel"></div></div>
       <div class="card"><div class="card-head"><h2>ETF vs indice sous-jacent et FX</h2><select id="etf-pick"></select></div><div class="chart" id="ch-etf"></div></div>
     </div>
+    <div class="grid">
+      <div class="card"><div class="card-head"><h2>Technique — prix, MM20 / MM50 / MM200 et RSI 14</h2><div class="controls"><select id="tech-pick"></select><select id="tech-period"><option value="252">1A</option><option value="504" selected>2A</option><option value="126">6M</option></select></div></div><div class="chart tall" id="ch-tech"></div></div>
+      <div class="card"><div class="card-head"><h2>Croisements récents et RSI extrêmes</h2><span class="hint">Golden / death cross 50/200 ≤ 20 séances, croisement 20/50 ≤ 5 séances, RSI 14 ≤ 30 ou ≥ 70. Cliquer un titre pour le tracer.</span></div><div class="tscroll" id="tbl-tech"></div></div>
+    </div>
+    <div class="card"><div class="card-head"><h2>Backtest des signaux techniques</h2><span class="hint" id="techbt-hint"></span></div><div class="tscroll" id="tbl-techbt"></div><div class="chart tall" id="ch-techbt"></div><div id="techbt-caveats" class="note"></div></div>
   </section>
 
   <section class="panel" id="tab-fonda" hidden>
@@ -255,6 +260,10 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   const dstr = (s) => s ? s.slice(0, 10) : NA;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const sgnClass = (x) => isNum(x) ? (x > 0 ? 'up' : (x < 0 ? 'down' : '')) : '';
+  const crossCell = (c) => { if (!c) return NA; const rec = c.sessions_since != null && c.sessions_since <= 20; const arrow = c.state === 'haussier' ? '↑' : '↓'; return `<span class="${c.state === 'haussier' ? 'up' : 'down'}">${arrow} ${c.fast}/${c.slow}</span> <span class="${rec ? (c.last_cross === 'golden' ? 'up' : 'down') : 'muted'}" style="${rec ? 'font-weight:600' : ''}">${c.last_cross ? (c.last_cross === 'golden' ? 'G' : 'D') + ' ' + c.sessions_since + ' s.' : ''}</span>`; };
+  const crossTitle = (c) => c ? `MM${c.fast} ${c.state === 'haussier' ? '>' : '<'} MM${c.slow} (écart ${pct(c.spread)}) · dernier croisement ${c.last_cross === 'golden' ? 'haussier (golden)' : 'baissier (death)'} le ${c.last_cross_date || 'n/a'}, il y a ${c.sessions_since ?? 'n/a'} séances` : 'historique insuffisant';
+  const rsiCell = (m) => { const r = m.rsi_14; if (!isNum(r)) return NA; const cls = r <= 30 ? 'up' : (r >= 70 ? 'down' : ''); const d = isNum(m.rsi_14_5d_ago) ? r - m.rsi_14_5d_ago : null; return `<span class="${cls}" style="${cls ? 'font-weight:600' : ''}">${r.toFixed(0)}</span>${d != null ? ` <span class="muted">${d >= 0 ? '▲' : '▼'}${Math.abs(d).toFixed(0)}</span>` : ''}`; };
+  const rsiTitle = (m) => `RSI 14 (Wilder) ${num(m.rsi_14, 1)} · il y a 5 séances ${num(m.rsi_14_5d_ago, 1)} · ≤ 30 survendu, ≥ 70 suracheté`;
   const src = (label, at) => `${label}${at ? ' · ' + at.replace('T', ' ').replace('Z', ' UTC') : ''}`;
 
   // ---------------------------------------------------------------- generic table
@@ -342,7 +351,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       if (!filterSet.has('all') && !filterSet.has(r.group)) continue;
       const m = r.market || {}; const up = (E().upcoming || {})[t] || {}; const v = (R().vol.stocks || {})[t] || {};
       out.push({ t, r, m, up, v, name: r.name, group: r.group, last: m.last, r_1d: m.r_1d, r_5d: m.r_5d, r_1m: m.r_1m, r_3m: m.r_3m, r_ytd: m.r_ytd, vol_3m: m.vol_3m, beta: r.beta_spx_1y,
-        idio_1m: m.idio_1m, pe: (r.valuation || {}).pe_fwd, rev30: (r.sentiment || {}).rev_fy_30d, upside: (r.sentiment || {}).upside, d2e: up.days_to, im: up.implied_move, hist: up.hist_avg_abs_move, ratio: up.ratio_implied_hist, signal: r.signal });
+        idio_1m: m.idio_1m, mom121: m.mom_12_1, rsi: m.rsi_14, cross: (m.cross_50_200 || {}).sessions_since, pe: (r.valuation || {}).pe_fwd, rev30: (r.sentiment || {}).rev_fy_30d, upside: (r.sentiment || {}).upside, d2e: up.days_to, im: up.implied_move, hist: up.hist_avg_abs_move, ratio: up.ratio_implied_hist, signal: r.signal });
     }
     return out;
   }
@@ -354,6 +363,9 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       { key: 'last', label: 'Prix', render: (r) => `${px(r.last)} <span class="${r.m.stale ? 'stale' : 'muted'}" title="${r.m.stale ? 'clôture absente pour la date attendue' : ''}">${esc((r.m.last_date || '').slice(5))}</span>`, src: (r) => src('yfinance.download · dernière clôture ' + (r.m.last_date || NA), (P().symbols[r.t] || {}).fetched_at) },
       retCol('r_1d', '1D'), retCol('r_5d', '5D'), retCol('r_1m', '1M'), retCol('r_3m', '3M'), retCol('r_ytd', 'YTD'),
       { key: 'vol_3m', label: 'Vol 3M', render: (r) => pctAbs(r.vol_3m, 0), src: (r) => 'écart-type des rendements log 63 j × √252' },
+      { key: 'mom121', label: 'Mom 12-1', title: 'performance des 12 derniers mois hors dernier mois', render: (r) => pct(r.mom121, 0), cls: (r) => sgnClass(r.mom121), src: (r) => `P[t−21] / P[t−252] − 1 · 6-1 mois ${pct(r.m.mom_6_1, 0)}` },
+      { key: 'rsi', label: 'RSI 14', render: (r) => rsiCell(r.m), src: (r) => rsiTitle(r.m) },
+      { key: 'cross', label: 'MM 50/200', title: 'état des moyennes mobiles et dernier croisement (G = golden, D = death, en séances)', render: (r) => crossCell(r.m.cross_50_200), sortVal: (r) => r.cross, src: (r) => crossTitle(r.m.cross_50_200) + ' · 20/50 : ' + crossTitle(r.m.cross_20_50) },
       { key: 'beta', label: 'β SPX 1a', render: (r) => num(r.beta), src: (r) => `OLS rendements quotidiens USD 1 an vs ^GSPC · R² ${num(((R().betas[r.t] || {}).SPX || {}).r2_1y)}` },
       { key: 'idio_1m', label: 'Idio 1M', title: 'perf 1M − β × SPX 1M', render: (r) => pct(r.idio_1m), cls: (r) => sgnClass(r.idio_1m), src: (r) => `perf 1M ${pct(r.r_1m)} − β ${num(r.beta)} × SPX 1M ${pct(((r.r || {}).idio || {})['1m'] ? (r.r.idio['1m'].beta_part / (r.beta || 1)) : null)}` },
       { key: 'pe', label: 'P/E fwd', render: (r) => num(r.pe, 1), src: (r) => src('yfinance.info.forwardPE', r.r.fetched_at) },
@@ -378,6 +390,9 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       { key: 'r_1m', label: '1M', render: (r) => pct(r.m.r_1m), cls: (r) => sgnClass(r.m.r_1m), sortVal: (r) => r.m.r_1m }, { key: 'r_3m', label: '3M', render: (r) => pct(r.m.r_3m), cls: (r) => sgnClass(r.m.r_3m), sortVal: (r) => r.m.r_3m },
       { key: 'r_ytd', label: 'YTD', render: (r) => pct(r.m.r_ytd), cls: (r) => sgnClass(r.m.r_ytd), sortVal: (r) => r.m.r_ytd },
       { key: 'vol', label: 'Vol 3M', render: (r) => r.kind === 'Vol' ? NA : pctAbs(r.m.vol_3m, 0), sortVal: (r) => r.m.vol_3m },
+      { key: 'mom121', label: 'Mom 12-1', render: (r) => r.kind === 'Vol' ? NA : pct(r.m.mom_12_1, 0), cls: (r) => sgnClass(r.m.mom_12_1), sortVal: (r) => r.m.mom_12_1, src: () => 'P[t−21] / P[t−252] − 1' },
+      { key: 'rsi', label: 'RSI 14', render: (r) => rsiCell(r.m), sortVal: (r) => r.m.rsi_14, src: (r) => rsiTitle(r.m) },
+      { key: 'cross', label: 'MM 50/200', render: (r) => r.kind === 'Vol' ? NA : crossCell(r.m.cross_50_200), sortVal: (r) => (r.m.cross_50_200 || {}).sessions_since, src: (r) => crossTitle(r.m.cross_50_200) + ' · 20/50 : ' + crossTitle(r.m.cross_20_50) },
       { key: 'beta', label: 'β SPX 1a (USD)', render: (r) => num(r.beta), src: (r) => 'OLS quotidien 1 an en USD' },
       { key: 'gap', label: 'ETF − indice 1M (USD)', title: 'perf ETF en USD − perf indice sous-jacent', render: (r) => r.kind === 'ETF' ? `${pct(r.gap)} <span class="muted">3M ${pct(r.gap3)}</span>` : '', cls: (r) => sgnClass(r.gap), src: (r) => r.kind === 'ETF' ? `ETF ${r.t} converti en USD vs ${r.und}` : null },
       { key: 'signal', label: 'Signal', render: (r) => r.signal ? `<span class="tag sig">${esc(r.signal)}</span>` : '', sortVal: (r) => r.signal ? 1 : 0 },
@@ -454,6 +469,64 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       { type: 'scatter', mode: 'lines', name: sym(t).underlying + ' (USD)', x: dates, y: b100(alignOn(dates, und)), line: { color: cols[1], width: 2 } },
       { type: 'scatter', mode: 'lines', name: fxk, x: dates, y: b100(alignOn(dates, fx)), line: { color: cols[3], width: 1.4 } },
     ], { hovermode: 'x unified' });
+  }
+
+  // ---------------------------------------------------------------- TECHNIQUE
+  function sma(arr, n) { const out = []; let sum = 0; for (let i = 0; i < arr.length; i++) { sum += arr[i]; if (i >= n) sum -= arr[i - n]; out.push(i >= n - 1 ? sum / n : null); } return out; }
+  function rsiArr(arr, n = 14) { const out = [null]; let up = 0, dn = 0; for (let i = 1; i < arr.length; i++) { const d = arr[i] - arr[i - 1]; const u = Math.max(d, 0), v = Math.max(-d, 0); if (i <= n) { up += u / n; dn += v / n; out.push(i === n ? 100 - 100 / (1 + up / (dn || 1e-12)) : null); } else { up = (up * (n - 1) + u) / n; dn = (dn * (n - 1) + v) / n; out.push(100 - 100 / (1 + up / (dn || 1e-12))); } } return out; }
+  function techPickInit() {
+    const list = [...Object.keys(Q().stocks), ...U().groups.Indices, ...U().groups.ETFs, ...(U().groups['Secteurs US'] || []), ...(U().groups['Secteurs EU'] || [])].filter(series);
+    $('tech-pick').innerHTML = list.map((t) => `<option value="${t}">${t}${sym(t).name && sym(t).name !== t ? ' — ' + esc(sym(t).name) : ''}</option>`).join('');
+    $('tech-pick').addEventListener('change', chartTech); $('tech-period').addEventListener('change', chartTech);
+  }
+  function chartTech() {
+    const t = $('tech-pick').value; const s = series(t); if (!s) return; const n = Number($('tech-period').value);
+    const c = s.close, m20 = sma(c, 20), m50 = sma(c, 50), m200 = sma(c, 200), r = rsiArr(c, 14); const i0 = Math.max(0, c.length - n); const x = s.dates.slice(i0);
+    const cols = SERIES(); const sl = (a) => a.slice(i0);
+    plot('ch-tech', [
+      { type: 'scatter', mode: 'lines', name: t, x, y: sl(c), line: { color: css('--fg'), width: 1.6 }, hovertemplate: '%{x}<br>' + t + ' %{y:.2f}<extra></extra>' },
+      { type: 'scatter', mode: 'lines', name: 'MM20', x, y: sl(m20), line: { color: cols[3], width: 1 } },
+      { type: 'scatter', mode: 'lines', name: 'MM50', x, y: sl(m50), line: { color: cols[0], width: 1.4 } },
+      { type: 'scatter', mode: 'lines', name: 'MM200', x, y: sl(m200), line: { color: cols[1], width: 1.4 } },
+      { type: 'scatter', mode: 'lines', name: 'RSI 14', x, y: sl(r), yaxis: 'y2', line: { color: cols[6], width: 1.4 }, hovertemplate: '%{x}<br>RSI %{y:.0f}<extra></extra>' },
+    ], { hovermode: 'x unified', grid: { rows: 2, columns: 1 }, yaxis: { domain: [0.34, 1], gridcolor: css('--border'), title: { text: s.currency || '' } },
+      yaxis2: { domain: [0, 0.26], range: [0, 100], gridcolor: css('--border'), tickvals: [30, 50, 70] },
+      shapes: [{ type: 'rect', xref: 'paper', x0: 0, x1: 1, yref: 'y2', y0: 30, y1: 70, fillcolor: css('--surface-2'), opacity: 0.5, line: { width: 0 }, layer: 'below' }],
+      legend: { orientation: 'h', y: -0.1 }, margin: { l: 56, r: 12, t: 8, b: 40 } });
+  }
+  function renderTech() {
+    const T = ((R().signals || {}).technical) || {}; const rows = [];
+    for (const [t, v] of Object.entries(T)) { if (!v.flags || !v.flags.length) continue; rows.push({ t, v, grp: sym(t).group, flags: v.flags.join(' · '), rsi: v.rsi_14, mom: v.mom_12_1, since: (v.cross_50_200 || {}).sessions_since }); }
+    table('tbl-tech', [
+      { key: 't', label: 'Titre', left: true, render: (r) => `<a href="#monitor" data-tech="${esc(r.t)}"><b>${esc(r.t)}</b></a> <span class="muted">${esc(r.grp || '')}</span>` },
+      { key: 'flags', label: 'Signal', left: true, render: (r) => r.flags.split(' · ').map((f_) => `<span class="tag ${/golden|haussier|survendu/.test(f_) ? 'bon' : 'cher'}">${esc(f_)}</span>`).join(' '), sortVal: (r) => r.flags, src: () => 'risk.json signals.technical (clôtures ajustées)' },
+      { key: 'rsi', label: 'RSI 14', render: (r) => num(r.rsi, 0), sortVal: (r) => r.rsi },
+      { key: 'mom', label: 'Mom 12-1', render: (r) => pct(r.mom, 0), cls: (r) => sgnClass(r.mom), sortVal: (r) => r.mom },
+      { key: 'trend', label: 'MM50 vs MM200', left: true, render: (r) => crossCell(r.v.cross_50_200), sortVal: (r) => r.since, src: (r) => crossTitle(r.v.cross_50_200) },
+    ], rows, { defaultSort: 'rsi', defaultDir: 1 });
+    $('tbl-tech').querySelectorAll('[data-tech]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); $('tech-pick').value = a.dataset.tech; chartTech(); $('ch-tech').scrollIntoView({ behavior: 'smooth', block: 'center' }); }));
+  }
+
+  function renderTechBacktest() {
+    const bt = D.backtest; if (!bt) { $('techbt-hint').textContent = 'backtest.json absent'; return; }
+    const rows = Object.entries(bt.strategies || {}).filter(([k, s_]) => s_.kind === 'technical').map(([k, s_]) => ({ k, s: s_, uni: k.endsWith('indices') ? 'Indices (USD)' : 'Mag7 + AMD' }));
+    $('techbt-hint').textContent = `Hebdo ${bt.rebalance}, long only, frais ${bt.costs.fee_bps_per_side} bp + slippage ${bt.costs.slippage_bps_per_side} bp par côté, in-sample ${Math.round(bt.in_sample_share * 100)} % · ${(bt.generated_at || '').replace('T', ' ')}`;
+    const st = (o, f_) => (o && isNum(o[f_])) ? o[f_] : null;
+    table('tbl-techbt', [
+      { key: 'uni', label: 'Univers', left: true, render: (r) => `${esc(r.uni)}${r.s.selection_bias ? ' <span class="warn" title="' + esc(r.s.selection_bias) + '">biais</span>' : ''}`, src: (r) => (r.s.universe || []).join(', ') },
+      { key: 'rule', label: 'Règle', left: true, render: (r) => esc(r.s.rule || r.k), sortVal: (r) => r.k },
+      { key: 'cagr', label: 'CAGR net', render: (r) => pct(st(r.s.net, 'cagr')), cls: (r) => sgnClass(st(r.s.net, 'cagr')), sortVal: (r) => st(r.s.net, 'cagr') },
+      { key: 'bench', label: 'Bench', render: (r) => pct(st(r.s.benchmark_stats, 'cagr')), src: (r) => r.s.benchmark },
+      { key: 'ex', label: 'Excès', render: (r) => pct(st(r.s.net, 'cagr') - st(r.s.benchmark_stats, 'cagr')), cls: (r) => sgnClass(st(r.s.net, 'cagr') - st(r.s.benchmark_stats, 'cagr')), sortVal: (r) => st(r.s.net, 'cagr') - st(r.s.benchmark_stats, 'cagr') },
+      { key: 'sh', label: 'Sharpe', render: (r) => num(st(r.s.net, 'sharpe')), sortVal: (r) => st(r.s.net, 'sharpe') }, { key: 'dd', label: 'Max DD', render: (r) => pct(st(r.s.net, 'max_drawdown')), cls: () => 'down', sortVal: (r) => st(r.s.net, 'max_drawdown') },
+      { key: 'is', label: 'In-sample / bench', render: (r) => `${pct(st(r.s.in_sample.strategy, 'cagr'))} / ${pct(st(r.s.in_sample.benchmark, 'cagr'))}` },
+      { key: 'oos', label: 'Out-of-sample / bench', render: (r) => `${pct(st(r.s.out_of_sample.strategy, 'cagr'))} / ${pct(st(r.s.out_of_sample.benchmark, 'cagr'))}`, cls: (r) => sgnClass(st(r.s.out_of_sample.strategy, 'cagr') - st(r.s.out_of_sample.benchmark, 'cagr')) },
+      { key: 'to', label: 'Turnover / sem.', render: (r) => pctAbs(r.s.avg_turnover_one_way, 0) }, { key: 'inv', label: 'Investi', render: (r) => pctAbs(r.s.time_invested, 0) },
+    ], rows, { defaultSort: 'uni', defaultDir: 1 });
+    const cols = SERIES(); const tr = []; let benchDone = {};
+    rows.forEach((r, i) => { const e = r.s.equity; if (!e) return; tr.push({ type: 'scatter', mode: 'lines', name: r.k, x: e.dates, y: e.strategy, line: { color: cols[i % 8], width: 1.6, dash: r.uni.startsWith('Indices') ? 'dot' : 'solid' } }); if (!benchDone[r.uni]) { benchDone[r.uni] = true; tr.push({ type: 'scatter', mode: 'lines', name: 'bench ' + r.uni, x: e.dates, y: e.benchmark, line: { color: css('--muted'), width: 1.2, dash: r.uni.startsWith('Indices') ? 'dot' : 'solid' } }); } });
+    plot('ch-techbt', tr, { hovermode: 'x unified', yaxis: { type: 'log', gridcolor: css('--border') }, legend: { orientation: 'h', y: -0.12, font: { size: 10 } } });
+    $('techbt-caveats').innerHTML = (bt.caveats || []).filter((c) => /technique|hebdo|long only|Seuils/i.test(c)).map((c) => '• ' + esc(c)).join('<br>');
   }
 
   // ---------------------------------------------------------------- FONDAMENTAUX
@@ -642,6 +715,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       const i = s.inputs || {}; const buy = isNum(i.z_20d) && isNum(i.rsi_14) && i.z_20d <= T.mr.z_entry && i.rsi_14 <= T.mr.rsi_entry; const st = isNum(i.z_20d) && isNum(i.rsi_14) && i.z_20d >= T.mr.z_stretch && i.rsi_14 >= T.mr.rsi_stretch;
       rows.push({ t: sym(t).key || t, kind: 'Mean reversion EU', active: buy || st, state: buy ? 'achat (survendu)' : (st ? 'tension' : 'neutre'), conds: [[`z 20 j ${num(i.z_20d)}`, buy], [`RSI14 ${num(i.rsi_14, 0)}`, buy || st]] });
     }
+    for (const [t, v] of Object.entries(S.technical || {})) { if (!v.flags || !v.flags.length) continue; rows.push({ t, kind: 'Technique', active: true, state: v.flags.join(' · '), conds: [[`RSI ${num(v.rsi_14, 0)}`, !!v.rsi_state], [`MM50 ${v.trend || ''}`, v.trend === 'haussier']] }); }
     table('tbl-signals', [
       { key: 't', label: 'Titre', left: true, render: (r) => `<b>${esc(r.t)}</b>${r.flag ? '<span class="warn" title="résultats ≤ 5 j">*</span>' : ''}` },
       { key: 'kind', label: 'Signal', left: true },
@@ -653,7 +727,7 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
   function renderBacktest() {
     const bt = D.backtest; if (!bt) { $('bt-hint').textContent = 'backtest.json absent : lancer backtest_signals.py'; return; }
     $('bt-hint').textContent = `Hebdo ${bt.rebalance}, frais ${bt.costs.fee_bps_per_side} bp + slippage ${bt.costs.slippage_bps_per_side} bp par côté, in-sample = ${Math.round(bt.in_sample_share * 100)} % de l'historique · ${(bt.generated_at || '').replace('T', ' ')}`;
-    const rows = Object.entries(bt.strategies || {}).filter(([k, s]) => s.kind !== 'sector').map(([k, s]) => ({ k, s }));
+    const rows = Object.entries(bt.strategies || {}).filter(([k, s]) => !s.kind).map(([k, s]) => ({ k, s }));
     const st = (o, f) => (o && isNum(o[f])) ? o[f] : null;
     table('tbl-bt', [
       { key: 'k', label: 'Stratégie', left: true, render: (r) => `<b>${esc(r.k)}</b> <span class="muted">${r.s.n_names} titres</span>${r.s.selection_bias ? ' <span class="warn" title="' + esc(r.s.selection_bias) + '">biais</span>' : ''}`, src: (r) => (r.s.universe || []).join(', ') },
@@ -720,6 +794,8 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
       { key: 'quadrant', label: 'Quadrant', left: true, render: (r) => `<span class="tag" style="color:${css(QCOL[r.quadrant] || '--muted')};border-color:${css(QCOL[r.quadrant] || '--border')}">${esc(r.quadrant || NA)}</span>${r.quadrant_prev && r.quadrant_prev !== r.quadrant ? ` <span class="muted">← ${esc(r.quadrant_prev)}</span>` : ''}`, sortVal: (r) => ['Leading', 'Improving', 'Weakening', 'Lagging'].indexOf(r.quadrant), src: (r) => `RS-ratio ${num(r.rs_ratio, 1)} · RS-mom ${num(r.rs_momentum, 1)} · précédent (5 j) ${r.quadrant_prev || ''}` },
       { key: 'h52', label: 'vs haut 52 s.', render: (r) => pct(r.pct_vs_52w_high), cls: (r) => sgnClass(r.pct_vs_52w_high), sortVal: (r) => r.pct_vs_52w_high },
       { key: 'vol_3m', label: 'Vol 3M', render: (r) => pctAbs(r.vol_3m, 0), sortVal: (r) => r.vol_3m },
+      { key: 'rsi', label: 'RSI 14', render: (r) => rsiCell(r), sortVal: (r) => r.rsi_14, src: (r) => rsiTitle(r) },
+      { key: 'cross', label: 'MM 50/200', render: (r) => crossCell(r.cross_50_200), sortVal: (r) => (r.cross_50_200 || {}).sessions_since, src: (r) => crossTitle(r.cross_50_200) + ' · 20/50 : ' + crossTitle(r.cross_20_50) },
       { key: 'score', label: 'Score', render: (r) => `${r.sc.entry ? '<span class="tag sig">' : '<span class="tag">'}${r.sc.score}/${r.sc.max}</span>${r.sc.exit ? ' <span class="down" title="condition de sortie">sortie</span>' : ''}${r.sc.pullback ? ' <span class="muted" title="momentum 12-1 top avec dernier mois négatif">repli</span>' : ''}`, sortVal: (r) => r.sc.score, src: (r) => r.sc.conds.map((c) => (c[2] ? '✓ ' : '✗ ') + c[1]).join('\n') },
     ], rows, { defaultSort: 'rel_1m' });
     renderSecHeat(); renderSecSignals(); renderSecRefs();
@@ -847,11 +923,11 @@ td.up, .up { color: var(--up); } td.down, .down { color: var(--down); } .warn { 
     chips('grp-chips', items, state.group, () => { renderStocks(); });
     chips('grp-chips-f', items, state.groupF, () => { renderFonda(); });
     const safe = (fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } };
-    [renderStocks, renderIndices, renderHeat, volChipsInit, etfPickInit, renderFonda, render13f, renderCalendar, renderReact, renderReactDetail].forEach(safe);
+    [renderStocks, renderIndices, renderHeat, volChipsInit, etfPickInit, techPickInit, renderTech, renderTechBacktest, renderFonda, render13f, renderCalendar, renderReact, renderReactDetail].forEach(safe);
     chips('bench-chips', ['SPX', 'NDX', 'SOX'].map((b) => ({ value: b, label: b })), state.bench, renderBeta);
     [renderBeta, renderVol, renderBreadth, renderSigControls, renderSignals, renderBacktest, initSectors, renderSources, renderReading].forEach(safe);
     $('base-period').addEventListener('change', chartBase100); $('base-ccy').addEventListener('change', chartBase100); $('contrib-h').addEventListener('change', chartContrib);
-    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat, chartRRG, chartSecRs, chartSecPairs, renderSecRefs, renderSecHeat);
+    charts.push(chartScatter, chartBase100, chartRollVol, chartRel, chartEtf, chartReact, chartContrib, chartVix, chartBreadth, chartCorr, renderBacktest, renderHeat, chartRRG, chartSecRs, chartSecPairs, renderSecRefs, renderSecHeat, chartTech, renderTechBacktest);
     showTab(location.hash.slice(1) || 'monitor');
   }
   load().then(init).catch((e) => { console.error(e); $('loading').textContent = 'Erreur de chargement : ' + e.message; });

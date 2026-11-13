@@ -20,7 +20,7 @@ Indices (SPX, NDX, SOX, SX5E, DAX, CAC, FTSE) + EURUSD, GBPUSD ; Mag7 + AMD ; pa
 
 ## Onglet 1 — Monitor (market + fondamental + event sur une seule ligne par titre)
 
-Une ligne par action : prix, 1D / 5D / 1M / 3M / YTD, vol 3M, beta SPX 1 an, rendement 1M idiosyncratique (perf − beta × SPX), P/E fwd, révision EPS FY 30 j, upside vs cible, jours avant earnings, move implicite vs move historique moyen, signal. Un second tableau pour indices et ETFs (market seulement). Heatmap 1D/5D/idio, indices et ETFs base 100, scatter momentum/vol, vol glissante, relatif SX5E/SPX (EUR et USD) et NDX/SPX, ETF vs indice sous-jacent et FX. Tri et filtre par groupe.
+Une ligne par action : prix, 1D / 5D / 1M / 3M / YTD, vol 3M, momentum 12-1 mois, RSI 14 (avec variation 5 séances, survendu ≤ 30 / suracheté ≥ 70), état MM50/MM200 et ancienneté du dernier croisement (golden / death, croisement 20/50 en infobulle), beta SPX 1 an, rendement 1M idiosyncratique (perf − beta × SPX), P/E fwd, révision EPS FY 30 j, upside vs cible, jours avant earnings, move implicite vs move historique moyen, signal. Un second tableau pour indices et ETFs (market seulement). Heatmap 1D/5D/idio, indices et ETFs base 100, scatter momentum/vol, vol glissante, relatif SX5E/SPX (EUR et USD) et NDX/SPX, ETF vs indice sous-jacent et FX ; graphique technique par instrument (prix, MM20/50/200, RSI 14) et liste des croisements récents (50/200 ≤ 20 séances, 20/50 ≤ 5 séances) et RSI extrêmes. Tri et filtre par groupe.
 
 ## Onglet 2 — Fondamentaux
 
@@ -32,7 +32,7 @@ a) Calendrier à 30 jours : earnings (date, avant ouverture / après clôture, E
 
 ## Onglet 4 — Beta & risque
 
-a) Betas en USD contre SPX, NDX, SOX (et SX5E pour l'Europe) : 1 an et 3 mois sur rendements quotidiens, 1 an en hebdomadaire (corrige les clôtures non synchrones Londres / New York), downside beta (jours où le SPX baisse), R² et vol idiosyncratique. Contribution beta vs idio de la perf 1M et 3M. b) Vol implicite vs réalisée (spread, percentile 1 an, vol chère ≥ 80e, bon marché ≤ 20e) ; pour les actions l'IV ATM 30 j est dérivée du straddle. c) Breadth locale (MA50 / MA200, plus hauts 20 j, ligne A/D 3M, EW vs CW, Mag7 vs reste), avec la mention du biais de survie. d) Concentration semis : corrélations 60 j de SMGB en USD, matrice du panier 13F, paires > 0,8. e) Signaux (momentum US, mean reversion Europe, seuils modifiables, astérisque si earnings ≤ 5 j) et résultats du backtest (`backtest_signals.py` : in-sample / out-of-sample, frais et slippage explicites, biais de sélection du panier 13F).
+a) Betas en USD contre SPX, NDX, SOX (et SX5E pour l'Europe) : 1 an et 3 mois sur rendements quotidiens, 1 an en hebdomadaire (corrige les clôtures non synchrones Londres / New York), downside beta (jours où le SPX baisse), R² et vol idiosyncratique. Contribution beta vs idio de la perf 1M et 3M. b) Vol implicite vs réalisée (spread, percentile 1 an, vol chère ≥ 80e, bon marché ≤ 20e) ; pour les actions l'IV ATM 30 j est dérivée du straddle. c) Breadth locale (MA50 / MA200, plus hauts 20 j, ligne A/D 3M, EW vs CW, Mag7 vs reste), avec la mention du biais de survie. d) Concentration semis : corrélations 60 j de SMGB en USD, matrice du panier 13F, paires > 0,8. e) Signaux (momentum US, mean reversion Europe, technique : croisements MM récents et RSI extrêmes ; seuils modifiables, astérisque si earnings ≤ 5 j) et résultats du backtest (`backtest_signals.py` : in-sample / out-of-sample, frais et slippage explicites, biais de sélection du panier 13F).
 
 ## Onglet 5 — Rotation sectorielle (US et Europe)
 
@@ -53,7 +53,7 @@ Mention obligatoire : la rotation calée sur le cycle macro officiel ne bat pas 
 
 ## Format
 
-Dashboard interactif, sobre, mobile, dark mode, chaque chiffre relié à sa source (infobulle : appel et horodatage). Terminer par 6 lignes de lecture du marché : ce qui bouge (beta vs idio), anomalies de vol (dont implicite vs réalisée et moves implicites vs historiques), signaux, événements à surveiller, concentration semis, rotation sectorielle (leaders/retardataires, cycliques − défensives, secteurs en Leading, entrées et sorties du score).
+Dashboard interactif, sobre, mobile, dark mode, chaque chiffre relié à sa source (infobulle : appel et horodatage). Terminer par 6 lignes de lecture du marché : ce qui bouge (beta vs idio), anomalies de vol (dont implicite vs réalisée et moves implicites vs historiques), signaux (dont croisements MM et RSI extrêmes), événements à surveiller, concentration semis, rotation sectorielle (leaders/retardataires, cycliques − défensives, secteurs en Leading, entrées et sorties du score).
 
 ## Idées pour la suite (non faites)
 

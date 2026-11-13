@@ -84,15 +84,54 @@ def zscore(s: pd.Series, n: int = 20):
     return f((s.iloc[-1] - w.mean()) / sd) if sd and sd > 0 else None
 
 
+def ma_cross(s: pd.Series, fast: int, slow: int):
+    """State of the fast/slow moving-average pair and the last crossover (date, direction, sessions since)."""
+    if len(s) < slow + 5:
+        return None
+    diff = (s.rolling(fast).mean() - s.rolling(slow).mean()).dropna()
+    sign = np.sign(diff)
+    sign = sign[sign != 0]
+    if sign.empty:
+        return None
+    changes = sign[sign != sign.shift(1)].index
+    changes = changes[1:] if len(changes) else changes  # the first element is the start of the series, not a cross
+    state = "haussier" if sign.iloc[-1] > 0 else "baissier"
+    out = {"fast": fast, "slow": slow, "state": state, "spread": f(diff.iloc[-1] / s.iloc[-1])}
+    if len(changes):
+        last = changes[-1]
+        pos = s.index.get_loc(last)
+        out.update({"last_cross_date": str(last.date()), "last_cross": "golden" if sign.loc[last] > 0 else "death",
+                    "sessions_since": int(len(s) - 1 - pos)})
+    else:
+        out.update({"last_cross_date": None, "last_cross": None, "sessions_since": None})
+    return out
+
+
+def rsi_series(s: pd.Series, n: int = 14):
+    d = s.diff()
+    up = d.clip(lower=0).ewm(alpha=1 / n, adjust=False).mean()
+    dn = (-d.clip(upper=0)).ewm(alpha=1 / n, adjust=False).mean()
+    return 100 - 100 / (1 + up / dn.replace(0, np.nan))
+
+
 def market_stats(s: pd.Series):
     s = s.dropna()
     if s.empty:
         return {}
+    ma20 = s.rolling(20).mean().iloc[-1] if len(s) >= 20 else np.nan
     ma50 = s.rolling(50).mean().iloc[-1] if len(s) >= 50 else np.nan
     ma200 = s.rolling(200).mean().iloc[-1] if len(s) >= 200 else np.nan
     hi52 = s.iloc[-252:].max()
     lo52 = s.iloc[-252:].min()
+    rsi_s = rsi_series(s, 14) if len(s) > 20 else None
+    r14 = f(rsi_s.iloc[-1]) if rsi_s is not None else None
     return {
+        "mom_12_1": f(s.iloc[-22] / s.iloc[-253] - 1) if len(s) > 253 else None,
+        "mom_6_1": f(s.iloc[-22] / s.iloc[-127] - 1) if len(s) > 127 else None,
+        "ma20": f(ma20), "pct_vs_ma20": f(s.iloc[-1] / ma20 - 1) if ma20 and not np.isnan(ma20) else None,
+        "cross_50_200": ma_cross(s, 50, 200), "cross_20_50": ma_cross(s, 20, 50),
+        "rsi_14_5d_ago": f(rsi_s.iloc[-6]) if rsi_s is not None and len(rsi_s) > 6 else None,
+        "rsi_state": None if r14 is None else ("survendu" if r14 <= 30 else ("suracheté" if r14 >= 70 else None)),
         "last": f(s.iloc[-1]), "last_date": str(s.index[-1].date()),
         "prev_close": f(s.iloc[-2]) if len(s) > 1 else None,
         "r_1d": horizon_return(s, 1), "r_5d": horizon_return(s, 5), "r_1m": horizon_return(s, 21),

@@ -75,7 +75,8 @@ sont souvent encore à J−2, le dashboard le montre tel quel.
 
 ## Conventions de calcul
 
-- Rendements sur clôtures ajustées ; 1M = 21 séances, 3M = 63, 1 an = 252.
+- Rendements sur clôtures ajustées ; 1M = 21 séances, 3M = 63, 1 an = 252. Momentum 12-1 = P[t−21] / P[t−252] − 1.
+- RSI 14 de Wilder (lissage exponentiel alpha = 1/14) ; croisements MM20/50 et MM50/200 : état, écart et dernier croisement (date, séances écoulées).
 - Betas sur log-rendements **en USD** (GBp / 100 × GBPUSD, EUR × EURUSD). Le beta hebdo
   (W-FRI, 52 semaines) corrige la non-synchronicité Londres / New York.
 - Idio 1M = perf 1M − β(1 an) × SPX 1M. Le même découpage est fait sur 3M.

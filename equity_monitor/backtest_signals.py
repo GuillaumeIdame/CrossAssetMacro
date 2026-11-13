@@ -185,6 +185,83 @@ def main():
         "n_entries": int(((w > 0) & (w.shift(1).fillna(0) == 0)).sum().sum()),
         "equity": {"dates": [str(d.date()) for d in eq.index], "strategy": [float(v) for v in eq.values], "benchmark": [float(v) for v in beq.values]},
     }
+    # ---------------- technical signals: MA crossovers, RSI reversal, momentum (weekly, long only, equal weight)
+    def rsi_frame(px, n=14):
+        d = px.diff()
+        up = d.clip(lower=0).ewm(alpha=1 / n, adjust=False).mean()
+        dn = (-d.clip(upper=0)).ewm(alpha=1 / n, adjust=False).mean()
+        return 100 - 100 / (1 + up / dn.replace(0, np.nan))
+
+    def state_weights(enter: pd.DataFrame, leave: pd.DataFrame, px_w: pd.DataFrame):
+        """Long while a position is open: open when `enter` is true, close when `leave` is true (evaluated weekly)."""
+        e = enter.reindex(px_w.index, method="ffill").fillna(False)
+        l = leave.reindex(px_w.index, method="ffill").fillna(False)
+        pos = pd.DataFrame(False, index=px_w.index, columns=px_w.columns)
+        st = {c: False for c in px_w.columns}
+        for d in px_w.index:
+            for c in px_w.columns:
+                if not st[c] and bool(e.at[d, c]):
+                    st[c] = True
+                elif st[c] and bool(l.at[d, c]):
+                    st[c] = False
+                pos.at[d, c] = st[c]
+        n = pos.sum(axis=1)
+        return pos.div(n.replace(0, np.nan), axis=0).fillna(0.0)
+
+    def record(label, w, px_w, bench_w, extra):
+        gross, net, to = run_strategy(w, px_w, cost_side)
+        bench_r = bench_w.pct_change().reindex(net.index).fillna(0.0)
+        first = w.index[(w.sum(axis=1) > 0).argmax()] if (w.sum(axis=1) > 0).any() else net.index[0]
+        start = max(first, px_w.index[min(52, len(px_w) - 1)])
+        net, gross, bench_r, to = net[net.index >= start], gross[gross.index >= start], bench_r[bench_r.index >= start], to[to.index >= start]
+        ins, oos = split(net, bt["in_sample_share"]); bins, boos = split(bench_r, bt["in_sample_share"])
+        eq, beq = (1 + net).cumprod(), (1 + bench_r).cumprod()
+        result["strategies"][label] = {
+            **extra, "kind": "technical",
+            "gross": perf_stats(gross), "net": perf_stats(net), "benchmark_stats": perf_stats(bench_r),
+            "in_sample": {"strategy": perf_stats(ins), "benchmark": perf_stats(bins)}, "out_of_sample": {"strategy": perf_stats(oos), "benchmark": perf_stats(boos)},
+            "avg_turnover_one_way": float(to.mean()), "avg_cost_per_week_bps": float((to * cost_side).mean()),
+            "time_invested": float(((w[w.index >= start].sum(axis=1)) > 0).mean()), "avg_names_held": float((w[w.index >= start] > 0).sum(axis=1).mean()),
+            "equity": {"dates": [str(d.date()) for d in eq.index], "strategy": [float(v) for v in eq.values], "benchmark": [float(v) for v in beq.values]},
+        }
+
+    universes = {
+        "mag7_amd": ([t for t in cfg["stock_groups"]["Mag7+AMD"]], universe["index_keys"]["SPX"], "SPX", lambda t: series_from_prices(prices, t)),
+        "indices": ([v for v in universe["index_keys"].values()], None, "EW indices (USD, buy & hold)",
+                    lambda t: to_usd(series_from_prices(prices, t), next((cfg["indices"][k]["currency"] for k, v in universe["index_keys"].items() if v == t), "USD"), fx) if series_from_prices(prices, t) is not None else None),
+    }
+    for uname, (names, bench_t, bench_label, getter) in universes.items():
+        cols = {t: getter(t) for t in names}
+        cols = {t: s_ for t, s_ in cols.items() if s_ is not None and len(s_) > 300}
+        if len(cols) < 3:
+            continue
+        px_d = pd.DataFrame(cols).dropna(how="all").ffill()
+        px_w = px_d.resample(bt["rebalance"]).last().dropna(how="all")
+        bench_w = spx.reindex(px_d.index).ffill().resample(bt["rebalance"]).last() if bench_t else px_w.mean(axis=1) / px_w.mean(axis=1).iloc[0]
+        if not bench_t:
+            bench_w = (px_w / px_w.iloc[0]).mean(axis=1)
+        base = {"universe": list(px_d.columns), "n_names": int(px_d.shape[1]), "benchmark": bench_label,
+                "selection_bias": "Mag7 + AMD sont les gagnants connus aujourd'hui : toute regle long only sur cet univers est flattee (biais de selection)." if uname == "mag7_amd" else None}
+        for fast, slow in ((50, 200), (20, 50)):
+            above = px_d.rolling(fast).mean() > px_d.rolling(slow).mean()
+            sel = above.reindex(px_w.index, method="ffill").fillna(False)
+            w = sel.astype(float).div(sel.sum(axis=1).replace(0, np.nan), axis=0).fillna(0.0)
+            record(f"ma_cross_{fast}_{slow}_{uname}", w, px_w, bench_w, {**base, "rule": f"long équipondéré des titres dont MM{fast} > MM{slow}, cash sinon, hebdo"})
+        rsi = rsi_frame(px_d)
+        w = state_weights(rsi < 30, rsi > 50, px_w)
+        record(f"rsi_reversal_{uname}", w, px_w, bench_w, {**base, "rule": "achat quand RSI 14 < 30, sortie quand RSI 14 > 50, long only, hebdo"})
+        mom = px_d.shift(21) / px_d.shift(252) - 1
+        if uname == "mag7_amd":
+            top = mom.rank(axis=1, ascending=False) <= 3
+            sel = top.reindex(px_w.index, method="ffill").fillna(False)
+            w = sel.astype(float).div(sel.sum(axis=1).replace(0, np.nan), axis=0).fillna(0.0)
+            record(f"momentum_12_1_top3_{uname}", w, px_w, bench_w, {**base, "rule": "top 3 du momentum 12-1 mois parmi Mag7+AMD, équipondéré, hebdo"})
+        else:
+            pos = (px_d / px_d.shift(252) - 1) > 0
+            sel = pos.reindex(px_w.index, method="ffill").fillna(False)
+            w = sel.astype(float).div(sel.sum(axis=1).replace(0, np.nan), axis=0).fillna(0.0)
+            record(f"tsmom_12m_{uname}", w, px_w, bench_w, {**base, "rule": "momentum temporel : long des indices dont la perf 12 mois > 0 (Moskowitz, Ooi & Pedersen 2012), hebdo"})
+
     # ---------------- sector rotation: 12-1 momentum top N, monthly rebalance, with and without Faber trend filter
     sc = cfg.get("sector_signals", {})
     for rk, rc in cfg.get("sectors", {}).items():
@@ -232,6 +309,7 @@ def main():
         "Long only, pas de levier, cash non remunere.",
         "Seuils = ceux de monitor_config.json, non optimises ; le decoupage in/out-of-sample mesure la stabilite, pas une optimisation.",
         "Cinq ans d'historique : peu d'episodes de mean reversion en Europe, resultat statistiquement fragile.",
+        "Signaux techniques : regles evaluees sur clotures hebdomadaires, sans stop ; le croisement MM50/200 sur 5 ans contient 2 a 4 croisements par titre, le resultat depend de quelques evenements.",
         "Rotation sectorielle : 5 ans de prix Yahoo = 4 ans de signaux 12-1 et ~48 rebalancements mensuels ; la litterature citee porte sur 50 a 90 ans d'historique, ce backtest ne la reproduit pas, il verifie seulement que la regle se comporte normalement sur la periode recente.",
     ]
     write_json(out / "backtest.json", result)

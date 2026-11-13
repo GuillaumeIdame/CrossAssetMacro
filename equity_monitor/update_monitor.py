@@ -614,6 +614,24 @@ class MonitorRun:
             s["inputs"] = {k: q["market"].get(k) for k in ("z_20d", "rsi_14", "last", "ma50", "ma200")}
             sig["mean_reversion_eu"][t] = s
             q["signal"] = s["state"] if s["active"] else None
+        # technical: recent MA crossovers and RSI extremes, every instrument with a market block
+        tech = {}
+        for coll in (quotes["stocks"], quotes["indices"], quotes["etfs"]):
+            for t, q in coll.items():
+                m = q.get("market") or {}
+                c = m.get("cross_50_200") or {}
+                c2 = m.get("cross_20_50") or {}
+                flags = []
+                if c.get("sessions_since") is not None and c["sessions_since"] <= 20:
+                    flags.append(("golden cross 50/200" if c["last_cross"] == "golden" else "death cross 50/200") + f" il y a {c['sessions_since']} s.")
+                if c2.get("sessions_since") is not None and c2["sessions_since"] <= 5:
+                    flags.append(("croisement haussier 20/50" if c2["last_cross"] == "golden" else "croisement baissier 20/50") + f" il y a {c2['sessions_since']} s.")
+                if m.get("rsi_state"):
+                    flags.append(f"RSI {m['rsi_14']:.0f} {m['rsi_state']}")
+                if flags or m.get("rsi_14") is not None:
+                    tech[t] = {"flags": flags, "rsi_14": m.get("rsi_14"), "rsi_state": m.get("rsi_state"), "mom_12_1": m.get("mom_12_1"),
+                               "cross_50_200": c or None, "cross_20_50": c2 or None, "trend": c.get("state")}
+        sig["technical"] = tech
         risk["signals"] = sig
         # correlations (60d, USD)
         win = cfg["correlation_window_days"]
@@ -671,7 +689,11 @@ class MonitorRun:
                      f"moves implicites vs historique les plus chers : {rtxt}.")
         mom = [t + ("*" if s["earnings_soon"] else "") for t, s in risk["signals"]["momentum_us"].items() if s["active"]]
         mr = [f"{universe['symbols'][t]['key']} {s['state']}" for t, s in risk["signals"]["mean_reversion_eu"].items() if s["active"]]
-        lines.append(f"Signaux — momentum US actif : {', '.join(mom) or 'aucun'} ; mean reversion Europe : {', '.join(mr) or 'aucune'} (* = résultats ≤ {risk['signals']['earnings_flag_days']} j).")
+        tech = risk["signals"].get("technical", {})
+        crosses = [f"{t} {x}" for t, v in tech.items() for x in v["flags"] if "cross" in x or "croisement" in x]
+        rsi_x = [f"{t} {v['rsi_14']:.0f}" for t, v in tech.items() if v.get("rsi_state")]
+        lines.append(f"Signaux — momentum US actif : {', '.join(mom) or 'aucun'} ; mean reversion Europe : {', '.join(mr) or 'aucune'} (* = résultats ≤ {risk['signals']['earnings_flag_days']} j) ; "
+                     f"croisements MM récents : {', '.join(crosses[:6]) or 'aucun'} ; RSI 14 extrêmes : {', '.join(rsi_x[:8]) or 'aucun'}.")
         soon = [c for c in events["calendar"] if (date.fromisoformat(c["date"]) - self.today).days <= 7]
         lines.append("Événements 7 j — " + ("; ".join(f"{c['date']} {c['label']}" + (f" (move impl. {pct(c['implied_move'])} vs hist {pct(c['hist_avg_abs_move'])})" if c.get("implied_move") else "") for c in soon) or "rien de programmé."))
         corr = risk["correlations"]
