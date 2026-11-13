@@ -97,3 +97,82 @@ def fed_speeches(url: str, limit: int = 8) -> List[dict]:
             "date": pd.to_datetime(it.findtext("pubDate"), errors="coerce"),
         })
     return items[:limit]
+
+
+# --------------------------------------------------------------------------- Interactive Brokers
+class IBKRUnavailable(RuntimeError):
+    pass
+
+
+def ibkr_fetch(contracts: Dict[str, Dict[str, int]], exchanges: Dict[str, str], host: str, port: int,
+               client_id: int, market_data_type: int = 3, timeout: int = 15,
+               intraday: bool = True, daily: bool = True, snapshot: bool = True) -> dict:
+    """Pull bars and last prices for many futures from TWS / IB Gateway in one connection.
+
+    contracts: {curve: {code: conId}}, exchanges: {curve: exchange}.
+    Returns {"intraday": {curve: {code: Series}}, "daily": {...}, "last": {curve: {code: float}}, "errors": [...]}.
+    Intraday bars are tz-aware UTC; daily bars are naive session dates (same shape as yahoo_prices).
+    """
+    import asyncio
+    import math
+
+    try:  # Streamlit runs scripts in worker threads that have no event loop
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+    from ib_async import IB, Contract
+
+    ib = IB()
+    try:
+        ib.connect(host, port, clientId=client_id, timeout=timeout, readonly=True)
+    except Exception as e:  # noqa: BLE001
+        raise IBKRUnavailable(f"cannot connect to TWS/IB Gateway at {host}:{port} ({e})") from e
+
+    out = {"intraday": {}, "daily": {}, "last": {}, "errors": []}
+    try:
+        ib.reqMarketDataType(market_data_type)
+        flat = [(cv, code, Contract(conId=cid, exchange=exchanges[cv]))
+                for cv, codes in contracts.items() for code, cid in codes.items()]
+        qualified = ib.qualifyContracts(*[c for _, _, c in flat])
+        ok = {c.conId for c in qualified}
+        for cv, code, c in flat:
+            if c.conId not in ok:
+                out["errors"].append(f"IBKR {cv} {code}: contract {c.conId} not found")
+        flat = [(cv, code, c) for cv, code, c in flat if c.conId in ok]
+
+        def bars(c, duration, size):
+            b = ib.reqHistoricalData(c, endDateTime="", durationStr=duration, barSizeSetting=size,
+                                     whatToShow="TRADES", useRTH=False, formatDate=2, timeout=timeout)
+            if not b:
+                return None
+            return pd.Series([x.close for x in b], index=[pd.Timestamp(x.date) for x in b], dtype=float)
+
+        for cv, code, c in flat:
+            if daily:
+                try:
+                    s = bars(c, "1 Y", "1 day")
+                    if s is not None:
+                        s.index = pd.DatetimeIndex(s.index).tz_localize(None).normalize()
+                        out["daily"].setdefault(cv, {})[code] = s
+                except Exception as e:  # noqa: BLE001
+                    out["errors"].append(f"IBKR {cv} {code} daily: {e}")
+            if intraday:
+                try:
+                    s = bars(c, "2 D", "5 mins")
+                    if s is not None:
+                        idx = pd.DatetimeIndex(s.index)
+                        s.index = idx.tz_localize("UTC") if idx.tz is None else idx.tz_convert("UTC")
+                        out["intraday"].setdefault(cv, {})[code] = s
+                except Exception as e:  # noqa: BLE001
+                    out["errors"].append(f"IBKR {cv} {code} 5m: {e}")
+
+        if snapshot and flat:
+            tickers = [(cv, code, ib.reqMktData(c, "", snapshot=True)) for cv, code, c in flat]
+            ib.sleep(min(timeout, 6))
+            for cv, code, t in tickers:
+                px = t.last if t.last == t.last and t.last else t.marketPrice()
+                if px is not None and not math.isnan(px) and px > 0:
+                    out["last"].setdefault(cv, {})[code] = float(px)
+    finally:
+        ib.disconnect()
+    return out

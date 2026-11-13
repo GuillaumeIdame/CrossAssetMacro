@@ -230,3 +230,74 @@ def argmax_abs(values: Iterable[Optional[float]]) -> int:
         if v is not None and abs(v) > best:
             best, idx = abs(v), i
     return idx if best > 0 else -1
+
+
+# --------------------------------------------------------------------------- 3M strip -> meeting path
+def third_wednesday(year: int, month: int) -> date:
+    d = date(year, month, 15)
+    return d + timedelta(days=(2 - d.weekday()) % 7)
+
+
+def imm_period(code: str) -> tuple:
+    """Reference quarter of a 3M RFR future: 3rd Wed of the contract month to 3rd Wed three months later."""
+    m, y = MONTH_CODES[code[0]], 2000 + int(code[1:])
+    em, ey = (m + 3, y) if m <= 9 else (m - 9, y + 1)
+    return third_wednesday(y, m), third_wednesday(ey, em)
+
+
+def strip_meeting_path(meetings: Sequence[date], strip_rates: Dict[str, float], current_rate: float,
+                       asof: date, smooth: float = 0.2) -> List[MeetingRow]:
+    """Approximate meeting-by-meeting path from quarterly 3M futures (used for CORRA / BoC).
+
+    The overnight rate is piecewise constant, changing the day after each meeting. Each contract's
+    implied rate (100 - price) is treated as the simple average of that path over its reference
+    quarter (days before `asof` are taken at `current_rate`). Post-meeting rates are solved by least
+    squares with a small penalty on changes in consecutive moves, because quarterly contracts do not
+    pin every meeting. Meetings after the last contract's reference period are dropped.
+    """
+    import numpy as np
+
+    periods = {c: imm_period(c) for c in strip_rates}
+    periods = {c: p for c, p in periods.items() if p[1] > asof}
+    if not periods:
+        return []
+    horizon = max(p[1] for p in periods.values())
+    mts = [m for m in sorted(meetings) if asof <= m < horizon]
+    n = len(mts)
+    if n == 0:
+        return []
+    rows, rhs = [], []
+    for c, (start, end) in periods.items():
+        total = (end - start).days
+        coef = np.zeros(n)
+        const = 0.0
+        d = start
+        while d < end:
+            k = sum(1 for m in mts if m < d)  # number of meetings already effective on day d
+            if d < asof or k == 0:
+                const += current_rate
+            else:
+                coef[k - 1] += 1
+            d += timedelta(days=1)
+        rows.append(coef / total)
+        rhs.append(strip_rates[c] - const / total)
+    A, b = np.array(rows), np.array(rhs)
+    # penalty on second differences of the path, i.e. on changes between consecutive moves
+    # (path point -1 is current_rate, a known constant moved to the right-hand side)
+    P, q = [], []
+    for i in range(1, n):
+        e = np.zeros(n)
+        e[i], e[i - 1] = 1.0, -2.0
+        if i >= 2:
+            e[i - 2] = 1.0
+        P.append(e * smooth)
+        q.append(0.0 if i >= 2 else -current_rate * smooth)
+    if P:
+        A, b = np.vstack([A, np.array(P)]), np.concatenate([b, np.array(q)])
+    sol, *_ = np.linalg.lstsq(A, b, rcond=None)
+    out, prev = [], current_rate
+    for m, r in zip(mts, sol):
+        r = float(r)
+        out.append(MeetingRow(m, round((r - prev) * 100, 1), round((r - current_rate) * 100, 1), round(r, 3)))
+        prev = r
+    return out

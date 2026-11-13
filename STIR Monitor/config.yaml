@@ -1,47 +1,94 @@
-# STIR Monitor configuration. Every external identifier lives here so a broken
-# ticker or a new meeting date is a one-line fix.
+# STIR Monitor configuration. Every external identifier lives here.
+
+# ----------------------------------------------------------------------------- data provider
+# auto  = IBKR first (TWS / IB Gateway must be running with the API enabled), Yahoo fallback
+#         for SOFR + Fed Funds when IBKR is not reachable
+# ibkr  = IBKR only
+# yahoo = Yahoo only (SOFR + Fed Funds; other curves have no free Yahoo feed)
+provider: auto
+
+ibkr:
+  host: 127.0.0.1
+  port: 7497            # TWS live 7496 / paper 7497 · IB Gateway live 4001 / paper 4002
+  client_id: 37
+  market_data_type: 3   # 1 live · 3 delayed (free, ~10-15 min) · 4 delayed-frozen
+  timeout: 15
 
 yahoo:
-  # Yahoo contract-month ticker template. {root}{month}{yy}.{exchange}
-  #   SR3Z26.CME = Dec-26 3M SOFR future, ZQF27.CBT = Jan-27 30D Fed Funds future.
   ticker_template: "{root}{month}{yy}.{exchange}"
   intraday_interval: "5m"
   intraday_period: "5d"
   daily_period: "1y"
 
-sofr_futures:
-  root: SR3
-  exchange: CME
-  # Outright columns of the heatmap (Z29 is fetched for the Z8Z9 spread only).
-  contracts: [U26, Z26, H27, M27, U27, Z27, H28, M28, U28, Z28, H29, M29]
-  extra_contracts: [Z29]
-  dec_pairs: [[Z26, Z27, Z6Z7], [Z27, Z28, Z7Z8], [Z28, Z29, Z8Z9]]
-  sentiment_contract: Z27
+# ----------------------------------------------------------------------------- outrights
+# Codes follow the 3M-RFR convention: the month is the START of the reference quarter
+# (SR3 Z26 = Dec-26 -> Mar-27). Euribor and ASX bills expire IN their month, so U26 is gone.
+contracts: [U26, Z26, H27, M27, U27, Z27, H28, M28, U28, Z28, H29, M29]
+extra_contracts: [Z29]   # fetched for the Z8Z9 spread only
+dec_pairs: [[Z26, Z27, Z6Z7], [Z27, Z28, Z7Z8], [Z28, Z29, Z8Z9]]
+sentiment_contract: Z27
 
-fed_funds_futures:
-  root: ZQ
-  exchange: CBT
+# IBKR contract ids (conId), checked against IBKR's futures ladders on 13 Nov 2026.
+# Add the next contracts here as they list (or as front months expire).
+curves:
+  SOFR:
+    exchange: CME
+    yahoo_root: SR3
+    yahoo_exchange: CME
+    conids: {U26: 385575844, Z26: 385575900, H27: 385575880, M27: 385575861, U27: 385575841, Z27: 385575897,
+             H28: 385575879, M28: 385575856, U28: 385575837, Z28: 385575894, H29: 385575874, M29: 395594167,
+             Z29: 426903945}
+  Euribor:          # ICE Futures Europe 3M Euribor (I)
+    exchange: ICEEU
+    conids: {Z26: 460390619, H27: 476937869, M27: 496885442, U27: 514365267, Z27: 532513522, H28: 550554822,
+             M28: 567287312, U28: 586941459, Z28: 604446222, H29: 619453618, M29: 638255978, Z29: 673605902}
+  SONIA:            # ICE Futures Europe 3M SONIA (SO3)
+    exchange: ICEEU
+    conids: {U26: 522330868, Z26: 522330875, H27: 522330878, M27: 522330880, U27: 522330885, Z27: 532672437,
+             H28: 550757251, M28: 567487151, U28: 587120949, Z28: 604606769, H29: 619665648, M29: 638529419,
+             Z29: 673696352}
+  CORRA:            # Montreal Exchange 3M CORRA (CRA)
+    exchange: CDE
+    conids: {U26: 673862030, Z26: 692702513, H27: 711212024, M27: 730222881, U27: 749194870, Z27: 769776256,
+             H28: 793332605, M28: 815079941, U28: 839464247, Z28: 865768709, H29: 893127400, M29: 924816580}
+  SARON:            # Eurex 3M SARON (FSR3)
+    exchange: EUREX
+    conids: {U26: 731474013, Z26: 731474017, H27: 731474020, M27: 731474027, U27: 749028975, Z27: 769600238,
+             H28: 793079360, M28: 815022017, U28: 839389488, Z28: 865628077, H29: 893044170, M29: 924670929}
+  Aussie Bills:     # ASX 90 Day Bank Bills (IR)
+    exchange: SNFE
+    conids: {Z26: 531965339, H27: 549862528, M27: 566601074, U27: 584371135, Z27: 602063179, H28: 618689022,
+             M28: 635922922, U28: 652809927, Z28: 670498964, H29: 768512916, M29: 791433012, Z29: 838267871}
 
-# FOMC decision days (second day of the meeting). 2027 dates are provisional:
-# check them against federalreserve.gov/monetarypolicy/fomccalendars.htm.
-fomc_meetings:
-  - 2026-12-09
-  - 2027-01-27
-  - 2027-03-17
-  - 2027-04-28
-  - 2027-06-16
-  - 2027-07-28
-  - 2027-09-22
-  - 2027-11-03
+heatmap_curves: [SOFR, Euribor, SONIA, CORRA, SARON]
+dec_spread_curves: [SOFR, Euribor, SONIA, CORRA]
+sentiment_curves: [Aussie Bills, SARON, Euribor, SONIA, CORRA, SOFR]
 
-# Bonds view of the "Net change curve" widget (Yahoo yield indices, quoted in %).
+# 30D Fed Funds futures (CBOT ZQ), keyed by month code
+fed_funds:
+  exchange: CBOT
+  yahoo_root: ZQ
+  yahoo_exchange: CBT
+  conids: {X26: 529748903, Z26: 535970161, F27: 542225066, G27: 547336122, H27: 553809378, J27: 559306114,
+           K27: 564976869, M27: 570640401, N27: 576721296, Q27: 582769437, U27: 589145411, V27: 594762279,
+           X27: 600696458, Z27: 605997126, F28: 611473772}
+
+# ----------------------------------------------------------------------------- meetings
+# FOMC decision days (day 2), from federalreserve.gov/monetarypolicy/fomccalendars.htm.
+# 2027 is the Fed's published (tentative) schedule; the 26-27 Oct 2027 Monetary Policy
+# Strategy Meeting is not a rate-decision meeting and is excluded.
+fomc_meetings: [2026-12-09, 2027-01-27, 2027-03-17, 2027-04-28, 2027-06-09, 2027-07-28, 2027-09-15, 2027-11-17]
+
+# BoC rate announcements, from the Bank of Canada's 2027 schedule (published 15 Jul 2026).
+boc_meetings: [2026-12-09, 2027-01-27, 2027-03-03, 2027-04-28, 2027-06-02, 2027-07-21, 2027-09-08, 2027-10-27]
+
+# ----------------------------------------------------------------------------- other free feeds
 bonds:
   - {label: "UST 3M", ticker: "^IRX"}
   - {label: "UST 5Y", ticker: "^FVX"}
   - {label: "UST 10Y", ticker: "^TNX"}
   - {label: "UST 30Y", ticker: "^TYX"}
 
-# Overnight fixings (all free, no API key).
 fixings:
   - {label: SOFR,   source: fred, id: SOFR}
   - {label: EFFR,   source: fred, id: EFFR}
@@ -52,10 +99,6 @@ fixings:
   - {label: "AU 3M BAB", source: rba, id: FIRMMBAB90}
 
 fed_speeches_rss: "https://www.federalreserve.gov/feeds/speeches.xml"
-
-# Curves with no free futures feed. Shown only when "Show mock rows" is on,
-# and always tagged MOCK.
-mock_curves: [Euribor, SONIA, CORRA, SARON, Aussie Bills]
 
 colors:
   SOFR: "#ff6fae"

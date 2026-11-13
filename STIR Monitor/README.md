@@ -1,6 +1,7 @@
 # STIR Monitor
 
-Streamlit short-rates monitor built on **free data only** (no API keys).
+Streamlit short-rates monitor. Market data comes from **Interactive Brokers** (TWS / IB Gateway API),
+with **yfinance** as a fallback for SOFR and Fed Funds.
 
 ```bash
 cd "STIR Monitor"
@@ -8,32 +9,50 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## What is live and where it comes from
+## IBKR setup
 
-| Widget | Source | Notes |
-|---|---|---|
-| Overnight fixings | FRED (SOFR, EFFR, €STR, SONIA), Bank of Canada Valet (CORRA), RBA table F1 (cash rate, 3M BAB) | daily, published with a 1-day lag |
-| Net change heatmap (SOFR row) | Yahoo Finance, CME 3M SOFR futures `SR3<M><YY>.CME` | 5-min bars, ~10 min delayed |
-| Dec spreads (SOFR) | same as above | Z6Z7 / Z7Z8 / Z8Z9 |
-| Z27 sentiment (SOFR) | same as above | Day, Week, 1W–6M |
-| Net change curve | SOFR strip or UST yield indices (`^IRX ^FVX ^TNX ^TYX`) | |
-| Priced moves – Fed | Yahoo, 30D Fed Funds futures `ZQ<M><YY>.CBT` + EFFR | CME FedWatch-style meeting-by-meeting path, N-days-ago stepper |
-| Speaker cards | `speakers.json` (manual) + Fed speeches RSS | RATES READ pricing filled live |
+1. Run TWS or IB Gateway and log in.
+2. Enable the API: *Configure → API → Settings → Enable ActiveX and Socket Clients*.
+   Read-only is fine.
+3. Ports: TWS 7496 live / 7497 paper, Gateway 4001 / 4002. Set the default in `config.yaml`
+   or change it in the sidebar under **IBKR connection**.
+4. Market data: `market_data_type: 3` (delayed, free) works without subscriptions. Set it to 1
+   if you have real-time subscriptions for CME, CBOT, ICE Futures Europe, Eurex, Montréal (CDE)
+   and ASX 24 (SNFE). Historical bars for some exchanges may still need a subscription. Any
+   contract that returns nothing is listed in **Data status**.
 
-**No free feed exists** for Euribor, SONIA, CORRA, SARON or Aussie Bills futures, or for CORRA
-(BoC) meeting pricing. Those rows show up only with **Show mock rows** on in the sidebar, and are
-tagged `MOCK`. To make them live, add an adapter in `stir/sources.py` that returns
-`{contract_code: pd.Series of prices}` and wire it in `app.py`.
+The app opens a short connection per refresh, with client IDs `client_id`, +1 and +2. Daily
+bars are cached for 1 h, 5-min bars for 5 min, last prices for 60 s.
 
-The sidebar **Data status** panel lists every feed that failed to load. The app never fills a
-failed live feed with invented numbers.
+## Sources by widget
+
+| Widget | Source |
+|---|---|
+| Net change heatmap, Dec spreads, Z27 bars, curve chart | IBKR: 3M SOFR (CME), 3M Euribor (ICE), 3M SONIA (ICE), 3M CORRA (CDE), 3M SARON (Eurex), 90D bills (ASX). SOFR falls back to Yahoo `SR3<M><YY>.CME` |
+| Priced moves: Fed | 30D Fed Funds (CBOT ZQ) from IBKR, or Yahoo `ZQ<M><YY>.CBT`. Meeting-by-meeting FedWatch method, starting from EFFR |
+| Priced moves: BoC | 3M CORRA strip from IBKR, starting from the CORRA fixing. **Approximate**: no monthly CORRA future exists, so the path is a smoothed least-squares fit to the quarterly contracts |
+| Overnight fixings | FRED (SOFR, EFFR, €STR, SONIA), Bank of Canada Valet (CORRA), RBA F1 (cash rate, 3M BAB) |
+| Bonds curve view | Yahoo `^IRX ^FVX ^TNX ^TYX` |
+| Speakers | `speakers.json` (manual) + federalreserve.gov speeches RSS. RATES READ pricing is filled live |
+
+Contracts are pinned by IBKR contract ID in `config.yaml` (checked 13 Nov 2026). Add new
+contracts there as they list. `—` in a table means the contract has expired or isn't listed
+(e.g. Euribor and ASX bills expire in their contract month, so there's no U26).
+
+**Meeting dates** in `config.yaml` come from the official calendars:
+- FOMC: federalreserve.gov. The 2027 dates are tentative, and the 26–27 Oct 2027 strategy
+  meeting is excluded.
+- BoC: the 2027 schedule published 15 Jul 2026.
+
+**Show mock rows** fills any curve that returned no data with MOCK-tagged values. Leave it off
+for real use.
 
 ## Files
 
 - `app.py`: Streamlit layout and widgets
-- `config.yaml`: tickers, contract list, FOMC dates (check the provisional 2027 dates), fixing IDs, colours
-- `stir/calc.py`: pure maths (bp changes, reference points per timeframe, Dec spreads, FOMC path)
-- `stir/sources.py`: free-data adapters (Yahoo, FRED, BoC, RBA, Fed RSS)
+- `config.yaml`: provider, IBKR connection, contract IDs, FOMC/BoC dates, fixing IDs, colours
+- `stir/calc.py`: pure maths (bp changes, reference points, Dec spreads, FOMC path, CORRA strip fit)
+- `stir/sources.py`: data adapters (IBKR via ib_async, Yahoo, FRED, BoC, RBA, Fed RSS)
 - `stir/mock.py`: labelled mock data for curves with no free feed
 - `stir/ui.py`: CSS and HTML table/card builders
 - `mockup.html`: the original static design mockup

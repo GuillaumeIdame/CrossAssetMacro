@@ -1,5 +1,5 @@
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -76,3 +76,31 @@ def test_priced_history_delta():
     assert d == date(2026, 11, 13)
     prev = {r.meeting: r.cumulative for r in hist[1][1]}
     assert delta[0] == pytest.approx(rows[0].cumulative - prev[rows[0].meeting], abs=0.05)
+
+
+def test_imm_period():
+    assert calc.imm_period("Z26") == (date(2026, 12, 16), date(2027, 3, 17))
+    assert calc.imm_period("U26") == (date(2026, 9, 16), date(2026, 12, 16))
+
+
+def test_strip_meeting_path_recovers_flat_and_cut():
+    meetings = [date(2026, 12, 9), date(2027, 1, 27), date(2027, 3, 3), date(2027, 4, 28), date(2027, 6, 2)]
+    asof, cur = date(2026, 11, 13), 2.25
+    true = {m: (2.00 if m >= date(2027, 1, 27) else 2.25) for m in meetings}  # one 25bp cut in Jan
+
+    def rate_on(d):
+        r = cur
+        for m in meetings:
+            if d > m:
+                r = true[m]
+        return r
+
+    strip = {}
+    for code in ["U26", "Z26", "H27", "M27"]:
+        s, e = calc.imm_period(code)
+        days = [s + timedelta(days=i) for i in range((e - s).days)]
+        strip[code] = sum(cur if d < asof else rate_on(d) for d in days) / len(days)
+    rows = calc.strip_meeting_path(meetings, strip, cur, asof)
+    cum = {r.meeting: r.cumulative for r in rows}
+    assert cum[date(2027, 3, 3)] == pytest.approx(-25, abs=4)
+    assert rows[-1].implied == pytest.approx(2.00, abs=0.04)
