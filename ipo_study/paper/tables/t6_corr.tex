@@ -1,0 +1,27 @@
+\begin{table}[!htbp]\centering\small
+\caption{Spearman rank correlations}\label{tab:corr}
+
+\begin{threeparttable}
+\begin{tabular}{lrrrr}
+\toprule
+Pair & $n$ & $\rho$ & $p$ & $q$ (BH) \\
+\midrule
+Day-1 pop vs day-21 return & 43 & $+$0.04 & 0.80 & 0.88 \\
+Day-1 pop vs day-63 return & 43 & $+$0.01 & 0.96 & 0.96 \\
+Opening pop vs open-to-close & 43 & $+$0.07 & 0.66 & 0.80 \\
+Market cap vs day-1 pop & 43 & $+$0.11 & 0.49 & 0.80 \\
+10Y 3-month change vs day-63 return & 43 & $-$0.14 & 0.37 & 0.80 \\
+VIX vs day-1 pop & 43 & $+$0.23 & 0.13 & 0.74 \\
+Day 1-5 squeeze vs day 5-63 return (non-overlapping) & 43 & $+$0.09 & 0.57 & 0.80 \\
+Float \% vs day-1 pop & 43 & $-$0.08 & 0.61 & 0.80 \\
+Float \% vs day-63 return & 43 & $+$0.13 & 0.42 & 0.80 \\
+Price revision vs day-1 pop & 42 & $+$0.67 & $<$0.001 & $<$0.001 \\
+Price revision vs day-63 return & 42 & $-$0.15 & 0.35 & 0.80 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Returns measured from the day-1 close unless stated. The squeeze test uses non-overlapping windows (days 1--5 vs days 5--63). $q$ adjusts across the 11 correlations.
+\end{tablenotes}
+\end{threeparttable}
+
+\end{table}
