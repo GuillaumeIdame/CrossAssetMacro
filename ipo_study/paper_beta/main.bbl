@@ -1,0 +1,45 @@
+\begin{thebibliography}{6}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Barberis et~al.(2005)Barberis, Shleifer, and Wurgler]{barberis2005}
+Nicholas Barberis, Andrei Shleifer, and Jeffrey Wurgler.
+\newblock Comovement.
+\newblock \emph{Journal of Financial Economics}, 75\penalty0 (2):\penalty0
+  283--317, 2005.
+
+\bibitem[Braun and Larrain(2009)]{braun2016}
+Matías Braun and Borja Larrain.
+\newblock Do {IPOs} affect the prices of other stocks? evidence from emerging
+  markets.
+\newblock \emph{Review of Financial Studies}, 22\penalty0 (4):\penalty0
+  1505--1544, 2009.
+
+\bibitem[{CrossAssetMacro Research}(2026)]{frenzyfade2026}
+{CrossAssetMacro Research}.
+\newblock Frenzy and fade: {IPO} aftermarket dynamics, deal structure and
+  cross-asset spillovers, with an application to the {Anthropic} listing.
+\newblock Technical report, CrossAssetMacro Research, November 2026.
+
+\bibitem[Greenwood(2008)]{greenwood2008}
+Robin Greenwood.
+\newblock Excess comovement of stock returns: Evidence from cross-sectional
+  variation in {N}ikkei 225 weights.
+\newblock \emph{Review of Financial Studies}, 21\penalty0 (3):\penalty0
+  1153--1186, 2008.
+
+\bibitem[Hsu et~al.(2010)Hsu, Reed, and Rocholl]{hsu2010}
+Hung-Chia Hsu, Adam~V. Reed, and J{\"o}rg Rocholl.
+\newblock The new game in town: Competitive effects of {IPOs}.
+\newblock \emph{Journal of Finance}, 65\penalty0 (2):\penalty0 495--528, 2010.
+
+\bibitem[Slovin et~al.(1994)Slovin, Sushka, and Bendeck]{slovin1994}
+Myron~B. Slovin, Marie~E. Sushka, and Yvette~M. Bendeck.
+\newblock Seasoned common stock issuance following an {IPO}.
+\newblock \emph{Journal of Banking and Finance}, 18\penalty0 (1):\penalty0
+  207--226, 1994.
+
+\end{thebibliography}

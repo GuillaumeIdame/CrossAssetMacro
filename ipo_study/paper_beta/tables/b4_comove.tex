@@ -1,0 +1,29 @@
+\begin{table}[!htbp]\centering\footnotesize
+\caption{Daily co-movement: new issues trade on their own at first}\label{tab:b4}
+\resizebox{\linewidth}{!}{
+\begin{threeparttable}
+\begin{tabular}{lrrr}
+\toprule
+Median across IPOs & Days 1--21 & Days 22--63 & Days 64--190 \\
+\midrule
+Correlation, IPO vs peer basket & 0.32 & 0.39 & 0.48 \\
+Beta to QQQ & 1.21 & 1.64 & 1.38 \\
+Beta to the theme (peer basket ex-QQQ) & 0.48 & 0.43 & 0.55 \\
+Volatility, IPO / peer basket & 1.98 & 1.77 & 1.46 \\
+$R^2$ (QQQ + theme) & 0.17 & 0.23 & 0.26 \\
+Peer basket beta to QQQ & 1.16 & 1.14 & 1.11 \\
+\midrule
+Wilcoxon $p$, days 1--21 vs 64--190: correlation 0.001; theme beta 0.53 & & & \\
+\midrule
+\multicolumn{4}{l}{\textit{Pooled daily panel, days 1--21, excess returns over QQQ, clustered by IPO}} \\
+Peers today on IPO today & 0.086 & $t$=4.2 & $n$=903 \\
+Peers tomorrow on IPO today & $-$0.011 & $t$=$-$1.0 & \\
+IPO tomorrow on peers today & 0.044 & $t$=0.5 & \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Daily returns. Theme beta from a regression of the IPO's return on QQQ and on the peer basket orthogonalised to QQQ.
+\end{tablenotes}
+\end{threeparttable}
+}
+\end{table}

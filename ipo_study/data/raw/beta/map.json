@@ -1,0 +1,359 @@
+{
+ "peers": {
+  "SNOW": [
+   [
+    "MDB",
+    "DDOG",
+    "NET"
+   ],
+   []
+  ],
+  "U": [
+   [
+    "EA",
+    "TTWO"
+   ],
+   []
+  ],
+  "ARM": [
+   [
+    "NVDA",
+    "AMD",
+    "QCOM",
+    "AVGO"
+   ],
+   []
+  ],
+  "KVYO": [
+   [
+    "HUBS",
+    "BRZE"
+   ],
+   [
+    "SHOP"
+   ]
+  ],
+  "ALAB": [
+   [
+    "AVGO",
+    "MRVL",
+    "CRDO"
+   ],
+   []
+  ],
+  "CRWV": [
+   [
+    "NBIS",
+    "ORCL",
+    "SMCI"
+   ],
+   [
+    "NVDA"
+   ]
+  ],
+  "FIG": [
+   [
+    "ADBE",
+    "WIX"
+   ],
+   []
+  ],
+  "DUOL": [
+   [
+    "CHGG",
+    "COUR"
+   ],
+   []
+  ],
+  "RBRK": [
+   [
+    "CRWD",
+    "PANW",
+    "NTNX"
+   ],
+   []
+  ],
+  "NTSK": [
+   [
+    "ZS",
+    "CRWD",
+    "PANW",
+    "NET"
+   ],
+   []
+  ],
+  "SAIL": [
+   [
+    "OKTA",
+    "CYBR",
+    "CRWD"
+   ],
+   []
+  ],
+  "TOST": [
+   [
+    "XYZ",
+    "FOUR",
+    "PAR"
+   ],
+   []
+  ],
+  "ABNB": [
+   [
+    "BKNG",
+    "EXPE"
+   ],
+   []
+  ],
+  "DASH": [
+   [
+    "UBER",
+    "LYFT"
+   ],
+   []
+  ],
+  "CPNG": [
+   [
+    "AMZN",
+    "MELI",
+    "SE"
+   ],
+   []
+  ],
+  "CART": [
+   [
+    "DASH",
+    "UBER",
+    "KR"
+   ],
+   []
+  ],
+  "RDDT": [
+   [
+    "META",
+    "PINS",
+    "SNAP"
+   ],
+   []
+  ],
+  "BMBL": [
+   [
+    "MTCH"
+   ],
+   []
+  ],
+  "STUB": [
+   [
+    "EB",
+    "LYV",
+    "SEAT"
+   ],
+   []
+  ],
+  "COMP": [
+   [
+    "Z",
+    "RDFN",
+    "EXPI"
+   ],
+   []
+  ],
+  "HOOD": [
+   [
+    "SCHW",
+    "IBKR",
+    "COIN"
+   ],
+   []
+  ],
+  "AFRM": [
+   [
+    "PYPL",
+    "XYZ",
+    "UPST"
+   ],
+   []
+  ],
+  "CRCL": [
+   [
+    "HOOD"
+   ],
+   [
+    "COIN"
+   ]
+  ],
+  "CHYM": [
+   [
+    "SOFI",
+    "NU",
+    "DAVE"
+   ],
+   []
+  ],
+  "KLAR": [
+   [
+    "AFRM",
+    "PYPL",
+    "SEZL"
+   ],
+   []
+  ],
+  "ETOR": [
+   [
+    "HOOD",
+    "COIN",
+    "IBKR"
+   ],
+   []
+  ],
+  "FIGR": [
+   [
+    "SOFI",
+    "UPST",
+    "COIN"
+   ],
+   []
+  ],
+  "GEMI": [
+   [
+    "COIN",
+    "HOOD",
+    "CRCL"
+   ],
+   []
+  ],
+  "OSCR": [
+   [
+    "UNH",
+    "HUM",
+    "CLOV"
+   ],
+   []
+  ],
+  "MDLN": [
+   [
+    "OMI",
+    "CAH",
+    "MCK"
+   ],
+   []
+  ],
+  "TEM": [
+   [
+    "GH",
+    "NTRA"
+   ],
+   []
+  ],
+  "WAY": [
+   [
+    "EVH",
+    "PHR"
+   ],
+   []
+  ],
+  "HNGE": [
+   [
+    "TDOC",
+    "HIMS"
+   ],
+   []
+  ],
+  "CAVA": [
+   [
+    "CMG",
+    "SG",
+    "WING"
+   ],
+   []
+  ],
+  "BIRK": [
+   [
+    "DECK",
+    "CROX",
+    "NKE"
+   ],
+   []
+  ],
+  "VIK": [
+   [
+    "RCL",
+    "CCL",
+    "NCLH"
+   ],
+   []
+  ],
+  "IBTA": [
+   [
+    "CART",
+    "TTD"
+   ],
+   []
+  ],
+  "RIVN": [
+   [
+    "TSLA",
+    "LCID"
+   ],
+   [
+    "AMZN",
+    "F"
+   ]
+  ],
+  "LINE": [
+   [
+    "COLD",
+    "PLD"
+   ],
+   []
+  ],
+  "SARO": [
+   [
+    "HEI",
+    "TDG",
+    "FTAI"
+   ],
+   []
+  ],
+  "NXT": [
+   [
+    "ARRY",
+    "SHLS",
+    "FSLR"
+   ],
+   []
+  ],
+  "VG": [
+   [
+    "LNG",
+    "NFE"
+   ],
+   []
+  ],
+  "SPCX": [
+   [
+    "RKLB",
+    "ASTS"
+   ],
+   [
+    "GOOGL",
+    "DXYZ"
+   ]
+  ]
+ },
+ "anthropic": {
+  "peers": [
+   "NBIS",
+   "CRWV",
+   "ORCL",
+   "NVDA",
+   "AVGO",
+   "PLTR",
+   "MSFT"
+  ],
+  "holders": [
+   "AMZN",
+   "GOOGL"
+  ]
+ }
+}

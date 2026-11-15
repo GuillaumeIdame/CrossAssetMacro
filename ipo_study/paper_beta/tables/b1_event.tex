@@ -1,0 +1,32 @@
+\begin{table}[!htbp]\centering\footnotesize
+\caption{How related stocks trade around an IPO: abnormal returns against Nasdaq-100}\label{tab:b1}
+\resizebox{\linewidth}{!}{
+\begin{threeparttable}
+\begin{tabular}{lrrrrrr}
+\toprule
+Window & $n$ & Mean & Median & 95\% CI & $p$ & Share $>0$ \\
+\midrule
+\multicolumn{7}{l}{\textit{Comparable listed companies (equal-weight basket per IPO)}} \\
+\quad Days $-20$ to $-1$ & 43 & $-$0.7 & $-$2.1 & [$-$3.9, +2.7] & 0.69 & 37\% \\
+\quad Days $-10$ to $-1$ (roadshow) & 43 & $-$1.1 & $-$0.9 & [$-$3.5, +1.3] & 0.39 & 37\% \\
+\quad Days $-5$ to $-1$ & 43 & 0.0 & $-$0.7 & [$-$1.6, +1.6] & 0.99 & 40\% \\
+\quad Day 0 (first trade) & 43 & $-$0.3 & $-$0.1 & [$-$1.4, +0.7] & 0.53 & 44\% \\
+\quad Day 0, open to close & 43 & $-$0.2 & +0.1 & [$-$1.2, +0.6] & 0.71 & 53\% \\
+\quad Days 1 to 5 & 43 & $-$0.7 & $-$0.3 & [$-$2.0, +0.7] & 0.37 & 47\% \\
+\quad Days 1 to 21 & 43 & $-$3.0 & $-$1.2 & [$-$6.1, $-$0.1] & 0.055 & 42\% \\
+\quad Days 1 to 63 & 43 & $-$9.4 & $-$4.6 & [$-$16.5, $-$2.2] & 0.013 & 37\% \\
+\multicolumn{7}{l}{\textit{Listed stakeholders (Amazon, Ford, Shopify, Nvidia, Coinbase, Google, DXYZ)}} \\
+\quad Days $-10$ to $-1$ (roadshow) & 5 & $-$6.3 & $-$10.0 & [$-$13.5, +3.7] & 0.26 & 20\% \\
+\quad Day 0 (first trade) & 5 & $-$2.9 & $-$2.3 & [$-$8.6, +1.4] & 0.37 & 20\% \\
+\quad Days 1 to 5 & 5 & $-$2.1 & $-$4.3 & [$-$6.7, +3.5] & 0.50 & 40\% \\
+\quad Days 1 to 21 & 5 & +2.7 & $-$4.4 & [$-$6.7, +16.7] & 0.73 & 40\% \\
+\midrule
+\multicolumn{7}{l}{Placebo percentile of the actual mean (400 random event dates): day 0 31\%, days 1--21 31\%, days 1--63 24\%} \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Percent. Abnormal return = stock return minus a market model on QQQ estimated over days $-260$ to $-21$. 102 peer--IPO pairs (88 distinct stocks) across 43 IPOs; one basket per IPO. CI by bootstrap, $p$ from a $t$-test across IPO baskets. Placebo: the same peers on random dates within $\pm$1 year, using full-sample market models.
+\end{tablenotes}
+\end{threeparttable}
+}
+\end{table}

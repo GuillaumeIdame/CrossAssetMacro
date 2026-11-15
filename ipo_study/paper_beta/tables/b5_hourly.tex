@@ -1,0 +1,25 @@
+\begin{table}[!htbp]\centering\footnotesize
+\caption{Intraday: is there a beta trade from the IPO to its peers?}\label{tab:b5}
+\resizebox{\linewidth}{!}{
+\begin{threeparttable}
+\begin{tabular}{lrrr}
+\toprule
+Median across 14 IPOs & Days 1--5 & Days 6--21 & Days 22--63 \\
+\midrule
+Correlation, IPO vs peers (excess of QQQ) & 0.14 & 0.21 & 0.33 \\
+Beta of peers on the IPO & 0.032 & 0.083 & 0.153 \\
+Beta of the IPO on peers & 0.63 & 0.45 & 0.62 \\
+\midrule
+\multicolumn{4}{l}{\textit{Pooled hourly panel, days 1--63, clustered by IPO}} \\
+Peers on IPO, same hour, days 6--63 & 0.129 & $t$=7.8 & $n$=6034 \\
+\quad extra in days 1--5 & $-$0.105 & $t$=$-$5.4 & \\
+Peers next hour on IPO, days 1--5 / later & 0.009 / $-$0.012 & $t$=1.5 / $-$1.3 & \\
+IPO next hour on peers, days 1--5 / later & 0.16 / 0.04 & $t$=0.8 / 1.9 & \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} 60-minute bars, excess of QQQ, overnight gaps excluded. IPOs listed since January 2025: Venture Global, SailPoint, CoreWeave, Hinge Health, Circle, Chime, Figma, Klarna, Figure, Gemini, StubHub, Netskope, Medline, SpaceX.
+\end{tablenotes}
+\end{threeparttable}
+}
+\end{table}
