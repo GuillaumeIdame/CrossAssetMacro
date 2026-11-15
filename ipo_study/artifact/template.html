@@ -1,0 +1,418 @@
+<title>IPO Frenzy Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow reading column; each section = a claim, then the chart that proves it, then the table behind it. */
+:root {
+  --bg:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10); --mid:#f0efec;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --pos:#2a78d6; --neg:#e34948;
+  --good:#006300; --font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10); --mid:#383835;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --pos:#3987e5; --neg:#e66767; --good:#0ca30c; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10); --mid:#383835;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --pos:#3987e5; --neg:#e66767; --good:#0ca30c; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;
+  padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.15;letter-spacing:-.01em}
+h1{font-size:clamp(28px,5vw,44px);font-weight:700}
+h2{font-size:clamp(21px,3vw,27px);font-weight:650}
+h3{font-size:15px;font-weight:600}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);font-weight:600}
+.lede{font-size:17px;color:var(--ink2);max-width:68ch}
+.sec{display:flex;flex-direction:column;gap:18px;scroll-margin-top:16px}
+.claim{max-width:68ch;color:var(--ink2)}
+.claim b{color:var(--ink);font-weight:600}
+nav{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px}
+nav a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--axis)}
+nav a:hover{color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;min-width:0}
+.tile .l{font-size:12px;color:var(--ink2)}
+.tile .v{font-size:26px;font-weight:650;letter-spacing:-.02em}
+.tile .d{font-size:12px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 16px 12px;min-width:0;break-inside:avoid}
+.panel h3{margin-bottom:2px}
+.sub{font-size:12.5px;color:var(--ink2);margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--ink2);margin-bottom:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid;border-radius:2px}
+.legend i.sq{width:10px;height:10px;border:0;border-radius:2px}
+.chart{width:100%;position:relative}
+svg{display:block;overflow:visible}
+svg text{font-family:var(--font);fill:var(--muted);font-size:11px}
+svg text.ink{fill:var(--ink2)} svg text.strong{fill:var(--ink);font-weight:600}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px}
+.mini h3{font-size:13px;margin-bottom:0}
+.mini .sub{margin-bottom:2px}
+.tbl{overflow-x:auto}
+table{border-collapse:separate;border-spacing:2px;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th{font-weight:600;text-align:right;color:var(--ink2);font-size:12px;padding:4px 8px;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 8px;text-align:right;border-radius:3px;white-space:nowrap}
+td.lab{font-weight:500;background:none;padding-left:0;white-space:normal;min-width:150px}
+tr.grp th{text-align:left;padding-top:14px;color:var(--ink);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td.h{cursor:default;color:var(--ink)}
+td.n{color:var(--muted)}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.chip{border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.chip .k{font-size:12px;color:var(--ink2)} .chip .v{font-size:19px;font-weight:650} .chip .w{font-size:12px;color:var(--muted)}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;border:1px solid var(--axis);color:var(--ink2);vertical-align:2px;margin-left:6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+.card{border:1px solid var(--border);border-radius:8px;padding:14px 16px;background:var(--surface);display:flex;flex-direction:column;gap:6px;min-width:0}
+.card .odds{font-size:24px;font-weight:700}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:16px}
+ul.pts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--ink2)}
+ul.pts b{color:var(--ink)}
+details{border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:10px 14px}
+summary{cursor:pointer;font-weight:600}
+.fine{font-size:12.5px;color:var(--ink2);display:flex;flex-direction:column;gap:6px}
+#tt{position:fixed;z-index:50;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--axis);
+  border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 18px rgba(0,0,0,.18);max-width:280px}
+.tt-t{color:var(--ink2);margin-bottom:4px;font-size:12px}
+.tt-r{display:flex;align-items:center;gap:8px}.tt-r b{font-weight:650;font-variant-numeric:tabular-nums}.tt-r span{color:var(--ink2)}
+.tt-r i{width:12px;border-top:2px solid;display:inline-block}
+.cap{font-size:12px;color:var(--muted);margin-top:6px}
+@media print{
+  body{padding-block:0;background:#fff} nav{display:none} #tt{display:none} .wrap{gap:34px}
+  .sec{break-inside:auto} details{display:block}
+  h2,h3{break-after:avoid} .card,.chip,.tile,.tbl,.mini>div{break-inside:avoid} .claim{break-after:avoid}
+}
+@media (prefers-reduced-motion:no-preference){td.h:hover{outline:2px solid var(--ink2);outline-offset:-2px}}
+</style>
+
+<div class="wrap">
+<header class="sec" id="top">
+  <div class="eyebrow">Post-COVID US IPOs · data to 13 Nov 2026 · Anthropic (ANT) prices 18 Nov</div>
+  <h1>What the first days, weeks and months of 43 big IPOs say about ANT</h1>
+  <p class="lede">The frenzy is real but short. The reversion is slow, uneven, and depends on the sector, the quarter and the rate regime the company lists into. This page buckets the cohort by market cap, sector, listing season and macro regime, then reads Anthropic against each cut.</p>
+  <nav aria-label="Sections"><a href="#fade">Frenzy then fade</a><a href="#sectors">Sectors</a><a href="#seasons">Seasonality</a><a href="#regimes">Macro regime</a><a href="#liquidity">Liquidity</a><a href="#anthropic">Anthropic read</a><a href="#data">Data and method</a></nav>
+  <div class="tiles" id="tiles"></div>
+</header>
+
+<section class="sec" id="fade">
+  <h2>The pop is quick, the fade takes months</h2>
+  <p class="claim">Measured from the <b>day-1 close</b>, the price a frenzy buyer pays, the typical IPO is roughly flat after a week, a touch lower after a month, and about a quarter lower by month six. Only SpaceX has a post-COVID mega-cap path, and it followed the script: peak on day 3 (+31% from its first close), back below the $135 offer on day 23, trough on day 37.</p>
+  <div class="panel">
+    <h3>Median price path from the day-1 close, by market cap at offer</h3>
+    <div class="sub">Index, day-1 close = 100. Dotted line marks day 126, about the 180-day lock-up. Median of names still trading on each day, shown only while at least 3 remain.</div>
+    <div class="legend" id="lg-fade"></div>
+    <div class="chart" id="ch-fade"></div>
+  </div>
+  <div class="panel tbl"><h3>Medians by market-cap bucket</h3><div class="sub">Returns from the day-1 close. n = number of IPOs. Hover a cell for the names.</div><div id="tb-bucket"></div></div>
+</section>
+
+<section class="sec" id="sectors">
+  <h2>Sectors: consumer internet fades first, fintech fades hardest, software holds up best</h2>
+  <p class="claim"><b>Consumer internet</b> (Airbnb, DoorDash, Reddit, Instacart) popped most (+45%) and was under water within a week. <b>Fintech and crypto</b> kept rallying for a month (+21%), then gave back a quarter and, by month six, 41%. <b>Software, AI and semis</b>, where Anthropic sits, popped +28% and lost only 3% by month three. <b>Healthcare</b> looks best but is four deals.</p>
+  <div class="panel tbl"><h3>Median return from the day-1 close, by sector</h3><div class="sub">Blue is a gain, red is a loss. Last column: share of names that traded below their offer price at some point in the first 63 days.</div><div id="tb-sector"></div></div>
+  <div class="panel">
+    <h3>Path from day-1 close, sector median against all IPOs</h3>
+    <div class="legend"><span><i style="border-color:var(--s1)"></i>Sector median</span><span><i style="border-color:var(--muted)"></i>All 43 IPOs, median</span></div>
+    <div class="mini" id="mini"></div>
+  </div>
+</section>
+
+<section class="sec" id="seasons">
+  <h2>Seasonality: Q4 pops are biggest, Q3 listings fade worst, and the post-midterm tape helps</h2>
+  <p class="claim">Q4 and Q1 listings had the largest day-1 pops (+39% and +34%) and Q2 the smallest (+14%). Q3 listings fared worst by month six (−33%). Each quarter has only 6 to 15 names and the sample is clustered in 2021, so read this as a tilt. The market itself leans the same way: <b>November and December are two of the three best S&amp;P months since 1950</b>, and after a midterm election the S&amp;P rose in <b>18 of 19</b> three-month windows from 15 November.</p>
+  <div class="grid2">
+    <div class="panel"><h3>IPO outcome by listing quarter</h3><div class="sub">Median, from the day-1 close, except the first series (pop = day-1 close vs offer).</div><div class="legend" id="lg-q"></div><div class="chart" id="ch-q"></div></div>
+    <div class="panel"><h3>S&amp;P 500 average return by calendar month, 1950 to 2025</h3><div class="sub">Average monthly price return in %. Highlighted: November and December, when ANT lists.</div><div class="chart" id="ch-month"></div></div>
+  </div>
+  <div class="panel tbl"><h3>S&amp;P 500 from 15 November: midterm years against all others</h3><div class="sub">Price return and share of years positive. Midterm years: 1950, 1954 and every fourth year to 2022.</div><div id="tb-nov"></div></div>
+  <div class="panel tbl"><h3>Medians by listing quarter</h3><div id="tb-quarter"></div></div>
+</section>
+
+<section class="sec" id="regimes">
+  <h2>Macro regime: rising long yields are the worst backdrop, and ANT lists into one</h2>
+  <p class="claim">When the 10-year yield had risen more than 30bp in the three months before listing, the median IPO was down 18% by day 63; with flat yields it was up 2%. High volatility (VIX above 22) bought the biggest pops (+56%) and the sharpest three-month give-back (−23%). Almost every IPO in the cohort listed with the S&amp;P above its 200-day average, so the window itself tells you the market is healthy.</p>
+  <div class="panel"><h3>Where Anthropic lists, 13 Nov 2026</h3><div class="sub">The same regime variables used to tag every IPO in the cohort.</div><div class="chips" id="chips"></div>
+    <p class="cap">No IPO in the cohort listed with the 10-year above 5%, so today's yield level has no direct analog. Fed funds at 3.88% is up 25bp in six months, which my rule labels "on hold"; the 2022 hiking cycle had no listings to learn from.</p></div>
+  <div class="panel tbl"><h3>Median return from the day-1 close, by regime at listing</h3><div class="sub">Regime read the day before listing. 10Y: 3-month change in yield (rising above +30bp, falling below −30bp). Fed: 6-month change in fed funds (±50bp). VIX: level.</div><div id="tb-regime"></div></div>
+  <div class="panel">
+    <h3>Every IPO's day-63 return against listing date, over the rates backdrop</h3>
+    <div class="sub">Each dot is one IPO, return from its day-1 close to day 63. Axis clipped at ±100%; CoreWeave (+300%) sits at the top edge.</div>
+    <div class="legend"><span><i class="sq" style="background:var(--pos)"></i>Up at day 63</span><span><i class="sq" style="background:var(--neg)"></i>Down at day 63</span></div>
+    <div class="chart" id="ch-scatter"></div>
+    <div class="legend" style="margin-top:12px"><span><i style="border-color:var(--s1)"></i>US 10Y yield, %</span><span><i style="border-color:var(--s2)"></i>Fed funds, %</span></div>
+    <div class="chart" id="ch-rates"></div>
+  </div>
+</section>
+
+<section class="sec" id="liquidity">
+  <h2>Liquidity: the same assets get sold before every mega-IPO</h2>
+  <p class="claim">In the 14 trading days before SpaceX listed and in the run-up to Anthropic, Bitcoin, MSTR, gold and the AI complex fell while the S&amp;P held up. Fed net liquidity did not fall (it rose about $43B into Anthropic as the Treasury cash balance was drawn down) and VIX stayed near 19. That reads as private de-grossing to fund the allocation, not a reserves squeeze. Yields at 5.15% and a firmer dollar explain the same moves, and two events cannot separate the two.</p>
+  <div class="grid2">
+    <div class="panel"><h3>Change over the run-up to each mega-IPO, %</h3><div class="sub">14 trading days ending the day before SpaceX listed (11 Jun) and 26 Oct to 13 Nov for Anthropic.</div><div class="legend" id="lg-x"></div><div class="chart" id="ch-x"></div></div>
+    <div class="panel"><h3>Is the IPO class getting colder?</h3><div class="sub">Renaissance Capital US IPO class, average % return: first day, then aftermarket to quarter end.</div><div class="legend" id="lg-r"></div><div class="chart" id="ch-r"></div>
+      <p class="cap">Q3 2026: 30% of deals priced below the range; the ten largest averaged −6% from offer; Oura and Holtec pulled their deals.</p></div>
+  </div>
+  <p class="claim">Supply is the other half. SpaceX ($75B to $86B), SK hynix ($26.5B) and Anthropic (about $58B to $64B) add up to roughly <b>$160B to $177B in five months</b>, against $104.8B of US IPO proceeds in all of Q2. After SpaceX listed, Bitcoin rose 23% and gold 6% over the next 63 trading days, so the pressure lifted once the supply cleared (one observation).</p>
+</section>
+
+<section class="sec" id="anthropic">
+  <h2>Reading Anthropic against every cut</h2>
+  <div class="two">
+    <div class="panel"><h3>Tailwinds</h3><ul class="pts">
+      <li><b>Q4 listing:</b> biggest day-1 pops, and only 33% of Q4 names traded below offer in 63 days (6 deals).</li>
+      <li><b>Post-midterm tape:</b> S&amp;P up in 18 of 19 post-midterm windows from 15 Nov, average +7.7% over three months.</li>
+      <li><b>Software and AI:</b> the most resilient sector, median −3% at day 63.</li>
+      <li><b>Float about 4.5%:</b> tiny float and a fast-money crowd support a day 1 to 5 squeeze, as with SpaceX.</li>
+      <li><b>Valuation:</b> roughly 16x to 17x run-rate revenue against about 39x forward sales for SpaceX.</li></ul></div>
+    <div class="panel"><h3>Headwinds</h3><ul class="pts">
+      <li><b>Rising yields:</b> 10Y at 5.15%, +46bp in three months. The cohort's rising-yield IPOs were −18% at day 63.</li>
+      <li><b>Mega size:</b> every mega-cap in the sample reverted within 21 days (SpaceX −15%, Facebook −18%, Alibaba −6%); n = 3.</li>
+      <li><b>Cold tape:</b> three straight quarters of negative IPO aftermarket returns; 30% of Q3 deals priced below range.</li>
+      <li><b>Risk-off in the neighbours:</b> Nvidia −25%, Bitcoin −15%, MSTR −20% since the S-1 went public.</li>
+      <li><b>Unlocks:</b> up to 10% early, then 180 days or Q1-27 results; more than 20 windows over a year.</li></ul></div>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="eyebrow">Base · SpaceX-lite</div><div class="odds">~50%</div><p class="claim">Day-1 pop of +15% to +35%, peak on days 2 to 5 at +30% to +55% over the offer, down 10% to 20% from the day-1 close by day 21, near the offer by day 63.</p></div>
+    <div class="card"><div class="eyebrow">Bull · scarcity holds</div><div class="odds">~20%</div><p class="claim">Prices at or above range, pop above 40%, and the low float plus index demand keep it well above the offer through month three. Needs yields to stop rising.</p></div>
+    <div class="card"><div class="eyebrow">Bear · rates and AI-spend</div><div class="odds">~30%</div><p class="claim">Pop under 10%, below the offer within about three weeks, −20% to −30% by day 63. Raised from 25% in the first note because of the rising-yield result.</p></div>
+  </div>
+  <p class="cap">Odds are my judgment, loosely calibrated on the analogs above. They are not a model output or advice.</p>
+  <div class="panel"><h3>What to watch</h3><ul class="pts">
+    <li>The price against the $70 to $78 range, and day-1 volume. Above range with heavy volume is the squeeze setup.</li>
+    <li>The 10-year yield and Nvidia over the first two weeks. Both falling together was the bear trigger in 2021 and 2025.</li>
+    <li>Bitcoin, MSTR and gold after pricing. A bounce would be the "supply cleared" signal seen after SpaceX.</li>
+    <li>Any Nasdaq-100 inclusion date (SpaceX fell about 13% after being added) and the first sizeable unlock windows.</li></ul></div>
+</section>
+
+<section class="sec" id="data">
+  <h2>Data and method</h2>
+  <details id="det"><summary>Table view: all 43 IPOs</summary><div class="tbl" id="tb-all" style="margin-top:10px"></div></details>
+  <div class="fine">
+    <p><b>Universe.</b> 43 notable US IPOs from Sep 2020 to Jun 2026 whose offer price I could pin down. It is a hand-picked set, not the full universe, so it leans toward large and well-known deals (selection bias) and has no 2022 names because the window was shut. Direct listings (Coinbase, Roblox, Palantir) and the SK hynix ADR are excluded.</p>
+    <p><b>Returns.</b> Day 1 is the first close. Pop = day-1 close against the offer price. Later returns are measured from the day-1 close at trading days 5, 21, 63, 126 and 252. Prices from Yahoo Finance, unadjusted closes.</p>
+    <p><b>Market caps</b> at offer are approximate (±20%) and sector labels are my own six-way grouping. <b>Regimes</b> use ^TNX, ^VIX, the S&amp;P 500 and FRED effective fed funds the day before listing.</p>
+    <p><b>Small samples.</b> Sector and quarter cells hold 4 to 15 names, regimes 6 to 30, and mega-caps 1 to 3. Medians are shown with n; none of this is statistically tested.</p>
+    <p><b>Anthropic facts</b> (range $70 to $78, 825M shares, pricing 18 Nov, lock-up terms, run-rate revenue) come from secondary summaries of the S-1/A and press reports; verify against the filing. SpaceX offer price is $135 (Reuters, Investopedia). Cross-asset moves are my calculation from Yahoo and FRED. Q3 IPO class statistics: Renaissance Capital 3Q 2026 review. Not investment advice.</p>
+  </div>
+</section>
+</div>
+<div id="tt" role="tooltip" hidden></div>
+
+<script>
+const D = __DATA__;
+const NS = "http://www.w3.org/2000/svg";
+const $ = (s, r = document) => r.querySelector(s);
+const pct = (v, d = 0, plus = true) => { if (v == null || Number.isNaN(v)) return "n/a"; const a = Math.abs(v * 100).toFixed(d); if (+a === 0) return a + "%"; return (v > 0 ? (plus ? "+" : "") : "−") + a + "%"; };
+const num = (v, d = 1) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d);
+function S(tag, a = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (parent) parent.append(e); return e; }
+function H(tag, cls, text, parent) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; if (parent) parent.append(e); return e; }
+
+/* ---------- tooltip (untrusted strings via textContent) ---------- */
+const tt = $("#tt");
+function showTT(e, title, rows) {
+  tt.replaceChildren();
+  if (title) H("div", "tt-t", title, tt);
+  rows.forEach(r => { const d = H("div", "tt-r", null, tt); if (r.color) { const k = H("i", "", "", d); k.style.borderColor = r.color; }
+    H("b", "", r.v, d); H("span", "", r.l, d); });
+  tt.hidden = false; moveTT(e);
+}
+function moveTT(e) { const w = tt.offsetWidth, h = tt.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; tt.style.left = x + "px"; tt.style.top = y + "px"; }
+const hideTT = () => { tt.hidden = true; };
+
+const renderers = [];
+function register(fn) { renderers.push(fn); fn(); }
+let rz; new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(() => renderers.forEach(f => f()), 120); }).observe(document.body);
+
+function legend(host, items, sq) { items.forEach(it => { const s = H("span", "", null, host); const i = H("i", sq ? "sq" : "", "", s);
+  if (sq) i.style.background = it.color; else i.style.borderColor = it.color; H("span", "", it.name, s); }); }
+
+/* ---------- line chart with crosshair + one tooltip for every series ---------- */
+function lineChart(host, o) {
+  host.replaceChildren();
+  const W = host.clientWidth || 600, Ht = o.h || 300, m = { l: o.ml || 44, r: o.mr || 14, t: 10, b: 26 };
+  const iw = W - m.l - m.r, ih = Ht - m.t - m.b;
+  const xs = o.xs, x0 = o.x0 ?? xs[0], x1 = o.x1 ?? xs[xs.length - 1];
+  const X = v => m.l + (v - x0) / (x1 - x0) * iw, Y = v => m.t + (o.ymax - v) / (o.ymax - o.ymin) * ih;
+  const svg = S("svg", { width: W, height: Ht, viewBox: `0 0 ${W} ${Ht}`, role: "img", "aria-label": o.aria || "Line chart" }, host);
+  (o.yticks || []).forEach(t => { S("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), style: `stroke:${t === (o.base ?? NaN) ? "var(--axis)" : "var(--grid)"};stroke-width:1` }, svg);
+    const tx = S("text", { x: m.l - 8, y: Y(t) + 4, "text-anchor": "end" }, svg); tx.textContent = o.yfmt(t); });
+  (o.xticks || []).forEach(t => { const tx = S("text", { x: X(t.v), y: Ht - 6, "text-anchor": "middle" }, svg); tx.textContent = t.l; });
+  (o.vmarks || []).forEach(v => { S("line", { x1: X(v.x), x2: X(v.x), y1: m.t, y2: m.t + ih, style: "stroke:var(--axis);stroke-width:1;stroke-dasharray:1 3" }, svg);
+    if (v.l) { const tx = S("text", { x: X(v.x) + 4, y: m.t + 10 }, svg); tx.textContent = v.l; } });
+  const ser = [...o.series].sort((a, b) => (a.top ? 1 : 0) - (b.top ? 1 : 0));
+  ser.forEach(s => { let d = "", pen = false, last = null;
+    s.vals.forEach((v, i) => { if (v == null) { pen = false; return; } d += (pen ? "L" : "M") + X(xs[i]).toFixed(1) + " " + Y(v).toFixed(1); pen = true; last = [xs[i], v]; });
+    S("path", { d, fill: "none", style: `stroke:${s.color};stroke-width:${s.w || 2};stroke-linejoin:round;stroke-linecap:round` }, svg);
+    if (last && !o.noend) S("circle", { cx: X(last[0]), cy: Y(last[1]), r: 4, style: `fill:${s.color};stroke:var(--surface);stroke-width:2` }, svg); });
+  const cross = S("line", { y1: m.t, y2: m.t + ih, style: "stroke:var(--ink2);stroke-width:1", visibility: "hidden" }, svg);
+  const dots = o.series.map(s => S("circle", { r: 4, style: `fill:${s.color};stroke:var(--surface);stroke-width:2`, visibility: "hidden" }, svg));
+  const ov = S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent", tabindex: 0, style: "outline:none" }, svg);
+  let cur = 0;
+  const at = (i, e) => { cur = i; const xv = xs[i]; cross.setAttribute("x1", X(xv)); cross.setAttribute("x2", X(xv)); cross.setAttribute("visibility", "visible");
+    const rows = []; o.series.forEach((s, k) => { const v = s.vals[i]; if (v == null) { dots[k].setAttribute("visibility", "hidden"); return; }
+      dots[k].setAttribute("cx", X(xv)); dots[k].setAttribute("cy", Y(v)); dots[k].setAttribute("visibility", "visible"); rows.push({ color: s.color, v: o.tfmt(v), l: s.name }); });
+    const r = ov.getBoundingClientRect(); showTT(e || { clientX: r.left + X(xv) - m.l, clientY: r.top + 20 }, o.xtitle(xv), rows); };
+  ov.addEventListener("pointermove", e => { const r = ov.getBoundingClientRect(); const v = x0 + (e.clientX - r.left) / iw * (x1 - x0);
+    let bi = 0, bd = 1e18; xs.forEach((xv, i) => { const dd = Math.abs(xv - v); if (dd < bd) { bd = dd; bi = i; } }); at(bi, e); });
+  ov.addEventListener("pointerleave", () => { cross.setAttribute("visibility", "hidden"); dots.forEach(d => d.setAttribute("visibility", "hidden")); hideTT(); });
+  ov.addEventListener("keydown", e => { if (e.key === "ArrowRight") at(Math.min(xs.length - 1, cur + 1)); if (e.key === "ArrowLeft") at(Math.max(0, cur - 1)); });
+  ov.addEventListener("focus", () => at(cur)); ov.addEventListener("blur", () => { cross.setAttribute("visibility", "hidden"); hideTT(); });
+}
+
+/* ---------- bar helpers: 4px rounded data-end, square at baseline ---------- */
+function barPath(x, y, w, h, dir, r = 4) { // dir: 'up','down','right','left' = direction of data end
+  r = Math.min(r, Math.abs(dir === "up" || dir === "down" ? h : w) / 2);
+  if (dir === "up") return `M${x} ${y + h}V${y + r}Q${x} ${y} ${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h}Z`;
+  if (dir === "down") return `M${x} ${y}V${y + h - r}Q${x} ${y + h} ${x + r} ${y + h}H${x + w - r}Q${x + w} ${y + h} ${x + w} ${y + h - r}V${y}Z`;
+  if (dir === "right") return `M${x} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h - r}Q${x + w} ${y + h} ${x + w - r} ${y + h}H${x}Z`;
+  return `M${x + w} ${y}H${x + r}Q${x} ${y} ${x} ${y + r}V${y + h - r}Q${x} ${y + h} ${x + r} ${y + h}H${x + w}Z`;
+}
+function colsChart(host, o) { // vertical grouped columns
+  host.replaceChildren();
+  const W = host.clientWidth || 500, Ht = o.h || 260, m = { l: 42, r: 8, t: 12, b: 26 }, iw = W - m.l - m.r, ih = Ht - m.t - m.b;
+  const Y = v => m.t + (o.ymax - v) / (o.ymax - o.ymin) * ih;
+  const svg = S("svg", { width: W, height: Ht, viewBox: `0 0 ${W} ${Ht}`, role: "img", "aria-label": o.aria }, host);
+  o.yticks.forEach(t => { S("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), style: `stroke:${t === 0 ? "var(--axis)" : "var(--grid)"};stroke-width:1` }, svg);
+    const tx = S("text", { x: m.l - 8, y: Y(t) + 4, "text-anchor": "end" }, svg); tx.textContent = o.yfmt(t); });
+  const nc = o.cats.length, band = iw / nc, ns = o.series.length, bw = Math.min(22, (band * 0.8) / ns - 2), gw = ns * bw + (ns - 1) * 2;
+  o.cats.forEach((c, ci) => {
+    const gx = m.l + ci * band + (band - gw) / 2;
+    const tx = S("text", { x: m.l + ci * band + band / 2, y: Ht - 6, "text-anchor": "middle" }, svg); tx.textContent = c;
+    o.series.forEach((s, si) => { const v = s.vals[ci]; if (v == null) return; const x = gx + si * (bw + 2), y0 = Y(0), y1 = Y(v);
+      const p = S("path", { d: barPath(x, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0)), v >= 0 ? "up" : "down"), style: `fill:${s.color(ci)}`, tabindex: 0 }, svg);
+      const tip = e => { p.style.opacity = .8; showTT(e, c, [{ color: s.color(ci), v: o.tfmt(v), l: s.name }].concat(s.extra ? s.extra(ci) : [])); };
+      p.addEventListener("pointermove", tip); p.addEventListener("pointerleave", () => { p.style.opacity = 1; hideTT(); });
+      p.addEventListener("focus", () => { const r = p.getBoundingClientRect(); tip({ clientX: r.left + bw, clientY: r.top }); }); p.addEventListener("blur", hideTT);
+      if (s.label && s.label(ci)) { const lt = S("text", { x: x + bw / 2, y: v >= 0 ? y1 - 5 : y1 + 13, "text-anchor": "middle", class: "strong" }, svg); lt.textContent = o.tfmt(v); } });
+  });
+}
+function rowsChart(host, o) { // horizontal grouped bars
+  host.replaceChildren();
+  const W = host.clientWidth || 500, bh = 14, gap = 2, rowH = o.series.length * (bh + gap) + 12, Ht = o.cats.length * rowH + 28, m = { l: o.ml || 92, r: 40, t: 4, b: 22 };
+  const iw = W - m.l - m.r, X = v => m.l + (v - o.xmin) / (o.xmax - o.xmin) * iw;
+  const svg = S("svg", { width: W, height: Ht, viewBox: `0 0 ${W} ${Ht}`, role: "img", "aria-label": o.aria }, host);
+  o.xticks.forEach(t => { S("line", { x1: X(t), x2: X(t), y1: m.t, y2: Ht - m.b, style: `stroke:${t === 0 ? "var(--axis)" : "var(--grid)"};stroke-width:1` }, svg);
+    const tx = S("text", { x: X(t), y: Ht - 6, "text-anchor": "middle" }, svg); tx.textContent = o.xfmt(t); });
+  o.cats.forEach((c, ci) => { const y = m.t + ci * rowH;
+    const tx = S("text", { x: m.l - 8, y: y + rowH / 2 - 2, "text-anchor": "end", class: "ink" }, svg); tx.textContent = c;
+    o.series.forEach((s, si) => { const v = s.vals[ci], yy = y + 4 + si * (bh + gap), x0 = X(0), x1 = X(v);
+      const p = S("path", { d: barPath(Math.min(x0, x1), yy, Math.max(1, Math.abs(x1 - x0)), bh, v >= 0 ? "right" : "left"), style: `fill:${s.color}`, tabindex: 0 }, svg);
+      const tip = e => { p.style.opacity = .8; showTT(e, c, [{ color: s.color, v: o.tfmt(v), l: s.name }]); };
+      p.addEventListener("pointermove", tip); p.addEventListener("pointerleave", () => { p.style.opacity = 1; hideTT(); });
+      p.addEventListener("focus", () => { const r = p.getBoundingClientRect(); tip({ clientX: r.left + 10, clientY: r.top }); }); p.addEventListener("blur", hideTT);
+      const lt = S("text", { x: v >= 0 ? x1 + 5 : x1 - 5, y: yy + bh - 3, "text-anchor": v >= 0 ? "start" : "end", class: "strong" }, svg); lt.textContent = o.tfmt(v); }); });
+}
+
+/* ---------- heat tables ---------- */
+function heatCell(td, v, scale = 0.4) { if (v == null || Number.isNaN(v)) { td.textContent = "n/a"; td.className = "n"; return; }
+  const t = Math.min(1, Math.abs(v) / scale) * 62; td.className = "h";
+  td.style.background = `color-mix(in srgb, var(--${v >= 0 ? "pos" : "neg"}) ${t.toFixed(0)}%, var(--mid))`; td.textContent = pct(v); }
+function heatTable(host, groups, cols) {
+  host.replaceChildren(); const t = H("table", "", null, host); const th = H("tr", "", null, H("thead", "", null, t));
+  H("th", "", "", th); H("th", "", "n", th); cols.forEach(c => H("th", "", c.h, th)); const tb = H("tbody", "", null, t);
+  groups.forEach(g => { if (g.title) { const r = H("tr", "grp", null, tb); const h = H("th", "", g.title, r); h.colSpan = cols.length + 2; }
+    g.rows.forEach(r => { const tr = H("tr", "", null, tb); H("td", "lab", r.key, tr); H("td", "n", String(r.n), tr);
+      cols.forEach(c => { const td = H("td", "", "", tr); const v = r[c.k]; if (c.fmt === "plain") { td.textContent = (v == null || Number.isNaN(v)) ? "n/a" : (v * 100).toFixed(0) + "%"; td.className = "n"; } else heatCell(td, v, c.scale);
+        if (c.k === "pop" || c.fmt !== "plain") { const tip = e => showTT(e, r.key, [{ v: c.h, l: pct(v) }, { v: "n", l: String(r.n) }, { v: "Names", l: (r.names || []).slice(0, 14).join(", ") + ((r.names || []).length > 14 ? " …" : "") }]);
+          td.addEventListener("pointermove", tip); td.addEventListener("pointerleave", hideTT); } }); }); });
+}
+const COLS = [{ k: "pop", h: "Day-1 pop (vs offer)", scale: .6 }, { k: "r5", h: "Day 5" }, { k: "r21", h: "Day 21" }, { k: "r63", h: "Day 63" }, { k: "r126", h: "Day 126" }, { k: "r252", h: "Day 252" }, { k: "pct_below_offer63", h: "Below offer by day 63", fmt: "plain" }];
+const mk = a => a.map(r => ({ ...r, key: r.key }));
+
+/* ---------- header tiles ---------- */
+(() => { const a = D.all, t = $("#tiles");
+  [["IPOs studied", String(a.n), "Sep 2020 to Jun 2026"], ["Median day-1 pop", pct(a.pop), "mean +37%, from offer"], ["Day 21", pct(a.r21, 1), "median, from day-1 close"],
+   ["Day 126", pct(a.r126), `${(a.pct_down126 * 100).toFixed(0)}% below day-1 close`], ["Below offer by day 63", (a.pct_below_offer63 * 100).toFixed(0) + "%", "of all IPOs"]]
+  .forEach(([l, v, d]) => { const c = H("div", "tile", null, t); H("div", "l", l, c); H("div", "v", v, c); H("div", "d", d, c); }); })();
+
+/* ---------- 1. fade chart ---------- */
+const XT = [{ v: 1, l: "D1" }, { v: 21, l: "1m" }, { v: 63, l: "3m" }, { v: 126, l: "6m" }, { v: 189, l: "9m" }, { v: 252, l: "12m" }];
+const dayX = Array.from({ length: 253 }, (_, i) => i + 1);
+const BK = [["Small <10B", "var(--s1)", "Small, under $10B"], ["Mid 10-30B", "var(--s2)", "Mid, $10B to $30B"], ["Large 30-100B", "var(--s3)", "Large, $30B to $100B"], ["SpaceX", "var(--ink)", "SpaceX, mega ($1.77T)"]];
+legend($("#lg-fade"), BK.map(b => ({ name: b[2], color: b[1] })));
+register(() => lineChart($("#ch-fade"), { xs: dayX, x0: 1, x1: 252, ymin: 40, ymax: 150, yticks: [50, 75, 100, 125, 150], base: 100, yfmt: v => v, xticks: XT, h: 320,
+  vmarks: [{ x: 126, l: "lock-up ≈ day 126" }], tfmt: v => num(v - 100, 1) + "%", xtitle: x => `Day ${x}`, aria: "Median IPO price paths by market cap bucket",
+  series: BK.map(b => ({ name: b[2], color: b[1], vals: D.bucket_paths[b[0]].concat(Array(253).fill(null)).slice(0, 253), w: b[0] === "SpaceX" ? 2.5 : 2, top: b[0] === "SpaceX" })) }));
+heatTable($("#tb-bucket"), [{ rows: mk(D.bucket) }], COLS);
+
+/* ---------- 2. sectors ---------- */
+heatTable($("#tb-sector"), [{ rows: mk(D.sector) }], COLS);
+const mini = $("#mini");
+D.sector.forEach(s => { const c = H("div", "", null, mini); H("h3", "", s.key, c); H("div", "sub", `n = ${s.n} · day 63 median ${pct(s.r63)} · day 126 ${pct(s.r126)}`, c); const h = H("div", "chart", null, c);
+  register(() => lineChart(h, { xs: dayX, x0: 1, x1: 252, ymin: 40, ymax: 160, yticks: [50, 100, 150], base: 100, yfmt: v => v, xticks: [{ v: 1, l: "D1" }, { v: 63, l: "3m" }, { v: 126, l: "6m" }, { v: 252, l: "12m" }], h: 170, ml: 34, noend: true,
+    tfmt: v => num(v - 100, 1) + "%", xtitle: x => `Day ${x}`, aria: s.key + " median path",
+    series: [{ name: "All IPOs", color: "var(--muted)", vals: D.all_path, w: 1.5 }, { name: s.key, color: "var(--s1)", vals: D.sector_paths[s.key], w: 2.5, top: true }] })); });
+
+/* ---------- 3. seasonality ---------- */
+const QS = [{ name: "Day-1 pop (vs offer)", k: "pop", color: "var(--s1)" }, { name: "Day 63 (from day-1 close)", k: "r63", color: "var(--s2)" }, { name: "Day 126 (from day-1 close)", k: "r126", color: "var(--s3)" }];
+legend($("#lg-q"), QS.map(s => ({ name: s.name, color: s.color })), true);
+register(() => colsChart($("#ch-q"), { cats: D.quarter.map(q => q.key), ymin: -.4, ymax: .5, yticks: [-.4, -.2, 0, .2, .4], yfmt: v => pct(v), tfmt: v => pct(v), aria: "IPO outcomes by listing quarter",
+  series: QS.map(s => ({ name: s.name, color: () => s.color, vals: D.quarter.map(q => q[s.k]), extra: i => [{ v: "n", l: String(D.quarter[i].n) }] })) }));
+const MN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+register(() => colsChart($("#ch-month"), { cats: MN, ymin: -1, ymax: 2.2, yticks: [-1, 0, 1, 2], yfmt: v => v + "%", tfmt: v => num(v, 2) + "%", h: 260, aria: "S&P 500 average return by calendar month",
+  series: [{ name: "Average monthly return", color: i => (i === 10 || i === 11) ? "var(--s1)" : "var(--axis)", vals: D.spx_month.map(m => m.mean), label: i => i === 10 || i === 11, extra: i => [{ v: D.spx_month[i].hit + "%", l: "months positive" }] }] }));
+(() => { const g = D.spx_nov15, rows = [["All years", g.all], ["Midterm years (post-election)", g.midterm], ["Other years", g.other]];
+  const host = $("#tb-nov"), t = H("table", "", null, host), th = H("tr", "", null, H("thead", "", null, t));
+  ["", "Years", "+1 month", "+3 months", "+12 months", "Up (3m)"].forEach(h => H("th", "", h, th)); const tb = H("tbody", "", null, t);
+  rows.forEach(([k, s]) => { const tr = H("tr", "", null, tb); H("td", "lab", k, tr); H("td", "n", String(s.n), tr);
+    [s.m1 / 100, s.m3 / 100, s.m12 / 100].forEach(v => heatCell(H("td", "", "", tr), v, .15)); H("td", "n", s.h3.toFixed(0) + "%", tr); }); })();
+heatTable($("#tb-quarter"), [{ rows: mk(D.quarter) }], COLS);
+
+/* ---------- 4. regimes ---------- */
+(() => { const c = D.current, h = $("#chips");
+  [["US 10Y yield", c.y10.toFixed(2) + "%", `${num(c.y10_3m * 100, 0)}bp in 3 months`, "Rising"], ["VIX", c.vix.toFixed(1), "Mid band (16 to 22)", "Mid"],
+   ["Fed funds", c.fed_level.toFixed(2) + "%", `${num(c.fed_6m * 100, 0)}bp in 6 months`, "Hold / turning"], ["S&P 500 vs 200-day", pct(c.spx_vs_200, 1), `${pct(c.spx_off_high, 1)} from high`, "Above"]]
+  .forEach(([k, v, w, tag]) => { const d = H("div", "chip", null, h); H("div", "k", k, d); const vv = H("div", "v", v, d); H("span", "tag", tag, vv); H("div", "w", w, d); }); })();
+heatTable($("#tb-regime"), [
+  { title: "10-year yield trend", rows: mk(D.yld) }, { title: "Fed policy", rows: mk(D.fed) }, { title: "VIX level", rows: mk(D.vix) }], COLS);
+
+const C = D.cohort, t0 = Date.UTC(2020, 8, 1), t1 = Date.UTC(2026, 11, 31), tm = s => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d || 1); };
+const yrT = []; for (let y = 2021; y <= 2026; y++) yrT.push({ v: Date.UTC(y, 0, 1), l: String(y) });
+register(() => { const host = $("#ch-scatter"); host.replaceChildren();
+  const W = host.clientWidth || 700, Ht = 300, m = { l: 44, r: 14, t: 10, b: 8 }, iw = W - m.l - m.r, ih = Ht - m.t - m.b;
+  const X = v => m.l + (v - t0) / (t1 - t0) * iw, Y = v => m.t + (1 - v) / 2 * ih * 1 + 0, yv = v => Math.max(-1, Math.min(1, v));
+  const YY = v => m.t + (1 - yv(v)) / 2 * ih;
+  const svg = S("svg", { width: W, height: Ht, viewBox: `0 0 ${W} ${Ht}`, role: "img", "aria-label": "Day 63 return of each IPO against listing date" }, host);
+  [-1, -.5, 0, .5, 1].forEach(t => { S("line", { x1: m.l, x2: W - m.r, y1: YY(t), y2: YY(t), style: `stroke:${t === 0 ? "var(--axis)" : "var(--grid)"};stroke-width:1` }, svg); const tx = S("text", { x: m.l - 8, y: YY(t) + 4, "text-anchor": "end" }, svg); tx.textContent = pct(t); });
+  yrT.forEach(t => S("line", { x1: X(t.v), x2: X(t.v), y1: m.t, y2: m.t + ih, style: "stroke:var(--grid);stroke-width:1" }, svg));
+  S("line", { x1: X(tm("2026-11-19")), x2: X(tm("2026-11-19")), y1: m.t, y2: m.t + ih, style: "stroke:var(--ink2);stroke-width:1;stroke-dasharray:2 3" }, svg);
+  const ant = S("text", { x: X(tm("2026-11-19")) - 5, y: m.t + 12, "text-anchor": "end", class: "strong" }, svg); ant.textContent = "ANT 19 Nov";
+  const pts = C.filter(c => c.r63 != null).map(c => ({ c, x: X(tm(c.ipo_date)), y: YY(c.r63) }));
+  pts.forEach(p => S("circle", { cx: p.x, cy: p.y, r: 5, style: `fill:var(--${p.c.r63 >= 0 ? "pos" : "neg"});stroke:var(--surface);stroke-width:2` }, svg));
+  const hi = S("circle", { r: 8, fill: "none", style: "stroke:var(--ink);stroke-width:2", visibility: "hidden" }, svg);
+  const ov = S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  ov.addEventListener("pointermove", e => { const r = ov.getBoundingClientRect(), px = e.clientX - r.left + m.l, py = e.clientY - r.top + m.t; let b = null, bd = 1e9;
+    pts.forEach(p => { const d = Math.hypot(p.x - px, p.y - py); if (d < bd) { bd = d; b = p; } });
+    if (b && bd < 40) { hi.setAttribute("cx", b.x); hi.setAttribute("cy", b.y); hi.setAttribute("visibility", "visible"); const c = b.c;
+      showTT(e, `${c.name} · ${c.ipo_date}`, [{ v: pct(c.r63), l: "day 63 from day-1 close" }, { v: pct(c.d1_pop), l: "day-1 pop" }, { v: c.sector, l: "" }, { v: c.y10.toFixed(2) + "%", l: `10Y (${num(c.y10_3m_chg * 100, 0)}bp / 3m)` }, { v: c.vix.toFixed(0), l: "VIX" }]); }
+    else { hi.setAttribute("visibility", "hidden"); hideTT(); } });
+  ov.addEventListener("pointerleave", () => { hi.setAttribute("visibility", "hidden"); hideTT(); });
+  const hr = $("#ch-rates"), mm = D.macro_monthly, xs = mm.map(r => tm(r.d + "-15"));
+  lineChart(hr, { xs, x0: t0, x1: t1, ymin: 0, ymax: 6, yticks: [0, 2, 4, 6], yfmt: v => v + "%", xticks: yrT, h: 150, ml: 44, mr: 14, tfmt: v => v.toFixed(2) + "%", noend: true,
+    xtitle: x => new Date(x).toISOString().slice(0, 7), aria: "US 10-year yield and fed funds rate", vmarks: [{ x: tm("2026-11-19") }],
+    series: [{ name: "Fed funds", color: "var(--s2)", vals: mm.map(r => r.ff) }, { name: "US 10Y", color: "var(--s1)", vals: mm.map(r => r.y10) }] }); });
+
+/* ---------- 5. liquidity ---------- */
+const XA = ["Bitcoin", "MSTR", "Nvidia", "Gold", "Nasdaq", "S&P 500", "DXY", "HYG", "TLT"], SP = [-18.0, -27.1, -6.6, -9.4, -1.8, -0.7, 0.7, 0.6, 2.5], AN = [-14.7, -20.2, -24.6, -3.8, -3.9, -1.5, 1.4, 0.2, -2.4];
+legend($("#lg-x"), [{ name: "SpaceX, 14 days pre-listing", color: "var(--s2)" }, { name: "Anthropic, since S-1 (26 Oct)", color: "var(--s1)" }], true);
+register(() => rowsChart($("#ch-x"), { cats: XA, xmin: -32, xmax: 8, xticks: [-30, -20, -10, 0], xfmt: v => v + "%", tfmt: v => num(v, 1) + "%", aria: "Cross-asset change before SpaceX and Anthropic", ml: 62,
+  series: [{ name: "SpaceX pre-listing", color: "var(--s2)", vals: SP }, { name: "Anthropic run-up", color: "var(--s1)", vals: AN }] }));
+legend($("#lg-r"), [{ name: "First-day return", color: "var(--s1)" }, { name: "Aftermarket return", color: "var(--s2)" }], true);
+register(() => colsChart($("#ch-r"), { cats: ["3Q25", "4Q25", "1Q26", "2Q26", "3Q26"], ymin: -15, ymax: 30, yticks: [-10, 0, 10, 20, 30], yfmt: v => v + "%", tfmt: v => num(v, 1) + "%", h: 230, aria: "Renaissance IPO class returns",
+  series: [{ name: "First-day return", color: () => "var(--s1)", vals: [17.0, 12.0, 26.0, 15.2, 6.2] }, { name: "Aftermarket return", color: () => "var(--s2)", vals: [11.2, 0.9, -10.0, -3.9, -5.7] }] }));
+
+/* ---------- table view ---------- */
+(() => { const host = $("#tb-all"), t = H("table", "", null, host), th = H("tr", "", null, H("thead", "", null, t));
+  ["Company", "Sector", "Listed", "Offer $", "Cap $B", "Pop", "Day 5", "Day 21", "Day 63", "Day 126", "10Y trend", "VIX"].forEach(h => H("th", "", h, th)); const tb = H("tbody", "", null, t);
+  C.slice().sort((a, b) => a.ipo_date < b.ipo_date ? -1 : 1).forEach(c => { const tr = H("tr", "", null, tb);
+    H("td", "lab", `${c.name} (${c.ticker})`, tr); H("td", "n", c.sector, tr).style.textAlign = "left"; H("td", "n", c.ipo_date, tr); H("td", "n", String(c.offer), tr); H("td", "n", c.cap_b >= 100 ? "1,770" : String(c.cap_b), tr);
+    [c.d1_pop, c.r5, c.r21, c.r63, c.r126].forEach((v, i) => heatCell(H("td", "", "", tr), v, i ? .4 : .6)); H("td", "n", c.yld, tr); H("td", "n", c.vix.toFixed(0), tr); }); })();
+document.body.addEventListener("pointerleave", hideTT);
+</script>
