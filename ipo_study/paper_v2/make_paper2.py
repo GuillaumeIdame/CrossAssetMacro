@@ -333,3 +333,58 @@ ax.set_xticks(range(len(fm)), [m for m, _ in fm], rotation=60, fontsize=6); ax.s
 ax.set_title("(b) FINRA margin debt peaked in the SpaceX month", fontsize=8, loc="left")
 fig.tight_layout(); fig.savefig(FIG / "f5_unwind.pdf"); plt.close(fig)
 print("ok", sorted(p.name for p in FIG.glob("*.pdf")), len(list(TAB.glob("*.tex"))))
+
+# ======================================================== CROWDING SECTION (crowding.py)
+CR = json.loads((DATA / "crowding.json").read_text())
+SIGLAB = {"beta63": "High beta vs low vol, 63d", "mtum63": "Momentum vs market, 63d", "btc63": "Bitcoin, 63d", "ipo63": "Recent IPOs (IPO ETF) vs S\\&P, 63d",
+          "sector63": "Own sector ETF vs S\\&P, 63d", "CROWD": "Crowding composite", "turn1": "Day-1 turnover (vol / shares sold)", "turn5": "Days 1--5 turnover"}
+cmap = {(c["signal"], c["outcome"]): c for c in CR["corr"]}
+def cell(s_, y):
+    c = cmap.get((s_, y))
+    if not c:
+        return "--"
+    st_ = "$^{\\dagger}$" if c["q"] < 0.05 else ("$^{*}$" if c["q"] < 0.10 else "")
+    return num(c["rho"], 2) + st_
+rows = [rf"{SIGLAB[s_]} & {cell(s_,'pop')} & {cell(s_,'r21')} & {cell(s_,'r63')} & {cell(s_,'x63')} & {cell(s_,'d5_63')} \\" for s_ in ["beta63", "mtum63", "btc63", "ipo63", "sector63", "CROWD"]]
+rows += [r"\midrule"] + [rf"{SIGLAB[s_]} & -- & {cell(s_,'r21')} & {cell(s_,'r63')} & {cell(s_,'x63')} & {cell(s_,'d5_63')} \\" for s_ in ["turn1", "turn5"]]
+table("t15_crowd_corr", "Crowded trades at listing and IPO outcomes: rank correlations", "tab:crowdcorr", "lrrrrr",
+      r"Crowding signal & Pop & Day 21 & Day 63 & D63 vs QQQ & Day 5$\to$63", rows,
+      "Spearman $\\rho$ across 43 IPOs. $^{\\dagger}q<0.05$, $^{*}q<0.10$ (Benjamini--Hochberg across all 64 signal--outcome tests). Market crowding measured at the last close before listing; turnover is observed on and after day 1, so it is not related to the pop. "
+      "Sector ETFs: IGV, FDN, ARKF, XLV, XLY, XLI.", size=r"\footnotesize")
+rows = []
+for lab, b in CR["buckets"].items():
+    rows.append(rf"\multicolumn{{8}}{{l}}{{\textit{{{lab}}}: perm.\ $p={b['perm_p']:.3f}$; FE $t$ (pop) $={num(b['fe']['pop']['t'],1)}$, FE $t$ (D63) $={num(b['fe']['r63']['t'],1)}$; crowded worse in {sum(r['same_sign'] for r in b['rows'])} of {b['n_split']}}} \\")
+    for r in b["rows"]:
+        rows.append(rf"\quad {esc(r['key'])} & {r['n_cr']} / {r['n_nc']} & {f(r['pop_cr'],0)} & {f(r['pop_nc'],0)} & {f(r['r63_cr'],0)} & {f(r['r63_nc'],0)} & {('--' if r['rho'] is None else num(r['rho'],2))} & {'yes' if r['same_sign'] else ('--' if not (r['n_cr'] and r['n_nc']) else 'no')} \\")
+    rows.append(r"\addlinespace")
+table("t16_crowd_buckets", "Crowded versus not crowded within each bucket", "tab:crowdbuckets", "lrrrrrrc",
+      r"Bucket & $n$ cr./not & Pop cr. & Pop not & D63 cr. & D63 not & $\rho$ (D63) & Cr.\ worse", rows,
+      "Crowded = crowding composite above its cohort median. Medians in percent; D63 from the first close. perm.\\ $p$: two-sided test that shuffles the composite only within buckets (5,000 draws). FE $t$: HC3 $t$-statistic on the composite in OLS with bucket fixed effects.",
+      size=r"\scriptsize")
+R2 = CR["race"]
+def rc(k, v):
+    r = R2.get(k)
+    return f"{num(r['coef'][v],2)} ({num(r['t'][v],1)})" if r and v in r["coef"] else "--"
+rows = []
+for y, lab in [("pop", "Pop"), ("r63", "Day 63"), ("x63", "D63 vs QQQ")]:
+    rows.append(rf"{lab} & {rc(f'{y} ~ CROWD','CROWD')} & {rc(f'{y} ~ CROWD + revision_pct','CROWD')} & {rc(f'{y} ~ CROWD + revision_pct','revision_pct')} & {rc(f'{y} ~ CROWD + PSI','CROWD')} & {rc(f'{y} ~ CROWD + PSI','PSI')} \\")
+table("t17_crowd_race", "Crowding, demand and positioning together", "tab:crowdrace", "lrrrrr",
+      r"Outcome & Crowding alone & Crowding & Price revision & Crowding & PSI \\ & (1) & \multicolumn{2}{c}{(2)} & \multicolumn{2}{c}{(3)}", rows,
+      "OLS coefficients with HC3 $t$-statistics in brackets; 42--43 IPOs. The crowding composite and PSI share two components (high beta vs low vol and Bitcoin), so model (3) mainly asks which summary fits better.", size=r"\footnotesize")
+S2 = CR["strat"]
+rows = [rf"{esc(k)} & {v['n']} & {f(v['mean'])} & [{f(v['lo'],0)}, {f(v['hi'],0)}] & {v['hit']*100:.0f} & {fp(v['p'])} & {num(v['sr'],2)} \\" for k, v in S2.items()]
+table("t18_crowd_strat", "Short from day 5 to day 63, conditioned on crowding", "tab:crowdstrat", "lrrcrrr", r"Subset & $n$ & Mean & 95\% CI & Hit & $p_W$ & SR$_\text{trade}$", rows,
+      "Short-seller's return in percent. In-sample split at the cohort median; costs and borrow ignored.", size=r"\footnotesize")
+# figure: dumbbell crowded vs not by bucket
+items = [(lab, r) for lab, b in CR["buckets"].items() for r in b["rows"] if r["n_cr"] and r["n_nc"]]
+fig, ax = plt.subplots(figsize=(6.6, 5.6)); yy = np.arange(len(items))[::-1]
+for y_, (lab, r) in zip(yy, items):
+    a_, b_ = r["r63_nc"] * 100, r["r63_cr"] * 100
+    ax.plot([a_, b_], [y_, y_], color=GRID, lw=2.2, zorder=1)
+    ax.plot(a_, y_, "o", color=B1, ms=5, zorder=2); ax.plot(b_, y_, "o", color=RED, ms=5, zorder=2)
+ax.set_yticks(yy, [f"{lab}: {r['key']}" for lab, r in items], fontsize=6.3); ax.axvline(0, color="#c3c2b7", lw=0.8)
+ax.set_xlim(-60, 60); ax.set_xlabel("Median return, day-1 close to day 63 (%)  [Q1 not-crowded (+155%) clipped]")
+ax.plot([], [], "o", color=RED, label="Crowded at listing"); ax.plot([], [], "o", color=B1, label="Not crowded"); ax.legend(fontsize=7, loc="lower right"); ax.grid(axis="y", visible=False)
+ax.set_title("Crowded vs not crowded, day-63 median, within each bucket", fontsize=8, loc="left")
+fig.savefig(FIG / "f6_crowd_buckets.pdf"); plt.close(fig)
+print("crowding tables done")

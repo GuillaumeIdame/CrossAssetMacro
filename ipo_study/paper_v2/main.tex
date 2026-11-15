@@ -43,7 +43,7 @@
 \thispagestyle{fancy}
 
 \begin{abstract}
-\noindent The sell-off in Bitcoin, gold and high-beta equities before the SpaceX listing, and again before Anthropic's, looks like a liquidity drain caused by mega-IPOs. Across 22 large US listings since 2020 it is not: on average there is no abnormal pre-listing move. We ask whether the pattern instead depends on positioning, meaning low realised volatility, strong momentum, crowded high-beta and momentum trades, a complacent volatility curve, futures and margin leverage. We build a positioning stretch index (PSI) and test it in three ways: a state-matched placebo, panel regressions with Newey--West errors, and cross-sectional tests on 43 IPOs. Positioning does not reliably explain the cross-asset moves; the one interaction that survives correction points the other way, with high beta outperforming more before large listings in stretched markets. Positioning does explain the IPO stock itself. IPOs that list into a stretched market pop more and fade much harder: the rank correlation between PSI at listing and the day-63 return is $-0.51$ ($q=0.006$), robust to market adjustment, to excluding 2021 and to controlling for demand. In the top PSI tercile the median IPO falls 28\% from its first close by day 63; in the bottom tercile it rises 19\%. SpaceX listed at the 90th percentile of PSI. Anthropic lists after a momentum and high-beta unwind, with PSI at the 12th percentile, which historically points to a smaller pop and a shallower fade.
+\noindent The sell-off in Bitcoin, gold and high-beta equities before the SpaceX listing, and again before Anthropic's, looks like a liquidity drain caused by mega-IPOs. Across 22 large US listings since 2020 it is not: on average there is no abnormal pre-listing move. We ask whether the pattern instead depends on positioning, meaning low realised volatility, strong momentum, crowded high-beta and momentum trades, a complacent volatility curve, futures and margin leverage. We build a positioning stretch index (PSI) and test it in three ways: a state-matched placebo, panel regressions with Newey--West errors, and cross-sectional tests on 43 IPOs. Positioning does not reliably explain the cross-asset moves; the one interaction that survives correction points the other way, with high beta outperforming more before large listings in stretched markets. Positioning does explain the IPO stock itself. IPOs that list into a stretched market pop more and fade much harder: the rank correlation between PSI at listing and the day-63 return is $-0.51$ ($q=0.006$), robust to market adjustment, to excluding 2021 and to controlling for demand. In the top PSI tercile the median IPO falls 28\% from its first close by day 63; in the bottom tercile it rises 19\%. Crowding in high beta, Bitcoin, new issues and the IPO's own sector gives the same signal, and it survives within the earlier bucketings (market value, quarter, rates, VIX, float and demand; sector only marginally, and not within PSI terciles, with which it overlaps); turnover in the IPO stock itself carries no signal. SpaceX listed at the 90th percentile of PSI. Anthropic lists after a momentum and high-beta unwind, with PSI at the 12th percentile, which historically points to a smaller pop and a shallower fade. Its crowding composite is lower than at any of the 43 listings in the cohort; SpaceX's was at the 86th percentile.
 \end{abstract}
 
 \noindent\textbf{Keywords:} initial public offerings, positioning, leverage, realised volatility, momentum, event study.\\
@@ -56,6 +56,7 @@
 \item \textbf{Stretched listings fade hard.} High-PSI tercile: pop $+27\%$, day 63 $-28\%$. Low-PSI tercile: pop $+9\%$, day 63 $+19\%$. Above-range deals in stretched markets: $+35\%$ then $-28\%$.
 \item \textbf{The cross-asset sell-off is not a positioning effect either.} No test of event$\times$positioning survives correction except one: high beta outperforms \emph{more} before large listings in stretched markets ($q=0.05$).
 \item \textbf{SpaceX was a stretched listing; Anthropic is not.} SpaceX: PSI 90th percentile, momentum crowding 98th. Anthropic: momentum vs market and high beta vs low vol at their 0th and 2nd percentiles after an unwind; PSI 12th percentile.
+\item \textbf{Crowded trades, not crowded IPOs.} A composite of crowding at listing predicts a bigger pop ($q=0.03$) and a deeper fade, and the crowded half underperforms within most buckets (stratified permutation $p\approx0.01$--$0.03$). Day-1 turnover in the IPO itself has no signal.
 \item \textbf{Leverage is still high.} Margin debt growth is at the 83rd percentile and asset managers' E-mini length at the 82nd: the unwind has hit crowded trades, not overall leverage.
 \end{enumerate}}}
 
@@ -159,11 +160,39 @@ The result is reasonably robust (Table~\ref{tab:robust}). It holds net of QQQ, w
 
 \input{tables/t10_strat}
 
+\subsection{Crowded trades and the IPO}
+
+Is the signal about crowded trades specifically? We measure crowding at the last close before listing in five ways: high beta vs low volatility, momentum vs the market, Bitcoin, the Renaissance IPO ETF vs the S\&P~500 (crowding into new issues), and the IPO's own sector ETF vs the S\&P~500 (crowding into its theme). We combine them into an equal-weighted crowding composite. We also measure crowding in the IPO stock itself through turnover, the day-1 and days 1--5 volume divided by the shares sold in the offering.
+
+Market crowding gives a signal; crowding in the stock itself does not (Table~\ref{tab:crowdcorr}). The composite predicts a bigger pop ($\rho=0.44$, $q=0.03$) and a deeper fade ($\rho=-0.37$ for day 63, $p=0.014$, $q=0.06$; the same net of QQQ). Crowding into new issues and into the IPO's own sector mainly inflates the pop ($\rho=0.42$ and $0.43$, $q=0.03$). Crowded high beta and Bitcoin mainly predict the fade. Momentum crowding on its own (MTUM vs the market) carries no signal. Turnover is unrelated to anything that follows ($p>0.35$ throughout). One suggestive pattern is that in crowded markets, IPOs with \emph{low} day-1 turnover fell most by day 63 ($-27\%$, $n=7$), against $-6\%$ for high-turnover ones, as if supply that was not flipped on day 1 arrived later.
+
+The signal survives the earlier bucketings (Table~\ref{tab:crowdbuckets}; Figure~\ref{fig:crowdbuckets}). Within buckets, crowded listings had a lower day-63 median in:
+\begin{itemize}
+\item every market-value, rate, float and demand bucket;
+\item three of four listing quarters;
+\item two of three VIX regimes;
+\item three of five sectors where both groups exist.
+\end{itemize}
+A permutation test that shuffles the composite only within buckets rejects no relationship for market value ($p=0.017$), listing quarter (0.016), rate trend (0.015), VIX (0.010), float (0.018) and demand (0.028). Sector is marginal (0.074). With bucket fixed effects, the composite remains significant for the pop in every bucketing ($t$ between 2.3 and 3.1) and is negative for the day-63 return ($t$ between $-1.1$ and $-2.1$).
+
+Crowding and demand are complementary, and crowding and PSI largely overlap (Table~\ref{tab:crowdrace}). With the price revision included, crowding still predicts the fade ($t=-2.4$) while the revision does not. With PSI included, crowding adds nothing, since the two share their strongest components. Conditioning the day-5-to-day-63 short on crowding (Table~\ref{tab:crowdstrat}) earns 13\% on average with a 77\% hit rate ($p_W=0.04$), better than the unconditional trade but weaker than conditioning on PSI.
+
+\input{tables/t15_crowd_corr}
+\input{tables/t16_crowd_buckets}
+
+\begin{figure}[!htbp]\centering
+\includegraphics[width=0.95\linewidth]{figures/f6_crowd_buckets.pdf}
+\caption{Median return from the first close to day 63 for crowded (red) and not-crowded (blue) listings within each bucket. Buckets with only one group are omitted.}\label{fig:crowdbuckets}
+\end{figure}
+
+\input{tables/t17_crowd_race}
+\input{tables/t18_crowd_strat}
+
 \section{SpaceX and Anthropic}
 
 \paragraph{SpaceX listed into a stretched market.} Eleven sessions before its June listing, SpaceX met realised volatility at the 21st percentile and a steep volatility curve (VIX/VIX3M at the 14th). High beta was at the 92nd percentile, momentum crowding at the 98th and asset managers' E-mini length at the 92nd; PSI was at the 90th percentile (Table~\ref{tab:case}; Figure~\ref{fig:dash}). FINRA margin debt reached \$1.50tn at the end of June, its highest reading in the 13 months we have, and fell 5.6\% in July (Figure~\ref{fig:unwind}b). SpaceX's own path, a 19\% pop, a peak on day 3 and a return below the offer by day 23, is what the high-PSI tercile predicts.
 
-\paragraph{Anthropic lists after an unwind.} When the S-1 became public on 26 October, the market was calm but not stretched: realised volatility at the 18th percentile, PSI at the 45th. Over the following three weeks the crowded trades unwound (Table~\ref{tab:moves}; Figure~\ref{fig:unwind}a). High beta lost 4.6\% relative to low volatility and momentum lost 2.3\% relative to the market. Bitcoin fell 12.5\% and MSTR 19.5\%. By 13 November momentum crowding was at its lowest reading since 2020, the high-beta spread at the 2nd percentile, realised volatility at the 85th and PSI at the 12th percentile. The sell-off before Anthropic therefore looks like a momentum unwind already under way, not a cash call by the IPO. Overall leverage has not come down: margin debt growth is at the 83rd percentile and asset managers' E-mini length at the 82nd.
+\paragraph{Anthropic lists after an unwind.} When the S-1 became public on 26 October, the market was calm but not stretched: realised volatility at the 18th percentile, PSI at the 45th. Over the following three weeks the crowded trades unwound (Table~\ref{tab:moves}; Figure~\ref{fig:unwind}a). High beta lost 4.6\% relative to low volatility and momentum lost 2.3\% relative to the market. Bitcoin fell 12.5\% and MSTR 19.5\%. By 13 November momentum crowding was at its lowest reading since 2020, the high-beta spread at the 2nd percentile, realised volatility at the 85th and PSI at the 12th percentile. The sell-off before Anthropic therefore looks like a momentum unwind already under way, not a cash call by the IPO. On the crowding composite of Section~4.5, Anthropic now sits below every listing in the cohort, against the 86th percentile for SpaceX. Overall leverage has not come down: margin debt growth is at the 83rd percentile and asset managers' E-mini length at the 82nd.
 
 \input{tables/t13_case}
 \input{tables/t14_moves}
@@ -191,7 +220,7 @@ The result is reasonably robust (Table~\ref{tab:robust}). It holds net of QQQ, w
 
 \section{Conclusion}
 
-The SpaceX pattern, a sell-off in crowded risk assets before a mega-IPO, does not generalise across large listings, and conditioning on positioning does not rescue it: if anything, stretched markets chase high beta into large deals. Positioning does explain something important, though: how far the IPO stock itself rises and falls. In stretched markets IPOs pop more and give much more back; in calm or de-risked markets the fade largely disappears. SpaceX listed at the top of the positioning cycle. Anthropic lists after the crowded trades have already unwound, which argues for a smaller pop and a shallower fade than SpaceX, provided that the remaining leverage does not unwind as well.
+The SpaceX pattern, a sell-off in crowded risk assets before a mega-IPO, does not generalise across large listings, and conditioning on positioning does not rescue it: if anything, stretched markets chase high beta into large deals. Positioning does explain something important, though: how far the IPO stock itself rises and falls. The signal comes from crowded trades around the IPO (high beta, Bitcoin, new issues and the IPO's own theme) rather than from frenzied trading in the stock, and it holds within market-value, season, rate, VIX, float and demand buckets. In stretched markets IPOs pop more and give much more back; in calm or de-risked markets the fade largely disappears. SpaceX listed at the top of the positioning cycle. Anthropic lists after the crowded trades have already unwound, which argues for a smaller pop and a shallower fade than SpaceX, provided that the remaining leverage does not unwind as well.
 
 \vspace{1em}
 \noindent{\footnotesize\textit{Disclaimer.} This note is for research and discussion. It is not investment advice or a recommendation to buy or sell any security. Anthropic figures are based on public filings and press reports as of 15 November 2026.}
