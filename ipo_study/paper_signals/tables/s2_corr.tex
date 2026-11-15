@@ -1,0 +1,26 @@
+\begin{table}[!htbp]\centering\footnotesize
+\caption{Which signals predict which part of the debut? Rank correlations}\label{tab:s2}
+\resizebox{\linewidth}{!}{
+\begin{threeparttable}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Signal & Open vs offer & Open$\to$close & Close vs high & Close vs offer & Day-2 gap & D1$\to$D5 & D1$\to$D63 \\
+\midrule
+Price revision & 0.76$^{\dagger}$ & $-$0.04 & $-$0.35$^{*}$ & 0.67$^{\dagger}$ & 0.20 & $-$0.01 & $-$0.15 \\
+Range revision & 0.65$^{\dagger}$ & $-$0.04 & $-$0.39$^{*}$ & 0.55$^{\dagger}$ & 0.23 & $-$0.03 & $-$0.09 \\
+Offer vs final range & 0.71$^{\dagger}$ & 0.04 & $-$0.20 & 0.66$^{\dagger}$ & 0.12 & 0.04 & $-$0.06 \\
+Above first range & 0.60$^{\dagger}$ & $-$0.13 & $-$0.21 & 0.50$^{\dagger}$ & 0.18 & $-$0.01 & $-$0.25 \\
+Range raised & 0.63$^{\dagger}$ & $-$0.01 & $-$0.31 & 0.53$^{\dagger}$ & 0.20 & $-$0.09 & $-$0.15 \\
+Upsized & $-$0.04 & 0.19 & 0.37$^{*}$ & 0.05 & 0.00 & 0.37$^{*}$ & 0.06 \\
+Float & $-$0.15 & 0.06 & 0.24 & $-$0.08 & 0.07 & 0.28 & 0.13 \\
+log proceeds & $-$0.07 & 0.20 & 0.13 & 0.07 & $-$0.06 & 0.18 & 0.04 \\
+Crowding at listing & 0.50$^{\dagger}$ & $-$0.01 & $-$0.37$^{*}$ & 0.44$^{\dagger}$ & 0.11 & $-$0.13 & $-$0.37$^{*}$ \\
+Positioning (PSI) & 0.42$^{\dagger}$ & $-$0.10 & $-$0.25 & 0.37$^{*}$ & 0.26 & $-$0.25 & $-$0.51$^{\dagger}$ \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Spearman $\rho$, 42--43 IPOs. $^{\dagger}q<0.05$, $^{*}q<0.10$ (Benjamini--Hochberg over all signal--outcome pairs). Close vs offer is the first-day return (``pop''); later returns are measured from the first close.
+\end{tablenotes}
+\end{threeparttable}
+}
+\end{table}

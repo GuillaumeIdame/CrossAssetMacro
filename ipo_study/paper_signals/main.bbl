@@ -1,0 +1,42 @@
+\begin{thebibliography}{5}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Aggarwal et~al.(2002)Aggarwal, Krigman, and Womack]{aggarwal2002}
+Rajesh~K. Aggarwal, Laurie Krigman, and Kent~L. Womack.
+\newblock Strategic {IPO} underpricing, information momentum, and lockup
+  expiration selling.
+\newblock \emph{Journal of Financial Economics}, 66\penalty0 (1):\penalty0
+  105--137, 2002.
+
+\bibitem[Benjamini and Hochberg(1995)]{benjamini1995}
+Yoav Benjamini and Yosef Hochberg.
+\newblock Controlling the false discovery rate: A practical and powerful
+  approach to multiple testing.
+\newblock \emph{Journal of the Royal Statistical Society: Series B},
+  57\penalty0 (1):\penalty0 289--300, 1995.
+
+\bibitem[Cornelli et~al.(2006)Cornelli, Goldreich, and
+  Ljungqvist]{cornelli2006}
+Francesca Cornelli, David Goldreich, and Alexander Ljungqvist.
+\newblock Investor sentiment and pre-{IPO} markets.
+\newblock \emph{Journal of Finance}, 61\penalty0 (3):\penalty0 1187--1216,
+  2006.
+
+\bibitem[{CrossAssetMacro Research}(2026)]{frenzyfade2026}
+{CrossAssetMacro Research}.
+\newblock Frenzy and fade: {IPO} aftermarket dynamics, deal structure and
+  cross-asset spillovers, with an application to the {Anthropic} listing.
+\newblock Technical report, CrossAssetMacro Research, November 2026.
+
+\bibitem[Hanley(1993)]{hanley1993}
+Kathleen~Weiss Hanley.
+\newblock The underpricing of initial public offerings and the partial
+  adjustment phenomenon.
+\newblock \emph{Journal of Financial Economics}, 34\penalty0 (2):\penalty0
+  231--250, 1993.
+
+\end{thebibliography}
