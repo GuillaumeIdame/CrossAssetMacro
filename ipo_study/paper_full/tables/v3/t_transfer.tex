@@ -1,0 +1,44 @@
+\begin{table}[!htbp]\centering\footnotesize
+\caption{Is liquidity transferred between markets around listings?}\label{tab:transfer}
+\resizebox{\linewidth}{!}{
+\begin{threeparttable}
+\begin{tabular}{lrrrr}
+\toprule
+Test & $n$ & Events & Random dates & $p$ \\
+\midrule
+\multicolumn{5}{l}{\textit{Panel A. Peer substitution: own sector ETF minus S\&P~500}} \\
+\quad All IPOs, T$-$10 to T$-$1 & 43 & +0.26 & $-$0.22 & 0.39 \\
+\quad All IPOs, Listing day to T+5 & 43 & +0.37 & $-$0.14 & 0.23 \\
+\quad All IPOs, T+6 to T+20 & 43 & +0.20 & $-$0.45 & 0.37 \\
+\quad Large IPOs (\$1bn+), T$-$10 to T$-$1 & 23 & +0.42 & $-$0.21 & 0.41 \\
+\quad Large IPOs (\$1bn+), Listing day to T+5 & 23 & +0.08 & $-$0.13 & 0.72 \\
+\quad Large IPOs (\$1bn+), T+6 to T+20 & 23 & +0.18 & $-$0.32 & 0.59 \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Panel B. Abnormal volume around large listings (log ratio to prior 60-day mean)}} \\
+\quad S\&P 500 (SPY), T$-$10 to T$-$1 & 23 & $-$0.02 & $-$0.07 & 0.29 \\
+\quad S\&P 500 (SPY), Listing week & 23 & $-$0.01 & $-$0.06 & 0.32 \\
+\quad Nasdaq (QQQ), T$-$10 to T$-$1 & 23 & +0.02 & $-$0.05 & 0.12 \\
+\quad Nasdaq (QQQ), Listing week & 23 & +0.01 & $-$0.05 & 0.29 \\
+\quad Recent IPOs (IPO ETF), T$-$10 to T$-$1 & 23 & $-$0.16 & $-$0.25 & 0.43 \\
+\quad Recent IPOs (IPO ETF), Listing week & 23 & +0.09 & $-$0.26 & 0.003 \\
+\quad Bitcoin, T$-$10 to T$-$1 & 23 & +0.01 & $-$0.05 & 0.30 \\
+\quad Bitcoin, Listing week & 23 & $-$0.14 & $-$0.05 & 0.20 \\
+\quad Own sector ETF, Listing week & 23 & $-$0.10 & $-$0.09 & 0.93 \\
+\addlinespace
+\multicolumn{5}{l}{\textit{Panel C. Correlation of daily returns, T$-$10 to T$-$1 (large listings)}} \\
+\quad SPY--BTC: level & 23 & +0.26 & +0.36 & 0.16 \\
+\quad SPY--BTC: change vs prior 10 sessions & 23 & 0.00 & 0.00 & 0.95 \\
+\quad SPY--GLD: level & 23 & +0.07 & +0.19 & 0.19 \\
+\quad SPY--GLD: change vs prior 10 sessions & 23 & $-$0.17 & 0.00 & 0.088 \\
+\quad BTC--GLD: level & 23 & +0.08 & +0.14 & 0.47 \\
+\quad BTC--GLD: change vs prior 10 sessions & 23 & $-$0.11 & 0.00 & 0.25 \\
+\quad SPY--IPO ETF: level & 23 & +0.59 & +0.67 & 0.13 \\
+\quad SPY--IPO ETF: change vs prior 10 sessions & 23 & +0.02 & 0.00 & 0.75 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Panel A in percent. Random dates: permutation test against 4,000--5,000 random draws (sector drawn in the cohort's proportions for Panel A). Large listings: proceeds of \$1bn or more (23 IPOs).
+\end{tablenotes}
+\end{threeparttable}
+}
+\end{table}

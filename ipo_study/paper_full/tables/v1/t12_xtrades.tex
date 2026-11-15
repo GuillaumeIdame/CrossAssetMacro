@@ -1,0 +1,37 @@
+\begin{table}[!htbp]\centering\scriptsize
+\caption{Cross-asset trades around large listings}\label{tab:xtrades}
+
+\begin{threeparttable}
+\begin{tabular}{llrrrrrr}
+\toprule
+Asset & Trade & Mean & vs typical & Hit & $p$ & SR$_\text{event}$ & SR$_\text{real}$ \\
+\midrule
+Bitcoin & Short T-10 to T-1 & $-$3.6 & $-$1.5 & 45 & 0.67 & $-$0.33 & $-$0.44 \\
+Bitcoin & Long T+1 to T+5 & +0.4 & $-$0.6 & 55 & 0.79 & 0.07 & 0.09 \\
+Bitcoin & Long T+6 to T+20 & +10.5 & +7.4 & 82 & 0.11 & 0.37 & 0.49 \\
+Speculative growth (ARKK) & Short T-10 to T-1 & $-$0.7 & $-$0.1 & 45 & 0.97 & $-$0.10 & $-$0.13 \\
+Speculative growth (ARKK) & Long T+1 to T+5 & $-$2.8 & $-$3.0 & 45 & 0.095 & $-$0.46 & $-$0.61 \\
+Speculative growth (ARKK) & Long T+6 to T+20 & +4.2 & +3.5 & 73 & 0.27 & 0.38 & 0.50 \\
+Gold (GLD) & Short T-10 to T-1 & +0.1 & +0.7 & 45 & 0.51 & 0.02 & 0.03 \\
+Gold (GLD) & Long T+1 to T+5 & $-$0.1 & $-$0.4 & 55 & 0.63 & $-$0.03 & $-$0.04 \\
+Gold (GLD) & Long T+6 to T+20 & +1.1 & +0.3 & 55 & 0.83 & 0.24 & 0.32 \\
+Nasdaq 100 (QQQ) & Short T-10 to T-1 & +0.5 & +1.4 & 55 & 0.26 & 0.12 & 0.16 \\
+Nasdaq 100 (QQQ) & Long T+1 to T+5 & $-$1.1 & $-$1.5 & 55 & 0.087 & $-$0.27 & $-$0.36 \\
+Nasdaq 100 (QQQ) & Long T+6 to T+20 & +3.8 & +2.6 & 73 & 0.083 & 0.81 & 1.07 \\
+Semis (SMH) & Short T-10 to T-1 & +1.1 & +2.7 & 73 & 0.17 & 0.14 & 0.19 \\
+Semis (SMH) & Long T+1 to T+5 & $-$1.2 & $-$2.0 & 45 & 0.16 & $-$0.17 & $-$0.23 \\
+Semis (SMH) & Long T+6 to T+20 & +5.9 & +3.7 & 82 & 0.11 & 0.79 & 1.05 \\
+Software (IGV) & Short T-10 to T-1 & $-$0.3 & +0.3 & 36 & 0.86 & $-$0.06 & $-$0.08 \\
+Software (IGV) & Long T+1 to T+5 & $-$1.2 & $-$1.5 & 45 & 0.21 & $-$0.28 & $-$0.38 \\
+Software (IGV) & Long T+6 to T+20 & +4.2 & +3.4 & 82 & 0.077 & 0.52 & 0.70 \\
+Recent IPOs (IPO ETF) & Short T-10 to T-1 & $-$1.3 & $-$0.8 & 36 & 0.69 & $-$0.23 & $-$0.31 \\
+Recent IPOs (IPO ETF) & Long T+1 to T+5 & $-$1.6 & $-$1.8 & 55 & 0.22 & $-$0.27 & $-$0.36 \\
+Recent IPOs (IPO ETF) & Long T+6 to T+20 & +2.7 & +2.2 & 82 & 0.36 & 0.33 & 0.45 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Percent per event, 11 events. ``vs typical'' subtracts the average of all same-length windows. SR$_\text{real}$ scales by $\sqrt{1.8}$ listings per year.
+\end{tablenotes}
+\end{threeparttable}
+
+\end{table}

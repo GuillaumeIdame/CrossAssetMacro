@@ -1,0 +1,21 @@
+\begin{table}[!htbp]\centering\footnotesize
+\caption{Positioning-conditioned strategies on the IPO stock}\label{tab:strat}
+\resizebox{\linewidth}{!}{
+\begin{threeparttable}
+\begin{tabular}{lrrcrrrr}
+\toprule
+Strategy & $n$ & Mean & 95\% CI & Hit & $p_W$ & SR$_\text{trade}$ & SR$_\text{real}$ \\
+\midrule
+Short day 5 to 63, all IPOs & 43 & +2.5 & [$-$12, +15] & 65 & 0.17 & 0.06 & 0.15 \\
+Short day 5 to 63, high-PSI tercile & 14 & +22.4 & [+7, +35] & 86 & 0.013 & 0.81 & 1.26 \\
+Short day 5 to 63, low-PSI tercile & 15 & $-$18.8 & [$-$50, +7] & 40 & 0.30 & $-$0.32 & $-$0.51 \\
+Long day 1 to 63, low-PSI tercile & 15 & +32.1 & [$-$2, +79] & 53 & 0.19 & 0.38 & 0.61 \\
+Short day 5 to 63, high PSI and above range & 12 & +22.2 & [+5, +37] & 83 & 0.034 & 0.74 & 1.06 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Percent per trade; shorts report the short-seller's return. SR$_\text{real}$ scales the per-trade Sharpe by the square root of the number of qualifying IPOs per year in the cohort (5.75 years). The tercile split uses the full-sample PSI distribution, so these are in-sample results; costs and borrow are ignored.
+\end{tablenotes}
+\end{threeparttable}
+}
+\end{table}

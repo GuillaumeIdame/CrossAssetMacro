@@ -1,0 +1,24 @@
+\begin{table}[!htbp]\centering\footnotesize
+\caption{Robustness of the PSI--fade relationship}\label{tab:robust}
+
+\begin{threeparttable}
+\begin{tabular}{lrrr}
+\toprule
+Test & $n$ & $\rho$ & $p$ \\
+\midrule
+Full sample, day 63 & 43 & $-$0.51 & $<$0.001 \\
+Full sample, day 63 vs QQQ & 43 & $-$0.44 & 0.003 \\
+Excluding 2021 listings, day 63 & 34 & $-$0.41 & 0.015 \\
+Excluding 2021 listings, day 63 vs QQQ & 34 & $-$0.37 & 0.031 \\
+Leave one listing year out, day 63 (range) & -- & $-$0.41 to $-$0.55 & -- \\
+Year-block bootstrap 95\% CI, day 63 & -- & [$-$0.59, 0.03] & -- \\
+Full sample, first-day return & 43 & 0.37 & 0.015 \\
+PSI vs price revision & 42 & 0.35 & 0.021 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Spearman correlations between PSI at listing and the outcome. The year-block bootstrap resamples listing years with replacement (5,000 draws), allowing for clustering of IPOs in hot windows.
+\end{tablenotes}
+\end{threeparttable}
+
+\end{table}

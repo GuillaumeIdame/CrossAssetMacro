@@ -1,0 +1,30 @@
+\begin{table}[!htbp]\centering\footnotesize
+\caption{Which state variables line up with the event-window moves?}\label{tab:varcorr}
+
+\begin{threeparttable}
+\begin{tabular}{lllrrr}
+\toprule
+State at T$-$11 & Asset & Window & $\rho$ & $p$ & $q$ \\
+\midrule
+VIX / VIX3M & Spec. growth (ARKK) & pre & 0.57 & 0.005 & 0.37 \\
+CFTC leveraged funds net / OI, E-mini & Bitcoin & pre & 0.56 & 0.007 & 0.37 \\
+Bitcoin return, 63d & High beta - low vol & pre & 0.51 & 0.016 & 0.38 \\
+CFTC leveraged funds net / OI, E-mini & High beta - low vol & pre & 0.50 & 0.017 & 0.38 \\
+CFTC asset managers net / OI, E-mini & High beta - low vol & pre & $-$0.50 & 0.019 & 0.38 \\
+Momentum vs market (MTUM/SPY), 63d & Spec. growth (ARKK) & pre & $-$0.44 & 0.038 & 0.57 \\
+S\&P 500 return, 63d & Nasdaq 100 & pre & $-$0.44 & 0.042 & 0.57 \\
+Momentum vs market (MTUM/SPY), 63d & Bitcoin & pre & $-$0.43 & 0.045 & 0.57 \\
+High beta vs low vol (SPHB/SPLV), 63d & Cross-asset momentum L/S & pre & 0.41 & 0.057 & 0.62 \\
+VIX / VIX3M & Nasdaq 100 & pre & 0.40 & 0.062 & 0.62 \\
+Margin debt growth, YoY (Fed Z.1) & Bitcoin & pre & 0.39 & 0.077 & 0.65 \\
+Bitcoin return, 63d & Cross-asset momentum L/S & pre & 0.37 & 0.095 & 0.65 \\
+Momentum vs market (MTUM/SPY), 63d & Spec. growth (ARKK) & post & $-$0.36 & 0.098 & 0.65 \\
+High beta vs low vol (SPHB/SPLV), 63d & High beta - low vol & pre & 0.36 & 0.099 & 0.65 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Spearman correlation across the 22 large listings between the state variable and the event-window return. The 14 smallest $p$-values of 100 tests are shown; $q$ adjusts across all 100.
+\end{tablenotes}
+\end{threeparttable}
+
+\end{table}

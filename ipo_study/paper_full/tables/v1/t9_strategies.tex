@@ -1,0 +1,29 @@
+\begin{table*}[!htbp]\centering\scriptsize
+\caption{Trading strategies on the IPO stock: returns, significance and implied Sharpe ratios}\label{tab:strategies}
+\resizebox{\linewidth}{!}{
+\begin{threeparttable}
+\begin{tabular}{lrrcrrrrrrrl}
+\toprule
+Strategy & $n$ & Mean & 95\% CI & Median & Hit & $p_t$ & $p_W$ & SR$_\text{trade}$ & SR$_\text{ann}$ & SR$_\text{real}$ & Conf. \\
+\midrule
+Allocation flip: offer to day-1 close (long) & 43 & +37.1 & [+23, +54] & +19.2 & 79 & $<$0.001 & $<$0.001 & 0.72 & 11.44 & 1.97 & High \\
+Buy the open, sell day-1 close (long) & 43 & $-$1.1 & [$-$4, +2] & $-$2.0 & 35 & 0.50 & 0.19 & $-$0.10 & $-$1.63 & $-$0.28 & Low \\
+Squeeze: day-1 close to day 5 (long) & 43 & +5.3 & [$-$1, +13] & +4.2 & 58 & 0.16 & 0.54 & 0.22 & 1.71 & 0.59 & Low \\
+Fade: short day 5 to day 21 & 43 & +1.7 & [$-$5, +8] & +2.4 & 60 & 0.59 & 0.22 & 0.08 & 0.33 & 0.23 & Low \\
+Fade: short day 5 to day 63 & 43 & +2.5 & [$-$12, +15] & +14.3 & 65 & 0.71 & 0.17 & 0.06 & 0.12 & 0.15 & Low \\
+Short the open to day 63 & 43 & $-$2.1 & [$-$22, +13] & +10.8 & 56 & 0.82 & 0.39 & $-$0.03 & $-$0.07 & $-$0.09 & Low \\
+Lock-up window: short day 118 to day 130 & 42 & $-$0.5 & [$-$5, +4] & +0.5 & 50 & 0.84 & 0.79 & $-$0.03 & $-$0.14 & $-$0.09 & Low \\
+Buy day-1 close, hold 1 year (long) & 41 & +0.2 & [$-$19, +20] & $-$15.9 & 44 & 0.99 & 0.90 & 0.00 & 0.00 & 0.01 & Low \\
+\midrule
+Squeeze vs QQQ: day 1 to 5 & 43 & +4.7 & [$-$2, +12] & +3.7 & 56 & 0.21 & 0.62 & 0.19 & 1.53 & 0.53 & Low \\
+Fade vs QQQ: short day 5 to 21 & 43 & +3.4 & [$-$3, +9] & +4.7 & 65 & 0.26 & 0.045 & 0.17 & 0.68 & 0.47 & Medium \\
+Fade vs QQQ: short day 5 to 63 & 43 & +8.0 & [$-$6, +20] & +16.9 & 70 & 0.23 & 0.027 & 0.19 & 0.39 & 0.51 & Medium \\
+Lock-up vs QQQ: short day 118 to 130 & 42 & $-$1.1 & [$-$6, +4] & $-$1.6 & 45 & 0.69 & 0.61 & $-$0.06 & $-$0.29 & $-$0.17 & Low \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]\footnotesize
+\item \textit{Notes:} Percent per trade; short trades report the short-seller's return. $p_t$: one-sample $t$-test; $p_W$: Wilcoxon signed-rank. SR$_\text{trade}$ = mean/sd per trade; SR$_\text{ann}$ = SR$_\text{trade}\sqrt{252/h}$ for holding period $h$ (an upper bound); SR$_\text{real}$ = SR$_\text{trade}\sqrt{7.5}$, the number of cohort IPOs per year. Confidence: High if the CI excludes zero and $p_W<0.05$; Medium if $\min(p_t,p_W)<0.10$; otherwise Low. Lower block subtracts QQQ.
+\end{tablenotes}
+\end{threeparttable}
+}
+\end{table*}
