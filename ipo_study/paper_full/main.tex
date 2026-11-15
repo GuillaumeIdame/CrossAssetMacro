@@ -35,7 +35,7 @@
 \renewcommand{\headrulewidth}{0.4pt}
 
 \title{\vspace{-1.2em}\textbf{IPO Frenzy and Fade}\\[0.3em]
-\large Demand, Positioning and Cross-Asset Liquidity:\\ Evidence from 43 IPOs and 22 Large Listings, with an Application to Anthropic}
+\large Demand, Positioning, Cross-Asset Liquidity and Prediction Markets:\\ Evidence from 43 IPOs and 22 Large Listings, with an Application to Anthropic}
 \author{CrossAssetMacro Research}
 \date{15 November 2026\\[0.2em]\small Market data to 13 November 2026; positioning data to 3 November 2026}
 
@@ -44,7 +44,7 @@
 \thispagestyle{fancy}
 
 \begin{abstract}
-\noindent This paper asks how a newly listed stock behaves, what drives it, and whether large listings move other markets. We study 43 notable US IPOs priced between September 2020 and June 2026 and 22 listings that raised \$1bn or more. We use daily and hourly prices, deal terms from SEC prospectuses, CFTC futures positioning and margin-debt data, and we correct every family of tests for multiplicity. The IPO follows a stable lifecycle. Demand during bookbuilding sets the first-day pop (rank correlation between the price revision and the pop 0.67, $q<0.001$). The opening print is usually the best price of the day. Over the following three months the stock fades, and the depth of that fade is set by positioning in the wider market at listing: a positioning-stretch index (low volatility, strong momentum, crowded high-beta and crypto exposure) predicts the day-63 return with a rank correlation of $-0.51$ ($q=0.006$), robustly to market adjustment, to controls for demand and size and to excluding 2021. The crowding signal survives within market-value, season, rate, volatility, float and demand buckets. The new stock trades as part of the speculative book, with significant betas to the high-beta spread and to Bitcoin. In contrast, we find little evidence that large listings transfer liquidity out of other markets: no average pre-listing sell-off, no sale of listed peers, no rise in cross-asset correlation, and a soft post-listing week that does not survive correction. The only robust transfer is attention into the new-issue complex. Causality therefore runs mainly from the market state to the IPO, not the other way. We set out 14 tested and 12 open hypotheses, and apply the framework to Anthropic, which lists after crowded trades have unwound, with its crowding composite below that of any listing in our sample.
+\noindent This paper asks how a newly listed stock behaves, what drives it, and whether large listings move other markets. We study 43 notable US IPOs priced between September 2020 and June 2026 and 22 listings that raised \$1bn or more. We use daily and hourly prices, deal terms from SEC prospectuses, CFTC futures positioning and margin-debt data, and we correct every family of tests for multiplicity. The IPO follows a stable lifecycle. Demand during bookbuilding sets the first-day pop (rank correlation between the price revision and the pop 0.67, $q<0.001$). The opening print is usually the best price of the day. Over the following three months the stock fades, and the depth of that fade is set by positioning in the wider market at listing: a positioning-stretch index (low volatility, strong momentum, crowded high-beta and crypto exposure) predicts the day-63 return with a rank correlation of $-0.51$ ($q=0.006$), robustly to market adjustment, to controls for demand and size and to excluding 2021. The crowding signal survives within market-value, season, rate, volatility, float and demand buckets. The new stock trades as part of the speculative book, with significant betas to the high-beta spread and to Bitcoin. In contrast, we find little evidence that large listings transfer liquidity out of other markets: no average pre-listing sell-off, no sale of listed peers, no rise in cross-asset correlation, and a soft post-listing week that does not survive correction. The only robust transfer is attention into the new-issue complex. Causality therefore runs mainly from the market state to the IPO, not the other way. Prediction markets (Polymarket, \$6.9m traded on the closing market cap alone) expect an above-range pricing near \$85--88 against a \$70--78 range, a first close near \$115 and a pop of about 30\%. That is the profile of a hot deal in a non-stretched market, which in our cohort gave back little over three months. We set out 14 tested and 14 open hypotheses, and apply the framework to Anthropic, which lists after crowded trades have unwound, with its crowding composite below that of any listing in our sample.
 \end{abstract}
 
 \noindent\textbf{Keywords:} initial public offerings, positioning, crowding, liquidity, event study, multiple testing.\quad
@@ -58,6 +58,7 @@
 \item \textbf{The signal is crowded trades around the IPO, not trading in the IPO.} Crowding in high beta, Bitcoin, new issues and the IPO's sector predicts the pop and the fade and holds within buckets; the stock's own turnover has no signal.
 \item \textbf{The IPO joins the speculative book.} Betas over days 2--63: 0.85 to QQQ, 0.49 to the high-beta spread ($t=3.8$), 0.13 to Bitcoin ($t=3.4$).
 \item \textbf{Little liquidity transfer.} No average pre-listing drain, no peer selling, no correlation spike; only attention flows into the new-issue complex ($p=0.003$). The SpaceX and Anthropic sell-offs coincide with episodes of very high cross-asset correlation, a common risk factor.
+\item \textbf{Prediction markets expect a hot deal.} Polymarket implies an offer near \$85--88 (72--83\% above the range), a day-1 close near \$116 (\$1.45tn) and a pop of about $+31\%$ (median); 89.5\% on closing above the offer. Expectations fell with the AI and crypto unwind, from \$2.0tn at the S-1 to \$1.45tn.
 \item \textbf{Anthropic is a de-risked listing.} SpaceX listed with PSI at the 90th percentile; Anthropic lists with PSI at the 12th percentile and the lowest crowding in the sample, which historically means a smaller pop and a shallower fade.
 \end{enumerate}}}
 
@@ -281,7 +282,7 @@ Unconditional strategies are weak (Table~\ref{tab:strategies}; Figure~\ref{fig:f
 % ===========================================================================
 \section{Hypotheses: tested and open}
 
-Table~\ref{tab:hyptested} lists the 14 hypotheses tested in this paper with their verdicts. Table~\ref{tab:hypopen} sets out 12 further hypotheses, each with a test design and the data it needs; several become testable once Anthropic has traded.
+Table~\ref{tab:hyptested} lists the 14 hypotheses tested in this paper with their verdicts. Table~\ref{tab:hypopen} sets out 14 further hypotheses, each with a test design and the data it needs; several become testable once Anthropic has traded.
 
 \begin{table}[!htbp]\centering\scriptsize
 \caption{Hypotheses tested in this paper}\label{tab:hyptested}
@@ -325,9 +326,40 @@ A9 & Volatility targeting transmits IPO-week volatility & Exposure changes of vo
 A10 & Crypto is a funding leg for allocations & Exchange inflows and stablecoin redemptions around mega-listings & On-chain flow data \\
 A11 & A listing re-rates its theme & Comparable stocks against the pricing surprise (price vs range) & Comparable set (AI infrastructure, model developers) \\
 A12 & Supply crowding weakens pops & Pop against IPO proceeds raised in the previous 60 days & Full IPO calendar with proceeds \\
+A13 & Prediction markets forecast the pop & Market-implied pop (Section~10) against the realised day-1 return, across all IPOs with markets & Polymarket/Kalshi histories for each IPO \\
+A14 & Prediction-market expectations lead the stock & Changes in market-implied value before listing against the first-week return & Intraday prediction-market and price data \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+% ===========================================================================
+\section{What the market expects: Polymarket and Kalshi}
+
+Prediction markets now price almost every dimension of a mega-IPO, and the Anthropic markets are deep: the day-1 closing market-cap market alone has traded \$6.9m. Kalshi lists Anthropic markets on timing (97--98\% before 20 November), the lead bank (Goldman Sachs, 99\%) and the S\&P sector (Information Technology, 93\%), but none on price or valuation, so the price expectations below come from Polymarket (Table~\ref{tab:pm1}). We read them as a market-implied forecast and check them against the cohort and against SpaceX.
+
+\paragraph{Reconciling the markets.} The markets resolve on different share counts. The IPO valuation uses fully diluted shares at the offer price; the closing market cap uses basic shares (Class A plus Class N) at the first close; the percentage sold divides shares sold by the same basic count. Press reports put the valuation at \$1.33tn at \$74 and \$1.404tn at \$78, so the fully diluted count is about 18.0bn. The percentage-sold market (6--7\% at 70\%) then implies about 12.6bn basic shares. Combining the bracket markets by Monte Carlo (Table~\ref{tab:pm2}; Figure~\ref{fig:pm}) gives:
+\begin{itemize}
+\item \textbf{An above-range pricing.} The valuation market implies an expected offer of \$85 and the amount-raised market \$88, against a \$70--78 range; the probability of pricing above \$78 is 72--83\%, and of pricing below \$70 only 3\%. In the language of Section~4.4, the market expects a hot deal.
+\item \textbf{A first close around \$115.} The expected day-1 closing market cap is \$1.45tn (median \$1.41tn; 10th--90th percentiles \$1.06--1.87tn), equivalent to a closing share price of about \$116 (median \$112; \$81--154).
+\item \textbf{A pop of about 30\%.} The implied first-day return has a mean of 35\% and a median of 31\%, with an 82\% chance of closing above the offer. The direct market on that question trades at 89.5\%, and the open-above-offer market at 94\%. The two estimates differ mainly because the Monte Carlo treats the markets as independent, which widens the distribution.
+\end{itemize}
+
+\paragraph{How expectations moved.} When the S-1 became public on 26 October the expected closing market cap was \$2.0tn and the expected valuation \$1.70tn (Table~\ref{tab:pm3}). Both fell sharply into the range announcement on 10 November (\$1.45tn and \$1.41tn). Since then the valuation expectation has recovered to \$1.51tn as the book has built, a demand signal, while the closing-cap expectation has stayed near \$1.46tn. Over 26 October to 13 November the expected closing market cap fell 31\% in log terms, alongside Nvidia ($-28\%$), Bitcoin ($-16\%$) and the high-beta spread ($-7\%$). Day-to-day correlations with these assets are positive but small and not significant (21 trading days, $\rho=0.1$--$0.2$). The market's expectations for the IPO were marked down with the crowded trades, consistent with the direction of causality in Section~7: from the market state to the IPO.
+
+\paragraph{Calibration on SpaceX.} Polymarket did not list a day-1 market for SpaceX, but it did list its market cap at the end of the IPO month (Table~\ref{tab:pm4}). After pricing and before trading, the market put 41\% on the \$2.0--2.5tn bracket, its modal bracket, which is where SpaceX finished June. Its expected value of \$2.21tn was about 5\% above SpaceX's day-1 closing market cap of \$2.11tn. One event is not a calibration study, but the market was well centred.
+
+\input{tables/v4/pm1_markets}
+\input{tables/v4/pm2_implied}
+\begin{figure}[!htbp]\centering
+\includegraphics[width=\linewidth]{figures/v4/f_pm.pdf}
+\caption{(a) Polymarket distribution of Anthropic's day-1 closing market cap. (b) Expected closing market cap and IPO valuation since mid-October. (c) Implied first-day return (median, 25--75\% and 10--90\% ranges) against cohort medians.}\label{fig:pm}
+\end{figure}
+\input{tables/v4/pm3_history}
+\input{tables/v4/pm4_spacex}
+
+\paragraph{Combining market expectations with the cohort.} The market's implied pop (median $+31\%$) sits close to the cohort's median for above-range deals ($+32\%$) and well above its median for low-PSI listings ($+9\%$). In effect the market is pricing Anthropic as a hot deal in a non-stretched market, the cell of Table~\ref{tab:2x2} that popped $+32\%$ and gave back only 5\% by day 63. Table~\ref{tab:pm5} turns these medians into illustrative price paths. From an expected offer of about \$88 and a market-implied close of \$116, the non-stretched path leads to roughly \$110 at day 63, still about 25\% above the offer. The stretched-market path, which would require crowding to rebuild, leads to about \$84, below the offer.
+
+\input{tables/v4/pm5_paths}
 
 % ===========================================================================
 \section{Application: SpaceX and Anthropic}
@@ -347,7 +379,7 @@ A12 & Supply crowding weakens pops & Pop against IPO proceeds raised in the prev
 \caption{(a) High beta vs low volatility and momentum vs the market, 63-day relative returns. (b) FINRA margin debt.}\label{fig:unwind}
 \end{figure}
 
-\paragraph{Outlook.} Anthropic is a de-risked listing in a still-levered market. The cohort's low-PSI, low-crowding listings popped less and did not fade on average. Demand remains the main driver of the pop: pricing above the \$70--78 range would point to a large first day. Positioning points to a shallower fade than SpaceX's, unless crowding rebuilds quickly into and after the listing. Two risks lie outside the IPO itself: Anthropic is far larger than any low-PSI listing in the sample, and the remaining leverage could unwind further. Table~\ref{tab:tree} gives the conditional outlook by pricing and Table~\ref{tab:cal} the calendar.
+\paragraph{Outlook.} Anthropic is a de-risked listing in a still-levered market. The cohort's low-PSI, low-crowding listings popped less and did not fade on average. Demand remains the main driver of the pop: pricing above the \$70--78 range would point to a large first day. Positioning points to a shallower fade than SpaceX's, unless crowding rebuilds quickly into and after the listing. Two risks lie outside the IPO itself: Anthropic is far larger than any low-PSI listing in the sample, and the remaining leverage could unwind further. Prediction markets point the same way on the pop: they expect an above-range pricing and a first close about 30\% above the offer (Section~10), the profile of the cohort's non-stretched hot deals, which gave back about 5\% by day 63. Table~\ref{tab:tree} gives the conditional outlook by pricing and Table~\ref{tab:cal} the calendar.
 
 \input{tables/v1/t15_tree}
 \input{tables/v1/t16_cal}
@@ -361,10 +393,11 @@ A12 & Supply crowding weakens pops & Pop against IPO proceeds raised in the prev
 \item \textbf{In-sample strategies.} Splits use full-sample breakpoints; borrow costs and options timing are ignored.
 \item \textbf{Confounding.} Eleven to 22 events cannot separate IPO effects from contemporaneous macro news.
 \item \textbf{Anthropic terms.} The range, share count and lock-up come from secondary summaries of the S-1/A and should be verified against the filing.
+\item \textbf{Prediction markets.} Prices are mid quotes on 15 November; bracket markets carry a small overround, are treated as independent in the Monte Carlo, and the share counts that link them (18.0bn fully diluted, 12.6bn basic) are inferred. Several Polymarket markets are too thin to use. The SpaceX calibration is a single event.
 \end{itemize}
 
 \section{Conclusion}
-A newly listed stock follows a recognisable path: demand sets its pop, the opening print is usually the day's high, and the market's positioning at listing sets how far it fades. The stock trades as part of the speculative book, so crowded trades around it, not frenzied trading in it, carry the signal, and that signal holds across size, season, rate, volatility, float and demand buckets. Large listings do not systematically pull liquidity from other markets; attention moves to new issues, while broad sell-offs around mega-listings coincide with common-factor risk-off episodes. SpaceX listed at the top of the positioning cycle and behaved accordingly. Anthropic lists after the crowded trades have unwound, which points to a smaller pop and a shallower fade, while leverage in the wider market remains a risk of its own.
+A newly listed stock follows a recognisable path: demand sets its pop, the opening print is usually the day's high, and the market's positioning at listing sets how far it fades. The stock trades as part of the speculative book, so crowded trades around it, not frenzied trading in it, carry the signal, and that signal holds across size, season, rate, volatility, float and demand buckets. Large listings do not systematically pull liquidity from other markets; attention moves to new issues, while broad sell-offs around mega-listings coincide with common-factor risk-off episodes. SpaceX listed at the top of the positioning cycle and behaved accordingly. Anthropic lists after the crowded trades have unwound. Prediction markets expect a hot deal and a pop of about 30\%; the cohort says that such deals, outside stretched markets, gave back little over the following three months. Leverage in the wider market remains a risk of its own.
 
 \vspace{1em}
 \noindent{\footnotesize\textit{Disclaimer.} This paper is for research and discussion. It is not investment advice or a recommendation to buy or sell any security. Figures for Anthropic are based on public filings and press reports as of 15 November 2026.}
