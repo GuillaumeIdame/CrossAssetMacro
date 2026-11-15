@@ -1,0 +1,145 @@
+<div class="wrap">
+<header class="sec" id="top">
+  <div class="eyebrow">Post-COVID US IPOs and cross-asset event study · data to 13 Nov 2026 · Anthropic (ANT) prices 18 Nov, trades 19 Nov</div>
+  <h1>What 43 IPOs and 11 large listings say about trading Anthropic</h1>
+  <p class="lede">Close-to-close and intraday evidence on the IPO stock itself and on the assets around it, with confidence intervals, significance tests and implied Sharpe ratios. Most patterns people quote about IPOs are real on average and weak statistically; this page separates the two.</p>
+  <nav aria-label="Sections"><a href="#conclusions">Conclusions</a><a href="#trades">Trade map</a><a href="#fade">Path and confidence</a><a href="#deal">Float and demand</a><a href="#intraday">Intraday</a><a href="#sectors">Sectors</a><a href="#seasons">Seasonality</a><a href="#regimes">Macro regime</a><a href="#xasset">Cross-asset</a><a href="#anthropic">Anthropic</a><a href="#data">Method</a></nav>
+  <div class="tiles" id="tiles"></div>
+</header>
+
+<section class="sec" id="conclusions">
+  <h2>Conclusions</h2>
+  <p class="lede" style="color:var(--ink)"><b>One relationship survives a multiple-testing correction: demand predicts the pop. Getting an allocation also pays, reliably.</b> Everything else on this page (sector, season, rates, float, cross-asset liquidity) is a tilt with confidence intervals that include zero. For Anthropic that means a conditional plan, sized for low confidence.</p>
+  <div class="panel"><ul class="pts concl" id="concl"></ul></div>
+</section>
+
+<section class="sec" id="trades">
+  <h2>Trade map: implied Sharpe and confidence</h2>
+  <p class="claim">Each strategy was run on every IPO in the cohort (or every large listing, for cross-asset trades). Dots show the <b>mean return per trade</b> with its <b>95% bootstrap confidence interval</b>. Per-trade Sharpe is mean divided by standard deviation. The "annualised-equivalent" figure assumes the trade could be repeated back to back and overstates what anyone could earn; the realistic figure scales by how often the setup actually occurs (7.5 IPOs or about 1.8 large listings a year) with cash in between.</p>
+  <div class="panel"><h3>The IPO stock: mean return per trade with 95% CI</h3><div class="sub">Short trades are shown as the short-seller's return (positive = the stock fell). "vs QQQ" = IPO return minus QQQ over the same days. Colour shows confidence: High = CI excludes zero and Wilcoxon p &lt; 0.05; Medium = p &lt; 0.10; Low = otherwise.</div>
+    <div class="legend" id="lg-conf"></div><div class="chart" id="ch-forest"></div></div>
+  <div class="panel tbl"><h3>Strategy statistics</h3><div class="sub">p(t) = t-test on the mean; p(W) = Wilcoxon signed-rank on the median. Hit = share of trades that made money.</div><div id="tb-strat"></div></div>
+  <div class="panel tbl"><h3>The same trades on the subsets closest to Anthropic</h3><div class="sub">Anthropic is a large, low-float (about 4.5%) software and AI listing that will price into a rising-yield market; whether it prices above its $70 to $78 range is unknown until 18 Nov.</div><div id="tb-sub"></div></div>
+  <div class="panel"><h3>Cross-asset trades around large listings: mean return per event with 95% CI</h3><div class="sub">11 large US listings, 2020 to 2026. p = permutation test against 10,000 random-date draws. None of these survive a Benjamini-Hochberg correction across the 56 cross-asset tests.</div><div class="chart" id="ch-forest-x"></div></div>
+  <div class="panel tbl"><h3>Anthropic event calendar</h3><div class="sub">Trading days counted from the first close (day 1 = 19 Nov), NYSE holidays applied. SpaceX's 8 Dec lock-up cliff lands on Anthropic's day 13.</div><div id="tb-cal"></div></div>
+</section>
+
+<section class="sec" id="fade">
+  <h2>The path from the first close, with its uncertainty</h2>
+  <p class="claim">The median IPO is roughly flat for a month and then drifts lower; its 95% band excludes zero only between about months four and seven. <b>Against QQQ the shortfall is larger and more reliable</b>: the median IPO trails QQQ by 14% at day 63, 34% at day 126 (95% CI −46% to −15%) and 39% at day 252 (CI −48% to −10%). The only single day with a significant average move is day 6 (−2.6%, p = 0.03), which does not survive correction for testing nine days.</p>
+  <div class="panel"><h3>Median price path from the day-1 close, all 43 IPOs</h3><div class="sub">Index, day-1 close = 100. Shaded: 95% bootstrap CI of the median. Shown while at least 8 IPOs remain. Dotted line: day 126, about the 180-day lock-up.</div><div class="legend" id="lg-band"></div><div class="chart" id="ch-band"></div></div>
+  <div class="stack">
+    <div class="panel"><h3>Day-by-day close-to-close return, days 2 to 10</h3><div class="sub">Mean daily return with 95% CI across 43 IPOs.</div><div class="chart" id="ch-days"></div></div>
+    <div class="panel tbl"><h3>By market cap at offer</h3><div class="sub">Median return from the day-1 close. Hover a cell for the 95% CI. Kruskal-Wallis q-values below test whether the buckets differ at all.</div><div id="tb-bucket"></div><p class="cap" id="kw-bucket"></p></div>
+  </div>
+</section>
+
+<section class="sec" id="deal">
+  <h2>Float and demand: the hot-deal effect is the one that holds up</h2>
+  <p class="claim">Oversubscription multiples are only published for a couple of deals (Reddit 5x, Gemini 20x), so this uses the standard proxy: where the final price landed against the <b>first filed range</b>, from the 424B4 prospectuses. Deals priced above their initial range popped <b>+31%</b> against +4% for the rest, and the size of the price revision predicts the pop strongly (rank correlation 0.67, q &lt; 0.001). The same hot deals then gave back the most: <b>−20% by day 63</b> (95% CI −28% to −2%) against +14%. The share of the company floated shows no reliable relationship with anything (all p &gt; 0.2).</p>
+  <div class="grid2">
+    <div class="panel"><h3>Price revision against the day-1 pop</h3><div class="sub">x = offer vs the midpoint of the first filed range; y = day-1 close vs offer. Colour = return from day-1 close to day 63.</div>
+      <div class="legend"><span><i class="sq" style="background:var(--pos)"></i>Up by day 63</span><span><i class="sq" style="background:var(--neg)"></i>Down by day 63</span></div><div class="chart" id="ch-rev"></div></div>
+    <div class="panel"><h3>Median by deal structure, with 95% CI</h3><div class="sub">Returns from the day-1 close except the pop. Float = deal size / market cap at offer.</div><div class="chart" id="ch-deal"></div></div>
+  </div>
+  <div class="panel tbl"><h3>Deal-structure buckets</h3><div id="tb-deal"></div><p class="cap" id="kw-deal"></p></div>
+</section>
+
+<section class="sec" id="intraday">
+  <h2>Intraday: the open is usually the best price a seller gets</h2>
+  <p class="claim">Daily open, high and low for all 43 debuts: the median stock opens <b>+23%</b> over its offer, closes <b>+19%</b>, and ends the day <b>7.5% below its high</b>; 60% close under their open. Buying the open and holding to the close lost 1.1% on average (95% CI −4.3% to +2.2%, so not significant on its own). Hourly bars for the 14 debuts since 2025 with a complete first session show the mechanics: the first print comes late (median about 12:30 ET), volume is heaviest in the hour after it, and the high of the day came in that first hour for 10 of the 14. Day 2's first hourly bar was down for 79% of them.</p>
+  <div class="grid2">
+    <div class="panel"><h3>Opening pop against what happened next on day 1</h3><div class="sub">x = opening print vs offer, y = close vs open. Rank correlation +0.07 (p = 0.66): the size of the opening pop says nothing about the rest of the day.</div>
+      <div class="legend"><span><i class="sq" style="background:var(--pos)"></i>Closed above its open</span><span><i class="sq" style="background:var(--neg)"></i>Closed below its open</span></div><div class="chart" id="ch-open"></div></div>
+    <div class="panel"><h3>SpaceX, hourly, first five sessions</h3><div class="sub">Hourly close as a % above the $135 offer; dotted lines mark sessions. Day 1 opened at 11:30 ET and closed +19%; the peak came on day 3 and a −9% reversal on day 4 started the fade.</div><div class="chart" id="ch-spx"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Share of the day's volume, by hourly bar</h3><div class="sub">Median across 14 IPOs, bar start time in ET. Day-1 bars with fewer than 4 IPOs trading are omitted.</div><div class="legend" id="lg-vol"></div><div class="chart" id="ch-vol"></div></div>
+    <div class="panel"><h3>Median return of each hourly bar</h3><div class="sub">Day 1 is negative in most bars after the open; on day 2 only the first bar is clearly negative.</div><div class="legend" id="lg-bar"></div><div class="chart" id="ch-bar"></div></div>
+  </div>
+  <div class="panel tbl"><h3>Debut-day shape and what the open costs you, by opening pop</h3><div class="sub">Last two columns are measured from the opening price, not the close.</div><div id="tb-intra"></div></div>
+</section>
+
+<section class="sec" id="sectors">
+  <h2>Sectors: big differences in the medians, none statistically</h2>
+  <p class="claim">Consumer internet faded first (−25% by day 63), fintech and crypto faded hardest (−41% by day 126), and software, AI and semis held up best (−3% by day 63). With 4 to 12 names per sector the confidence intervals overlap heavily, and a Kruskal-Wallis test cannot tell the sectors apart (q ≥ 0.57).</p>
+  <div class="panel tbl"><h3>Median return from the day-1 close, by sector</h3><div class="sub">Hover a cell for its 95% CI and the names.</div><div id="tb-sector"></div><p class="cap" id="kw-sector"></p></div>
+  <div class="panel"><h3>Path from day-1 close, sector median against all IPOs</h3>
+    <div class="legend"><span><i style="border-color:var(--s1)"></i>Sector median</span><span><i style="border-color:var(--muted)"></i>All 43 IPOs, median</span></div><div class="mini" id="mini"></div></div>
+</section>
+
+<section class="sec" id="seasons">
+  <h2>Seasonality: a tilt toward Q4, and a supportive post-midterm tape</h2>
+  <p class="claim">Q4 and Q1 listings had the largest pops (+39% and +34%) and Q3 listings faded worst by month six (−33%), but quarter makes no significant difference (q ≥ 0.76). The market-level evidence is stronger because it has 76 years behind it: November and December are two of the three best S&amp;P months since 1950, and after a midterm election the S&amp;P rose in <b>18 of 19</b> three-month windows from 15 November.</p>
+  <div class="grid2">
+    <div class="panel"><h3>IPO outcome by listing quarter</h3><div class="sub">Median, from the day-1 close, except the pop.</div><div class="legend" id="lg-q"></div><div class="chart" id="ch-q"></div></div>
+    <div class="panel"><h3>S&amp;P 500 average return by calendar month, 1950 to 2025</h3><div class="sub">Average monthly price return in %. Highlighted: November and December.</div><div class="chart" id="ch-month"></div></div>
+  </div>
+  <div class="panel tbl"><h3>S&amp;P 500 from 15 November: midterm years against all others</h3><div class="sub">Price return and share of years positive.</div><div id="tb-nov"></div></div>
+</section>
+
+<section class="sec" id="regimes">
+  <h2>Macro regime: rising yields lean negative, without significance</h2>
+  <p class="claim">IPOs that listed after a 3-month rise of more than 30bp in the 10-year yield had a median day-63 return of −18% against +2% with flat yields, but the 95% CI runs from −29% to +2% and the regime test is not significant (q ≥ 0.57). High volatility (VIX above 22) bought the biggest pops (+56%). Anthropic lists with the 10-year at 5.15%, a level no IPO in the cohort saw.</p>
+  <div class="panel"><h3>Where Anthropic lists, 13 Nov 2026</h3><div class="chips" id="chips"></div></div>
+  <div class="panel tbl"><h3>Median return from the day-1 close, by regime at listing</h3><div class="sub">10Y: 3-month change in yield (rising above +30bp). Fed: 6-month change in fed funds (±50bp). VIX: level.</div><div id="tb-regime"></div><p class="cap" id="kw-regime"></p></div>
+  <div class="panel"><h3>Every IPO's day-63 return against listing date, over the rates backdrop</h3><div class="sub">Return from the day-1 close to day 63; axis clipped at ±100%.</div>
+    <div class="legend"><span><i class="sq" style="background:var(--pos)"></i>Up at day 63</span><span><i class="sq" style="background:var(--neg)"></i>Down at day 63</span></div><div class="chart" id="ch-scatter"></div>
+    <div class="legend" style="margin-top:12px"><span><i style="border-color:var(--s1)"></i>US 10Y yield, %</span><span><i style="border-color:var(--s2)"></i>Fed funds, %</span></div><div class="chart" id="ch-rates"></div></div>
+</section>
+
+<section class="sec" id="xasset">
+  <h2>Cross-asset: no liquidity drain before large IPOs on average, a soft week after</h2>
+  <p class="claim">Across 11 large listings (Snowflake to SK hynix), the ten sessions <b>before</b> listing look ordinary for every asset tested: Bitcoin was up 3.6% on average (p = 0.67) and gold was flat. The Bitcoin, gold and MSTR sell-off before SpaceX, and again before Anthropic, is the exception, not the pattern. The week <b>after</b> listing is where something shows: S&amp;P −1.2% (p = 0.03), small caps −1.8% (p = 0.03), high yield −0.5% (p = 0.04), VIX +2.6 points (p = 0.02), followed by a rebound over days 6 to 20 (S&amp;P +3.1%, p = 0.05). Two cautions: none of it survives correction for 56 tests (q &gt; 0.3), and the averages lean heavily on CoreWeave, which listed days before the April 2025 tariff crash; the medians are close to zero.</p>
+  <div class="panel tbl"><h3>Average move around 11 large listings, against a random-date baseline</h3><div class="sub">Cell = average across events (% or points). Colour = difference from the average of all same-length windows since 2020. Hover for p, q, median, leave-one-out range and SpaceX. Bold = p &lt; 0.05.</div><div id="tb-xa"></div></div>
+  <div class="panel"><h3>Event-time paths, T−10 to T+20</h3><div class="sub">Average cumulative move from the close 11 sessions before listing. Shaded: 90% bootstrap band across events. Black: SpaceX alone.</div>
+    <div class="legend"><span><i style="border-color:var(--s1)"></i>Average of 11 listings</span><span><i style="border-color:var(--ink)"></i>SpaceX</span></div><div class="mini" id="mini-x"></div></div>
+  <div class="stack">
+    <div class="panel tbl"><h3>The hour an IPO opens: abnormal return of other assets</h3><div class="sub">Return in the IPO's first trading hour minus the same clock hour's average over the prior 20 sessions, in basis points. Large = deals of $1.4B or more (CoreWeave, Medline, SpaceX, Venture Global).</div><div id="tb-hour"></div>
+      <p class="cap">With four large deals, all four saw QQQ, SPY and small caps fall in the opening hour (t ≈ −2.2 to −3.2). Suggestive of index selling to fund allocations, but four observations.</p></div>
+    <div class="panel"><h3>SpaceX listing week, hourly: QQQ, Bitcoin, gold, ARKK</h3><div class="sub">Each indexed to 100 at the first bar shown (two sessions before listing). Dotted line: listing day.</div><div class="legend" id="lg-sh"></div><div class="chart" id="ch-sh"></div></div>
+  </div>
+  <div class="stack">
+    <div class="panel"><h3>How unusual is the Anthropic run-up?</h3><div class="sub">Each asset's 14-session move into 13 Nov, ranked against every 14-session window since mid-2020 (50 = typical). Semis, software and Bitcoin are near their 5th to 8th percentile: unusual, not extreme (about −1.2 to −1.6 standard deviations).</div><div class="chart" id="ch-runup"></div></div>
+    <div class="panel"><h3>Is the IPO class getting colder?</h3><div class="sub">Renaissance Capital US IPO class, average % return.</div><div class="legend" id="lg-r"></div><div class="chart" id="ch-r"></div>
+      <p class="cap">Fed net liquidity (balance sheet − Treasury cash − reverse repo) rose about $43B into Anthropic, so the plumbing is not draining. Mega-IPO supply: SpaceX $75B, SK hynix $26.5B and Anthropic about $58B to $64B in five months.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="anthropic">
+  <h2>Anthropic: a conditional plan</h2>
+  <div class="panel tbl"><h3>What the pricing on 18 Nov tells you</h3><div class="sub">Cohort medians for the two demand groups; Anthropic's range is $70 to $78.</div><div id="tb-tree"></div></div>
+  <div class="two">
+    <div class="panel"><h3>Tailwinds</h3><ul class="pts">
+      <li><b>Software and AI:</b> the most resilient sector by median (day 63 −3%), though not significantly.</li>
+      <li><b>Q4 and post-midterm:</b> S&amp;P up in 18 of 19 post-midterm windows from 15 Nov.</li>
+      <li><b>Valuation:</b> about 16x to 17x run-rate revenue against about 39x forward sales for SpaceX.</li>
+      <li><b>Allocation:</b> for anyone allocated at the offer, flipping on day 1 has been the one robust edge (+37% mean, 79% hit rate).</li></ul></div>
+    <div class="panel"><h3>Headwinds</h3><ul class="pts">
+      <li><b>Hot-deal reversal:</b> pricing above $78 puts it in the group that fell 20% by day 63.</li>
+      <li><b>Mega size:</b> every mega-cap in the sample reverted within 21 days (n = 3).</li>
+      <li><b>Rates:</b> 10Y at 5.15%, +46bp in three months.</li>
+      <li><b>Supply calendar:</b> SpaceX's 8 Dec unlock lands on Anthropic's day 13; Anthropic's own early-release windows start from day 1.</li></ul></div>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="eyebrow">Base · SpaceX-lite</div><div class="odds">~50%</div><p class="claim">Pop of +15% to +35%, peak on days 2 to 5, down 10% to 20% from the day-1 close by day 21, near the offer by day 63.</p></div>
+    <div class="card"><div class="eyebrow">Bull · scarcity holds</div><div class="odds">~20%</div><p class="claim">Strong days 1 to 5 that persist; well above the offer through month three. Needs yields to stop rising.</p></div>
+    <div class="card"><div class="eyebrow">Bear · hot deal reverts</div><div class="odds">~30%</div><p class="claim">Prices above range, pops, then fades below the offer within about three weeks; −20% to −30% by day 63.</p></div>
+  </div>
+  <p class="cap">Scenario odds are my judgment informed by the statistics above, not a model output. Anthropic is a single trade: even the best historical setup here has a per-trade Sharpe around 0.4, which means a wide range of outcomes on any one name. Not investment advice.</p>
+</section>
+
+<section class="sec" id="data">
+  <h2>Data and method</h2>
+  <details id="det"><summary>Table view: all 43 IPOs</summary><div class="tbl" id="tb-all" style="margin-top:10px"></div></details>
+  <div class="fine">
+    <p><b>Universe.</b> 43 notable US IPOs, Sep 2020 to Jun 2026; hand-picked, so it leans to large, well-known deals (selection bias), and has no 2022 listings. Direct listings and the SK hynix ADR are excluded from IPO-stock statistics; SK hynix is included as a cross-asset event.</p>
+    <p><b>Deal terms</b> (offer, shares, proceeds, first and final ranges, upsizing) from SEC 424B4 prospectuses and pricing press releases. Float = proceeds / market cap at offer (shares outstanding × offer where disclosed). Oversubscription multiples are rarely published and are not used.</p>
+    <p><b>Returns.</b> Yahoo Finance daily and 60-minute bars. Day 1 = first close. Hourly analysis keeps only IPOs whose hourly feed includes the debut session (eToro and SK hynix were dropped).</p>
+    <p><b>Statistics.</b> 10,000-draw bootstrap percentile intervals; t-test and Wilcoxon signed-rank for single strategies; Kruskal-Wallis across buckets; Spearman rank correlation; permutation tests (10,000 random-date draws) for cross-asset windows. Benjamini-Hochberg q-values across each family of tests (28 bucket tests, 11 correlations, 56 cross-asset windows). Returns are fat-tailed and IPOs cluster in hot windows, so even the reported p-values are optimistic.</p>
+    <p><b>Sharpe.</b> Per-trade = mean / standard deviation. Annualised-equivalent = per-trade × √(252 / holding days), an upper bound that assumes back-to-back repetition. Realistic = per-trade × √(setups per year): 7.5 IPOs or 1.8 large listings.</p>
+    <p><b>Anthropic facts</b> (range, 825M shares, dates, lock-up) come from secondary summaries of the S-1/A; verify against the filing. Macro: FRED and Yahoo. Q3 IPO class: Renaissance Capital. Not investment advice.</p>
+  </div>
+</section>
+</div>
+<div id="tt" role="tooltip" hidden></div>

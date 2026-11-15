@@ -34,12 +34,12 @@ COHORT = [
     ("HOOD", "Robinhood", 38, 32, FN), ("AFRM", "Affirm", 49, 12, FN), ("CRCL", "Circle", 31, 6.9, FN),
     ("CHYM", "Chime", 27, 11.6, FN), ("KLAR", "Klarna", 40, 15.1, FN), ("ETOR", "eToro", 52, 4.2, FN),
     ("FIGR", "Figure", 25, 5.3, FN), ("GEMI", "Gemini", 28, 3.3, FN), ("OSCR", "Oscar Health", 39, 8, FN),
-    ("MDLN", "Medline", 29, 40, HC), ("TEM", "Tempus AI", 37, 6.1, HC), ("WAY", "Waystar", 21, 3.7, HC),
+    ("MDLN", "Medline", 29, 40, HC), ("TEM", "Tempus AI", 37, 6.1, HC), ("WAY", "Waystar", 21.5, 3.7, HC),
     ("HNGE", "Hinge Health", 32, 2.6, HC),
     ("CAVA", "Cava", 22, 2.5, CS), ("BIRK", "Birkenstock", 46, 8.6, CS), ("VIK", "Viking", 24, 10.4, CS),
     ("IBTA", "Ibotta", 88, 2.7, CS),
-    ("RIVN", "Rivian", 78, 66, IE), ("LINE", "Lineage", 82, 18, IE), ("SARO", "StandardAero", 24, 8, IE),
-    ("NXT", "Nextracker", 24, 3.5, IE), ("VG", "Venture Global", 25, 20, IE), ("SPCX", "SpaceX", 135, 1770, IE),
+    ("RIVN", "Rivian", 78, 66, IE), ("LINE", "Lineage", 78, 19.6, IE), ("SARO", "StandardAero", 24, 8, IE),
+    ("NXT", "Nextracker", 24, 3.5, IE), ("VG", "Venture Global", 25, 60.5, IE), ("SPCX", "SpaceX", 135, 1770, IE),
 ]
 HZ = [1, 3, 5, 10, 21, 63, 126, 252]
 
@@ -66,7 +66,10 @@ def main():
     ma200 = spx.rolling(200).mean()
 
     rows, paths = [], {}
+    terms = pd.read_csv(DATA / "deal_terms.csv").set_index("ticker")  # verified deal terms (424B4 / pricing releases)
     for tk, nm, off, cap, sec in COHORT:
+        if tk in terms.index:
+            off, cap = float(terms.at[tk, "offer"]), float(terms.at[tk, "cap_b"])
         px = close(tk)
         d0 = px.index[0]
         prev = d0 - pd.Timedelta(days=1)

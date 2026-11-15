@@ -63,12 +63,16 @@ def main():
     # ---------- hourly -------------
     hp, vol_rows, high_hr, low_hr, first_bar = {1: [], 2: [], 3: []}, {1: [], 2: [], 3: []}, [], [], []
     fh = []
+    used = []
     sp_path = None
     hour_tk = [c for c in COHORT if c[0] not in ("SKHY",) and pd.Timestamp(enr.loc[c[0], "ipo_date"]) >= pd.Timestamp("2025-01-01")]
     for tk, nm, off, *_ in hour_tk:
         h = hist(tk, period="730d", interval="60m")
         h = h[h.index >= pd.Timestamp(enr.loc[tk, "ipo_date"]).tz_localize("America/New_York")]
         h = h[h.Volume > 0]
+        if h.empty or str(h.index[0].date()) != enr.loc[tk, "ipo_date"]:
+            continue  # hourly feed is missing the debut session (e.g. ETOR): skip rather than mislabel day 2 as day 1
+        used.append(tk)
         days = sorted(set(h.index.date))[:3]
         for k, day in enumerate(days, start=1):
             g = h[(h.index.date == day) & (h.Volume > 0)]  # drop placeholder bars before a delayed open
@@ -89,7 +93,7 @@ def main():
         a = pd.DataFrame(hp[k]); v = pd.DataFrame(vol_rows[k])
         prof[k] = [dict(hr=int(hr), bar_ret=float(g.bar_ret.median()), mean_ret=float(g.bar_ret.mean()), cum=float(g.cum.median()), n=int(len(g)),
                         vol=float(v[v.hr == hr].vs.median()), pos=float((g.bar_ret > 0).mean())) for hr, g in a.groupby("hr")]
-    out["hourly"] = dict(n_ipos=len(hour_tk), names=[c[0] for c in hour_tk], profile=prof, first_bar=first_bar,
+    out["hourly"] = dict(n_ipos=len(used), names=used, profile=prof, first_bar=first_bar,
                          high_hr=pd.Series(high_hr).value_counts().sort_index().to_dict(), low_hr=pd.Series(low_hr).value_counts().sort_index().to_dict(),
                          spacex=sp_path, first_hour=dict(n=len(fh), hi_first=sum(x['hi_first'] for x in fh), lo_first=sum(x['lo_first'] for x in fh), hi_first2=sum(x['hi_first2'] for x in fh), lo_first2=sum(x['lo_first2'] for x in fh)))
     json.dump(out, open(HERE / "data" / "intraday.json", "w"), default=float)
