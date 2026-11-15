@@ -35,7 +35,7 @@ p{margin:0}
 nav{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px}
 nav a{color:var(--ink2);text-decoration:none;border-bottom:1px solid var(--axis)}
 nav a:hover{color:var(--ink)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px}
 .tile{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;min-width:0}
 .tile .l{font-size:12px;color:var(--ink2)}
 .tile .v{font-size:26px;font-weight:650;letter-spacing:-.02em}
@@ -82,6 +82,7 @@ summary{cursor:pointer;font-weight:600}
 .tt-t{color:var(--ink2);margin-bottom:4px;font-size:12px}
 .tt-r{display:flex;align-items:center;gap:8px}.tt-r b{font-weight:650;font-variant-numeric:tabular-nums}.tt-r span{color:var(--ink2)}
 .tt-r i{width:12px;border-top:2px solid;display:inline-block}
+.concl li{color:var(--ink2)} .concl{gap:9px}
 .cap{font-size:12px;color:var(--muted);margin-top:6px}
 @media print{
   body{padding-block:0;background:#fff} nav{display:none} #tt{display:none} .wrap{gap:34px}
@@ -96,9 +97,24 @@ summary{cursor:pointer;font-weight:600}
   <div class="eyebrow">Post-COVID US IPOs · data to 13 Nov 2026 · Anthropic (ANT) prices 18 Nov</div>
   <h1>What the first days, weeks and months of 43 big IPOs say about ANT</h1>
   <p class="lede">The frenzy is real but short. The reversion is slow, uneven, and depends on the sector, the quarter and the rate regime the company lists into. This page buckets the cohort by market cap, sector, listing season and macro regime, then reads Anthropic against each cut.</p>
-  <nav aria-label="Sections"><a href="#fade">Frenzy then fade</a><a href="#sectors">Sectors</a><a href="#seasons">Seasonality</a><a href="#regimes">Macro regime</a><a href="#liquidity">Liquidity</a><a href="#anthropic">Anthropic read</a><a href="#data">Data and method</a></nav>
+  <nav aria-label="Sections"><a href="#conclusions">Conclusions</a><a href="#fade">Frenzy then fade</a><a href="#intraday">Intraday</a><a href="#sectors">Sectors</a><a href="#seasons">Seasonality</a><a href="#regimes">Macro regime</a><a href="#liquidity">Liquidity</a><a href="#anthropic">Anthropic read</a><a href="#data">Data and method</a></nav>
   <div class="tiles" id="tiles"></div>
 </header>
+
+<section class="sec" id="conclusions">
+  <h2>Conclusions</h2>
+  <p class="lede" style="color:var(--ink)"><b>Expect a squeeze in days 1 to 5 and fade risk from day 5 to day 63.</b> The rate backdrop is the thing most likely to break the squeeze, and chasing the open has historically been the worst entry.</p>
+  <div class="panel"><ul class="pts concl">
+    <li><b>Timing.</b> From the day-1 close the median IPO is +4% at day 5, −1.5% at day 21, −7% at day 63 and −23% at day 126. 58% trade below their offer price at some point in the first 63 days.</li>
+    <li><b>Intraday.</b> The open is usually the high-water mark. The median opening print is +23% over the offer and the median close +19%; 60% of debuts close below their open, and the typical close sits 7.5% under the day's high. Buying the open lost a median 11% by day 63. IPOs in the hourly sample open late (median first print about 12:30 ET), and the debut-day high came in the first trading hour for 10 of 15 hourly-data IPOs.</li>
+    <li><b>Market cap.</b> Every mega-cap in the sample reverted within 21 days (SpaceX −15%, Facebook −18%, Alibaba −6%; n = 3). Mid caps ($10B to $30B) were worst, −47% by month twelve.</li>
+    <li><b>Sector.</b> Consumer internet fades first (−25% by day 63), fintech and crypto fade hardest (−41% by day 126), software, AI and semis hold up best (−3% by day 63). Anthropic sits in the last group.</li>
+    <li><b>Season.</b> Q4 and Q1 listings pop most (+39%, +34%); Q3 listings fade worst (−33% by month six). November and December are top-three S&amp;P months, and the S&amp;P rose in 18 of 19 post-midterm three-month windows from 15 November.</li>
+    <li><b>Macro regime.</b> After a 3-month rise in the 10-year yield above 30bp the median IPO was −18% at day 63, against +2% with flat yields. Anthropic lists with the 10-year at 5.15% (+46bp), a level the cohort has never seen.</li>
+    <li><b>Liquidity.</b> Bitcoin, MSTR, gold and Nvidia were sold before both SpaceX and Anthropic while Fed net liquidity did not fall. That looks like private de-grossing to fund about $160B to $177B of mega-IPO supply in five months, though yields and the dollar explain the same moves.</li>
+    <li><b>Anthropic.</b> Base case (about 50%) is SpaceX-like: pop of +15% to +35%, peak in days 2 to 5, back near the offer by day 63. Bull about 20%, bear about 30%. Watch the price against the $70 to $78 range, the 10-year, Nvidia, and Bitcoin after pricing.</li>
+  </ul></div>
+</section>
 
 <section class="sec" id="fade">
   <h2>The pop is quick, the fade takes months</h2>
@@ -110,6 +126,21 @@ summary{cursor:pointer;font-weight:600}
     <div class="chart" id="ch-fade"></div>
   </div>
   <div class="panel tbl"><h3>Medians by market-cap bucket</h3><div class="sub">Returns from the day-1 close. n = number of IPOs. Hover a cell for the names.</div><div id="tb-bucket"></div></div>
+</section>
+
+<section class="sec" id="intraday">
+  <h2>Intraday: the open is usually the best price a seller gets</h2>
+  <p class="claim">Daily open, high and low for all 43 debuts show a consistent shape: the median stock opens <b>+23%</b> over its offer, closes <b>+19%</b>, and ends the day <b>7.5% below its high</b>; 60% close under their open. How big the opening pop is says nothing about the rest of the day (rank correlation +0.07). Hourly bars for the 15 IPOs since 2025 show the mechanics: the first print comes late (median about 12:30 ET), trading volume is heaviest in the first hour after it, and the high of the day arrives in that first trading hour for 10 of the 15. Day 2 starts weak: its first hourly bar is down in 80% of cases.</p>
+  <div class="grid2">
+    <div class="panel"><h3>Opening pop against what happened next on day 1</h3><div class="sub">Each dot is one IPO: x = opening print vs offer, y = close vs open on day 1. Hover a dot for the name.</div>
+      <div class="legend"><span><i class="sq" style="background:var(--pos)"></i>Closed above its open</span><span><i class="sq" style="background:var(--neg)"></i>Closed below its open</span></div><div class="chart" id="ch-open"></div></div>
+    <div class="panel"><h3>SpaceX, hourly, first five sessions</h3><div class="sub">Hourly closing price as a % above the $135 offer. Dotted lines mark each new session. Day 1 opened at 11:30 ET and closed +19%. The price peaked on day 3, then a reversal day on day 4 (−9%) started the fade.</div><div class="chart" id="ch-spx"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Share of the day's volume, by hourly bar</h3><div class="sub">Median across 15 IPOs since 2025, bar start time in ET. Day-1 bars before 11:30 are omitted (fewer than 5 IPOs had traded by then).</div><div class="legend" id="lg-vol"></div><div class="chart" id="ch-vol"></div></div>
+    <div class="panel"><h3>Median return of each hourly bar</h3><div class="sub">Close vs open of the bar, median across IPOs. Day 1 is negative in most bars after the open; on day 2 only the first bar is clearly negative, and it is down for 80% of the IPOs.</div><div class="legend" id="lg-bar"></div><div class="chart" id="ch-bar"></div></div>
+  </div>
+  <div class="panel tbl"><h3>Debut-day shape and what the open costs you, by opening pop</h3><div class="sub">All 43 IPOs, daily open, high, close. Last two columns are returns measured from the opening price, not the close.</div><div id="tb-intra"></div></div>
 </section>
 
 <section class="sec" id="sectors">
@@ -187,6 +218,7 @@ summary{cursor:pointer;font-weight:600}
     <li>The price against the $70 to $78 range, and day-1 volume. Above range with heavy volume is the squeeze setup.</li>
     <li>The 10-year yield and Nvidia over the first two weeks. Both falling together was the bear trigger in 2021 and 2025.</li>
     <li>Bitcoin, MSTR and gold after pricing. A bounce would be the "supply cleared" signal seen after SpaceX.</li>
+    <li>The opening print itself. Debuts in the sample opened around midday ET; the day-1 high has usually come in the first hour, and buying the open has lost a median 11% by day 63.</li>
     <li>Any Nasdaq-100 inclusion date (SpaceX fell about 13% after being added) and the first sizeable unlock windows.</li></ul></div>
 </section>
 
@@ -329,7 +361,7 @@ const mk = a => a.map(r => ({ ...r, key: r.key }));
 /* ---------- header tiles ---------- */
 (() => { const a = D.all, t = $("#tiles");
   [["IPOs studied", String(a.n), "Sep 2020 to Jun 2026"], ["Median day-1 pop", pct(a.pop), "mean +37%, from offer"], ["Day 21", pct(a.r21, 1), "median, from day-1 close"],
-   ["Day 126", pct(a.r126), `${(a.pct_down126 * 100).toFixed(0)}% below day-1 close`], ["Below offer by day 63", (a.pct_below_offer63 * 100).toFixed(0) + "%", "of all IPOs"]]
+   ["Day 126", pct(a.r126), `${(a.pct_down126 * 100).toFixed(0)}% below day-1 close`], ["Below offer by day 63", (a.pct_below_offer63 * 100).toFixed(0) + "%", "of all IPOs"], ["Close below the open", "60%", "on debut day, 43 IPOs"]]
   .forEach(([l, v, d]) => { const c = H("div", "tile", null, t); H("div", "l", l, c); H("div", "v", v, c); H("div", "d", d, c); }); })();
 
 /* ---------- 1. fade chart ---------- */
@@ -407,6 +439,38 @@ register(() => rowsChart($("#ch-x"), { cats: XA, xmin: -32, xmax: 8, xticks: [-3
 legend($("#lg-r"), [{ name: "First-day return", color: "var(--s1)" }, { name: "Aftermarket return", color: "var(--s2)" }], true);
 register(() => colsChart($("#ch-r"), { cats: ["3Q25", "4Q25", "1Q26", "2Q26", "3Q26"], ymin: -15, ymax: 30, yticks: [-10, 0, 10, 20, 30], yfmt: v => v + "%", tfmt: v => num(v, 1) + "%", h: 230, aria: "Renaissance IPO class returns",
   series: [{ name: "First-day return", color: () => "var(--s1)", vals: [17.0, 12.0, 26.0, 15.2, 6.2] }, { name: "Aftermarket return", color: () => "var(--s2)", vals: [11.2, 0.9, -10.0, -3.9, -5.7] }] }));
+
+
+/* ---------- intraday ---------- */
+const I = D.intra, HR = [9, 10, 11, 12, 13, 14, 15], hl = h => `${h}:30`;
+register(() => { const host = $("#ch-open"); host.replaceChildren();
+  const pts = I.daily.map(d => ({ d, x: d.open_pop, y: d.oc1 })), W = host.clientWidth || 500, Ht = 300, m = { l: 44, r: 14, t: 10, b: 30 }, iw = W - m.l - m.r, ih = Ht - m.t - m.b;
+  const xmin = -.2, xmax = 1.8, ymin = -.4, ymax = .6, X = v => m.l + (v - xmin) / (xmax - xmin) * iw, Y = v => m.t + (ymax - v) / (ymax - ymin) * ih;
+  const svg = S("svg", { width: W, height: Ht, viewBox: `0 0 ${W} ${Ht}`, role: "img", "aria-label": "Opening pop against day-1 open-to-close return" }, host);
+  [-.4, -.2, 0, .2, .4, .6].forEach(t => { S("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), style: `stroke:${t === 0 ? "var(--axis)" : "var(--grid)"};stroke-width:1` }, svg); const tx = S("text", { x: m.l - 8, y: Y(t) + 4, "text-anchor": "end" }, svg); tx.textContent = pct(t); });
+  [0, .5, 1, 1.5].forEach(t => { const tx = S("text", { x: X(t), y: Ht - 12, "text-anchor": "middle" }, svg); tx.textContent = pct(t, 0, false); });
+  const lb = S("text", { x: m.l + iw / 2, y: Ht - 0, "text-anchor": "middle", class: "ink" }, svg); lb.textContent = "Opening print vs offer";
+  pts.forEach(p => S("circle", { cx: X(p.x), cy: Y(p.y), r: 5, style: `fill:var(--${p.y >= 0 ? "pos" : "neg"});stroke:var(--surface);stroke-width:2` }, svg));
+  const hi = S("circle", { r: 8, fill: "none", style: "stroke:var(--ink);stroke-width:2", visibility: "hidden" }, svg), ov = S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  ov.addEventListener("pointermove", e => { const r = ov.getBoundingClientRect(), px = e.clientX - r.left + m.l, py = e.clientY - r.top + m.t; let b = null, bd = 1e9;
+    pts.forEach(p => { const d = Math.hypot(X(p.x) - px, Y(p.y) - py); if (d < bd) { bd = d; b = p; } });
+    if (b && bd < 40) { hi.setAttribute("cx", X(b.x)); hi.setAttribute("cy", Y(b.y)); hi.setAttribute("visibility", "visible"); const d = b.d;
+      showTT(e, `${d.name} · ${d.ipo_date}`, [{ v: pct(d.open_pop), l: "opening print vs offer" }, { v: pct(d.oc1), l: "open to close" }, { v: pct(d.close_vs_high), l: "close vs day high" }, { v: pct(d.d1_pop), l: "close vs offer" }]); }
+    else { hi.setAttribute("visibility", "hidden"); hideTT(); } });
+  ov.addEventListener("pointerleave", () => { hi.setAttribute("visibility", "hidden"); hideTT(); }); });
+register(() => { const sp = I.hourly.spacex, xs = sp.map((_, i) => i), days = []; sp.forEach((b, i) => { const dd = b.ts.slice(0, 5); if (!days.length || days[days.length - 1].d !== dd) days.push({ d: dd, i }); });
+  lineChart($("#ch-spx"), { xs, x0: 0, x1: sp.length - 1, ymin: 90, ymax: 170, yticks: [100, 120, 140, 160], base: 100, yfmt: v => num(v - 100, 0) + "%", xticks: days.map((d, k) => ({ v: d.i, l: "D" + (k + 1) })), h: 300, ml: 44,
+    vmarks: days.slice(1).map(d => ({ x: d.i })), tfmt: v => num(v - 100, 1) + "%", xtitle: x => sp[x].ts + " ET", aria: "SpaceX hourly closing price over the first five sessions vs offer",
+    series: [{ name: "Hourly close vs $135 offer", color: "var(--ink)", vals: sp.map(b => b.c * 100) }] }); });
+const P = I.hourly.profile, byH = (k, key, minN) => HR.map(h => { const r = P[k].find(x => x.hr === h); return r && r.n >= minN ? r[key] : null; }), nOf = (k, i) => { const r = P[k].find(x => x.hr === HR[i]); return r ? [{ v: String(r.n), l: "IPOs in sample" }] : []; };
+const DS = [{ n: "Day 1", c: "var(--s1)", k: 1 }, { n: "Day 2", c: "var(--s2)", k: 2 }, { n: "Day 3", c: "var(--s3)", k: 3 }];
+legend($("#lg-vol"), DS.map(s => ({ name: s.n, color: s.c })), true); legend($("#lg-bar"), DS.map(s => ({ name: s.n, color: s.c })), true);
+register(() => colsChart($("#ch-vol"), { cats: HR.map(hl), ymin: 0, ymax: .5, yticks: [0, .1, .2, .3, .4, .5], yfmt: v => pct(v, 0, false), tfmt: v => pct(v, 0, false), h: 260, aria: "Share of daily volume by hourly bar",
+  series: DS.map(s => ({ name: s.n, color: () => s.c, vals: byH(s.k, "vol", s.k === 1 ? 5 : 1), extra: i => nOf(s.k, i) })) }));
+register(() => colsChart($("#ch-bar"), { cats: HR.map(hl), ymin: -.04, ymax: .04, yticks: [-.04, -.02, 0, .02, .04], yfmt: v => pct(v, 0), tfmt: v => pct(v, 1), h: 260, aria: "Median return of each hourly bar",
+  series: DS.map(s => ({ name: s.n, color: () => s.c, vals: byH(s.k, "bar_ret", s.k === 1 ? 5 : 1), extra: i => nOf(s.k, i) })) }));
+(() => { const IC = [{ k: "open_pop", h: "Open vs offer", scale: .6 }, { k: "d1_pop", h: "Close vs offer", scale: .6 }, { k: "oc1", h: "Open to close", scale: .2 }, { k: "close_vs_high", h: "Close vs high", scale: .2 }, { k: "pct_below_open", h: "Below open", fmt: "plain" }, { k: "open_to_D21", h: "Open to day 21", scale: .3 }, { k: "open_to_D63", h: "Open to day 63", scale: .3 }];
+  heatTable($("#tb-intra"), [{ rows: I.by_open.map(r => ({ ...r })).concat([{ ...I.all, key: "All 43 IPOs", names: [] }]) }], IC); })();
 
 /* ---------- table view ---------- */
 (() => { const host = $("#tb-all"), t = H("table", "", null, host), th = H("tr", "", null, H("thead", "", null, t));
